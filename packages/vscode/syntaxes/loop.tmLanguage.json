@@ -1,0 +1,50 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Loop",
+  "scopeName": "source.loop",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#structure" },
+    { "include": "#sections" },
+    { "include": "#flow" },
+    { "include": "#human" },
+    { "include": "#config" },
+    { "include": "#numbers" }
+  ],
+  "repository": {
+    "comments": {
+      "match": "#.*$",
+      "name": "comment.line.number-sign.loop"
+    },
+    "strings": {
+      "name": "string.quoted.double.loop",
+      "begin": "\"",
+      "end": "\""
+    },
+    "structure": {
+      "match": "\\b(pipeline|stage|loop)\\b",
+      "name": "keyword.control.structure.loop"
+    },
+    "sections": {
+      "match": "(?i)\\b(goal|done when|look at|each cycle|plan from|archon)\\b",
+      "name": "keyword.other.section.loop"
+    },
+    "flow": {
+      "match": "(?i)\\b(when|after|reflect|stop|warn|plan|act|observe|tries)\\b",
+      "name": "keyword.control.flow.loop"
+    },
+    "human": {
+      "match": "(?i)(a human (approves|reviews)|ask (a|the) human|allow|ask me before|automatically)",
+      "name": "markup.bold.human.loop"
+    },
+    "config": {
+      "match": "(?i)^\\s*(use|schedule|runner|run with|target|notify)\\b",
+      "name": "entity.name.tag.config.loop"
+    },
+    "numbers": {
+      "match": "\\b[0-9]+\\b",
+      "name": "constant.numeric.loop"
+    }
+  }
+}

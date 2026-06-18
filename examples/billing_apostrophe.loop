@@ -1,0 +1,13 @@
+loop "fix billing apostrophe bug":
+  goal: settings save when the company name has an apostrophe
+  done when the test "billing.spec.ts::apostrophe" passes
+
+  look at: billing/form.tsx, api/settings.ts, schema/settings.ts, and the last failure
+  allow edits automatically, but ask me before migrations or pushes
+
+  each cycle: plan, then act, then observe
+  also: polish the code, run a security check, update the docs
+  when it passes and the goal is met: stop
+  when it fails: reflect on which layer broke, then plan again
+  when blocked: ask a human
+  after 6 tries: stop and warn "thrashing"

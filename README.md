@@ -1,0 +1,128 @@
+# Loop
+
+**An open, natural-language DSL for loop engineering.** Describe a staged, self-correcting, human-gated agent workflow in plain English, press ▶, and it runs on Claude Code.
+
+> Stop tuning prompts. Start editing the loop.
+
+---
+
+## Why
+
+AI writes the code now. But you're still the conductor — kicking off manual pass after manual pass: *"fix the security issues", "now refactor", "now fix the UI."* Even strong methods leave you iterating by hand, in layers, forever.
+
+Loop lets you describe that **movement once**. You don't type the app — you type the *loop*: the objective, the context, the allowed actions, how it verifies itself, when it stops, and where a human steps in. Then you reuse it.
+
+A loop has five knobs — **objective, context, actions, verification, stopping rules**. Today they're buried in a prompt. Loop makes them first-class, editable, and shareable.
+
+## A taste
+
+```loop
+loop "fix billing apostrophe bug":
+  goal: settings save when the company name has an apostrophe
+  done when the test "billing.spec.ts::apostrophe" passes
+
+  look at: billing/form.tsx, api/settings.ts, schema/settings.ts, and the last failure
+  allow edits automatically, but ask me before migrations or pushes
+
+  each cycle: plan, then act, then observe
+  when it passes and the goal is met:  stop
+  when it fails:                        reflect on which layer broke, then plan again
+  when blocked:                         ask a human
+  after 6 tries:                        stop and warn "thrashing"
+```
+
+Compose loops into **stages** and **pipelines**, with humans wired in where judgment lives:
+
+```loop
+pipeline "ship feature":
+  stage security:
+    goal: no high or critical vulnerabilities
+    done when "semgrep --severity=high" finds nothing
+    each cycle: plan, act, observe
+    when it fails: reflect, then plan again
+
+  stage build:
+    goal: feature works and tests pass
+    a human approves the plan first
+    then each cycle: act, observe
+    done when "pnpm test" passes
+
+  stage ui:
+    goal: matches design, responsive at 375px
+    each cycle: plan, act, observe
+    a human reviews before stopping
+```
+
+## Finishing passes: `also`
+
+Tack lightweight extra operations onto a loop — they run in order *after* the goal is
+met (and are skipped if it fails). Polish, security check, docs — the stuff you'd
+otherwise forget:
+
+```loop
+loop "fix billing":
+  goal: settings save with an apostrophe
+  done when the test "billing.spec.ts::apostrophe" passes
+  each cycle: plan, then act, then observe
+  also: polish the code, run a security check, update the docs
+```
+
+Each is a policy-gated Claude Code pass. When one needs its own verification, promote it
+to a full `stage` instead.
+
+## The vocabulary (~15 words — learn it once)
+
+`pipeline` · `stage` · `loop` · `each cycle` · `goal` · `done when` · `look at` · `allow…/ask me before…` · `also` · `when…` · `reflect` · `a human…` · `stop` · `use` · `schedule`
+
+Power comes from **composition**, not keyword count.
+
+## Methods are libraries, not syntax
+
+A method like **BMAD** is just a `.loop` file in the standard library. The core is method-agnostic; `use the BMAD method` pulls in a preset, and your own method is a fork. Sharing a method is the whole flywheel.
+
+## How it runs
+
+Each node maps to a Claude Code invocation:
+
+| Node | What happens |
+|---|---|
+| `plan` | Claude Code, plan-only, scoped to your `look at` context |
+| `act` | Claude Code headless; edits gated by your policy |
+| `observe` | runs the verify command, captures pass/fail |
+| `reflect` | feeds the failure back as context for the next plan |
+| `a human…` | pauses, waits for the person, resumes |
+| `done when` | runtime checks the predicate — you can't fake "done" |
+
+Loop runs natively on Claude Code — no extra infrastructure. The `loop-spec` IR is open,
+so a `.loop` file can also be **exported to other runtimes** (e.g. [Archon](https://github.com/coleam00/Archon))
+if you already run one. Native is the default; export is opt-in.
+
+## Project layout
+
+| Package | Purpose |
+|---|---|
+| `@loop/parser` | `.loop` text → `loop-spec` JSON (the open IR) |
+| `@loop/runtime` | walks a spec, drives Claude Code, emits a live trace |
+| `@loop/vscode` | highlight, formatter, ▶ Play CodeLens, live gutter trace |
+| `@loop/stdlib` | `BMAD.loop` + starter presets |
+| `@loop/generate` | `loop generate "<intent>"` → a validated `.loop` (talk, get a flow; self-repairs) |
+| `@loop/viz` | `loop viz file.loop` → self-contained HTML schematic (the cycle + reflect back-edge) |
+| `@loop/export-archon` | optional: `loop export file.loop` → Archon workflow YAML |
+| `spec/loop-spec.schema.json` | the open IR contract |
+
+## Status
+
+Early. v1 in progress: parser, runtime, VSCode extension, BMAD preset. See the [roadmap](#roadmap) and [open issues](../../issues).
+
+## Roadmap
+
+- **v1** — parser, single-loop + sequential pipeline runtime on Claude Code, blocking human nodes, VSCode extension, BMAD preset.
+- **v2** — visual graph editor (the `loop-spec` IR is built for it), async human nodes, reactive stages, scheduling, a community preset registry (`use someone/their-method`).
+
+## Contributing
+
+This is a **community project** and an **open standard**. Good first issues: new presets, grammar edge cases, formatter rules. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## License
+
+[Apache-2.0](LICENSE). The language and the `loop-spec` IR are an open standard — implement against them freely.

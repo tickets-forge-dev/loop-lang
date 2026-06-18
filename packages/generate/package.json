@@ -1,0 +1,18 @@
+{
+  "name": "@loop/generate",
+  "version": "0.1.0",
+  "description": "Generate a .loop flow from a natural-language description — talk, get a valid loop. Self-corrects by parsing and feeding errors back to the LLM.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": { ".": "./dist/index.js" },
+  "files": ["dist", "src"],
+  "dependencies": {
+    "@loop/parser": "0.1.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.js"
+  }
+}

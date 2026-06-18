@@ -1,0 +1,283 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loop-lang.dev/spec/loop-spec.schema.json",
+  "title": "Loop Spec",
+  "description": "The open intermediate representation a .loop file parses to. The contract between @loop/parser, @loop/runtime, and @loop/vscode. Anyone may implement against this.",
+  "type": "object",
+  "required": ["loopVersion", "definitions"],
+  "additionalProperties": false,
+  "properties": {
+    "loopVersion": {
+      "type": "string",
+      "description": "Spec version this document targets.",
+      "const": "0.1"
+    },
+    "config": {
+      "description": "The config tier: which method/preset, when it runs, where. Null when the file has no config block.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "use": {
+          "type": "string",
+          "description": "A preset reference: a stdlib name (\"BMAD\"), a local path (\"./my-method.loop\"), or a registry ref (\"owner/method\")."
+        },
+        "useOverrides": {
+          "description": "Overrides applied to the used preset (the `use X, but: ...` form). Each entry patches a named stage or a top-level config key.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/overrideEntry" }
+        },
+        "runner": {
+          "type": "string",
+          "description": "Execution backend. v1 supports only \"claude-code\".",
+          "default": "claude-code"
+        },
+        "schedule": {
+          "type": "string",
+          "description": "When to run: \"manual\", \"nightly\", \"on push\", or a cron expression. v1 parses but only runs \"manual\" (via Play)."
+        },
+        "target": {
+          "type": "string",
+          "description": "Working directory / scope the runner operates in."
+        },
+        "notify": {
+          "type": "string",
+          "description": "Notification destination (e.g. \"slack\"). Deferred past v1."
+        }
+      }
+    },
+    "definitions": {
+      "type": "array",
+      "description": "Top-level definitions in file order: pipelines and standalone loops.",
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/pipeline" },
+          { "$ref": "#/$defs/loop" }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "overrideEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target"],
+      "properties": {
+        "target": {
+          "type": "string",
+          "description": "What is being overridden: a stage name, or a config key like \"schedule\"."
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["stage", "config"],
+          "default": "stage"
+        },
+        "patch": {
+          "description": "For kind=stage, a partial loop to merge into the stage's loop. For kind=config, a {key,value}.",
+          "type": "object"
+        }
+      }
+    },
+    "pipeline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "name", "stages"],
+      "properties": {
+        "kind": { "const": "pipeline" },
+        "name": { "type": "string" },
+        "stages": {
+          "type": "array",
+          "description": "Stages run sequentially in v1; a failing stage halts the rest.",
+          "items": { "$ref": "#/$defs/stage" }
+        }
+      }
+    },
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "loop"],
+      "properties": {
+        "name": { "type": "string" },
+        "gate": {
+          "description": "A blocking human gate that must be approved before the stage's loop runs (e.g. \"a human approves before provisioning\").",
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "message": { "type": "string" }
+          }
+        },
+        "loop": { "$ref": "#/$defs/loop" }
+      }
+    },
+    "loop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "goal", "cycle"],
+      "properties": {
+        "kind": { "const": "loop" },
+        "name": {
+          "type": ["string", "null"],
+          "description": "Optional name; null for an anonymous loop inside a stage."
+        },
+        "goal": {
+          "type": "string",
+          "description": "The objective in plain language."
+        },
+        "doneWhen": {
+          "description": "The predicate the runtime checks to declare the goal met. Null means the loop relies on a human review to stop.",
+          "oneOf": [
+            { "$ref": "#/$defs/predicate" },
+            { "type": "null" }
+          ]
+        },
+        "context": {
+          "description": "What the agent may look at before acting (the `look at:` block).",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "files": { "type": "array", "items": { "type": "string" } },
+            "docs": { "type": "array", "items": { "type": "string" } },
+            "includeLastFailure": {
+              "type": "boolean",
+              "description": "Whether \"and the last failure\" was present.",
+              "default": false
+            }
+          }
+        },
+        "policy": {
+          "description": "Action policy: which action classes run automatically vs require confirmation.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "auto": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Action classes allowed without asking (e.g. [\"edit\"])."
+            },
+            "confirm": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Action classes that pause for human confirmation (e.g. [\"migrate\",\"push\"])."
+            }
+          }
+        },
+        "cycle": {
+          "type": "array",
+          "description": "The repeated steps, in order. Each step is an agent node executed by the runner.",
+          "items": {
+            "type": "string",
+            "enum": ["plan", "act", "observe"]
+          },
+          "minItems": 1
+        },
+        "also": {
+          "type": "array",
+          "description": "Extra finishing passes run in order after the goal is met (e.g. \"polish\", \"run a security check\", \"update the docs\"). Lightweight agent passes; promote to a stage when one needs its own verification.",
+          "items": { "type": "string" }
+        },
+        "planSource": {
+          "description": "Where the `plan` step gets its plan. Default (omitted) = the agent generates it. \"archon\" pulls the plan/task from an Archon project, so Loop executes what Archon planned.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": {
+            "type": { "type": "string", "enum": ["agent", "archon"] },
+            "project": {
+              "type": "string",
+              "description": "For type=archon: the Archon project to pull the plan/task from."
+            }
+          }
+        },
+        "humanPlan": {
+          "type": "boolean",
+          "description": "\"a human approves the plan first\" — the plan step is authored/approved by a person before acting.",
+          "default": false
+        },
+        "humanReviewBeforeStop": {
+          "type": "boolean",
+          "description": "\"a human reviews before stopping\" — a person judges the output and feeds the verdict back before the loop may stop.",
+          "default": false
+        },
+        "transitions": {
+          "type": "array",
+          "description": "The `when ...:` rules evaluated after each observe.",
+          "items": { "$ref": "#/$defs/transition" }
+        }
+      }
+    },
+    "predicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["test", "command", "human"]
+        },
+        "target": {
+          "type": "string",
+          "description": "For type=test: the test id, e.g. \"billing.spec.ts::apostrophe\"."
+        },
+        "command": {
+          "type": "string",
+          "description": "For type=command: the shell command. Default success = exit 0."
+        },
+        "expect": {
+          "type": "string",
+          "enum": ["exit-zero", "empty"],
+          "description": "For type=command: \"empty\" encodes \"finds nothing\" (no stdout). Defaults to exit-zero.",
+          "default": "exit-zero"
+        },
+        "description": {
+          "type": "string",
+          "description": "For type=human: what the person should confirm."
+        }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["on", "do"],
+      "properties": {
+        "on": {
+          "type": "string",
+          "enum": ["pass", "fail", "blocked", "attempts"],
+          "description": "The observed outcome that triggers this rule."
+        },
+        "requireGoalMet": {
+          "type": "boolean",
+          "description": "For on=pass: only fire when doneWhen is also satisfied (\"when it passes and the goal is met\").",
+          "default": false
+        },
+        "threshold": {
+          "type": "integer",
+          "description": "For on=attempts: fire once the attempt count exceeds this (\"after 6 tries\")."
+        },
+        "do": {
+          "type": "array",
+          "description": "Actions to run, in order.",
+          "items": { "$ref": "#/$defs/action" },
+          "minItems": 1
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action"],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["stop", "reflect", "plan", "act", "observe", "ask-human"]
+        },
+        "focus": {
+          "type": "string",
+          "description": "For reflect: what to reflect on (\"which layer broke\")."
+        },
+        "warn": {
+          "type": "string",
+          "description": "For stop: an optional warning message (\"thrashing\")."
+        }
+      }
+    }
+  }
+}

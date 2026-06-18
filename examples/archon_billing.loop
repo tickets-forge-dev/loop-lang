@@ -1,0 +1,13 @@
+# Archon supplies the plan; Loop drives Claude Code to execute it and feeds
+# results back. Run with ARCHON_URL set so the runtime can reach your Archon.
+
+loop "fix billing":
+  goal: settings save when the company name has an apostrophe
+  plan from the archon project "billing"
+  look at: billing/form.tsx, api/settings.ts, and the last failure
+  allow edits automatically, but ask me before migrations or pushes
+
+  each cycle: act, then observe
+  done when the test "billing.spec.ts::apostrophe" passes
+  when it fails: reflect, then plan again
+  after 6 tries: stop and warn "thrashing"

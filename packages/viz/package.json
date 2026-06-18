@@ -1,0 +1,18 @@
+{
+  "name": "@loop/viz",
+  "version": "0.1.0",
+  "description": "Render a Loop loop-spec as a self-contained HTML control-loop schematic — the plan/act/observe cycle and the reflect back-edge, made visible.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": { ".": "./dist/index.js" },
+  "files": ["dist", "src"],
+  "dependencies": {
+    "@loop/parser": "0.1.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.js"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@loop/runtime",
+  "version": "0.1.0",
+  "description": "Executes a loop-spec by driving Claude Code: cycles, the reflect back-edge, policy gates, verification, and human-in-the-loop nodes.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": { ".": "./dist/index.js" },
+  "bin": {
+    "loop": "dist/cli.js"
+  },
+  "files": ["dist", "src"],
+  "dependencies": {
+    "@loop/parser": "0.1.0",
+    "@loop/stdlib": "0.1.0",
+    "@loop/export-archon": "0.1.0",
+    "@loop/generate": "0.1.0",
+    "@loop/viz": "0.1.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.js"
+  }
+}

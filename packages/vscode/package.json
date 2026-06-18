@@ -1,0 +1,59 @@
+{
+  "name": "loop-vscode",
+  "displayName": "Loop",
+  "version": "0.1.0",
+  "description": "Syntax, formatting, completion, and a ▶ Play button for the Loop (.loop) DSL.",
+  "license": "Apache-2.0",
+  "publisher": "loop-lang",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Programming Languages"],
+  "main": "./dist/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "languages": [
+      {
+        "id": "loop",
+        "aliases": ["Loop", "loop"],
+        "extensions": [".loop"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "loop",
+        "scopeName": "source.loop",
+        "path": "./syntaxes/loop.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "loop.run",
+        "title": "Loop: Run this loop",
+        "category": "Loop"
+      }
+    ],
+    "configuration": {
+      "title": "Loop",
+      "properties": {
+        "loop.cliPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the `loop` CLI (dist/cli.js). Defaults to the bundled @loop/runtime."
+        },
+        "loop.model": {
+          "type": "string",
+          "default": "",
+          "description": "Model alias passed to Claude Code (e.g. opus, sonnet). Empty = CLI default."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/vscode": "1.85.0"
+  }
+}

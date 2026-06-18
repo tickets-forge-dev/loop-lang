@@ -1,0 +1,5 @@
+use the BMAD method
+run with claude code
+schedule: nightly
+target: ./src
+notify: slack

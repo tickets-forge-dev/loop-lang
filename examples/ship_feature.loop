@@ -1,0 +1,24 @@
+pipeline "ship feature":
+
+  stage security:
+    goal: no high or critical vulnerabilities
+    done when "semgrep --severity=high" finds nothing
+    each cycle: plan, then act, then observe
+    when it fails: reflect, then plan again
+
+  stage build:
+    goal: feature works and tests pass
+    a human approves the plan first
+    each cycle: act, then observe
+    done when "pnpm test" passes
+
+  stage ui:
+    goal: matches design, responsive at 375px
+    each cycle: plan, then act, then observe
+    a human reviews before stopping
+
+  stage deploy:
+    a human approves before provisioning
+    goal: infra live and healthchecks green
+    done when "./scripts/health.sh" passes
+    each cycle: act, then observe

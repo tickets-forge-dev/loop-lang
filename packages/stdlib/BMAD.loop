@@ -1,0 +1,30 @@
+# BMAD — a method, encoded as a Loop preset.
+# Pulled in with `use the BMAD method`. Fork this file to make it your own;
+# methods are libraries, not language.
+
+pipeline "BMAD":
+
+  stage analyze:
+    goal: requirements are clear and agreed
+    a human approves the plan first
+    each cycle: plan, then observe
+    when blocked: ask a human
+
+  stage architect:
+    goal: a design doc the team accepts
+    each cycle: plan, then act, then observe
+    a human reviews before stopping
+
+  stage build:
+    goal: stories implemented and tests pass
+    allow edits automatically, but ask me before migrations or pushes
+    each cycle: plan, then act, then observe
+    done when "pnpm test" passes
+    when it fails: reflect on what broke, then plan again
+    after 12 tries: stop and warn "build stage not converging"
+
+  stage qa:
+    goal: no regressions
+    each cycle: act, then observe
+    done when "pnpm test" passes
+    when it fails: reflect, then plan again
