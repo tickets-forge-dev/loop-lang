@@ -76,6 +76,15 @@ to a full `stage` instead.
 
 Power comes from **composition**, not keyword count.
 
+## Authoring: by hand or by agent
+
+Write `.loop` by hand — the [VSCode extension](packages/vscode) gives syntax highlight,
+context-aware Ctrl+Space autocomplete, hover docs, and live error squiggles (Copilot
+fills the AI-prediction lane). Or ask an AI assistant to write it: drop
+[AGENTS.md](AGENTS.md) in your repo and Claude Code / Copilot author `.loop` from a
+plain-English request — the language reference travels with the project, so no special
+generator is needed.
+
 ## Methods are libraries, not syntax
 
 A method like **BMAD** is just a `.loop` file in the standard library. The core is method-agnostic; `use the BMAD method` pulls in a preset, and your own method is a fork. Sharing a method is the whole flywheel.
@@ -105,7 +114,6 @@ if you already run one. Native is the default; export is opt-in.
 | `@loop/runtime` | walks a spec, drives Claude Code, emits a live trace |
 | `@loop/vscode` | highlight, formatter, ▶ Play CodeLens, live gutter trace |
 | `@loop/stdlib` | `BMAD.loop` + starter presets |
-| `@loop/generate` | `loop generate "<intent>"` → a validated `.loop` (talk, get a flow; self-repairs) |
 | `@loop/viz` | `loop viz file.loop` → self-contained HTML schematic (the cycle + reflect back-edge) |
 | `@loop/export-archon` | optional: `loop export file.loop` → Archon workflow YAML |
 | `spec/loop-spec.schema.json` | the open IR contract |

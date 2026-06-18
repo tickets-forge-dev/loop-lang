@@ -15,7 +15,6 @@
     "@loop/parser": "0.1.0",
     "@loop/stdlib": "0.1.0",
     "@loop/export-archon": "0.1.0",
-    "@loop/generate": "0.1.0",
     "@loop/viz": "0.1.0"
   },
   "scripts": {

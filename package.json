@@ -9,11 +9,9 @@
     "packages/parser",
     "packages/stdlib",
     "packages/export-archon",
-    "packages/generate",
     "packages/viz",
     "packages/runtime",
-    "packages/vscode",
-    "packages/studio"
+    "packages/vscode"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",

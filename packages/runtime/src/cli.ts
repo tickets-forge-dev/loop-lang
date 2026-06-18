@@ -60,27 +60,9 @@ function render(e: LoopEvent): string {
 
 async function main() {
   const [cmd, fileArg, ...rest] = process.argv.slice(2);
-  if (!cmd || (cmd !== "run" && cmd !== "parse" && cmd !== "export" && cmd !== "generate" && cmd !== "viz") || !fileArg) {
-    console.error('usage: loop <run|parse|export|viz> <file.loop> | loop generate "<intent>"  [--model <alias>] [--out <path>]');
+  if (!cmd || (cmd !== "run" && cmd !== "parse" && cmd !== "export" && cmd !== "viz") || !fileArg) {
+    console.error("usage: loop <run|parse|export|viz> <file.loop>  [--model <alias>] [--out <path>]");
     process.exit(2);
-  }
-
-  // `generate` takes a natural-language intent, not a file: talk -> validated .loop.
-  if (cmd === "generate") {
-    const { generateLoop } = await import("@loop/generate");
-    const gModelIdx = rest.indexOf("--model");
-    const gModel = gModelIdx >= 0 ? rest[gModelIdx + 1] : undefined;
-    const { source, attempts } = await generateLoop(fileArg, { model: gModel });
-    const gOutIdx = rest.indexOf("--out");
-    if (gOutIdx >= 0) {
-      const dest = resolve(process.cwd(), rest[gOutIdx + 1]);
-      writeFileSync(dest, source.endsWith("\n") ? source : source + "\n");
-      console.error(`# generated in ${attempts} attempt(s) -> ${dest}`);
-    } else {
-      console.error(`# generated in ${attempts} attempt(s)`);
-      console.log(source);
-    }
-    return;
   }
 
   const path = resolve(process.cwd(), fileArg);

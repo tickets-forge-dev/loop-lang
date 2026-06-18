@@ -1,0 +1,128 @@
+# AGENTS.md — authoring Loop (`.loop`) flows
+
+This file teaches an AI assistant (Claude Code, Copilot, Cursor, etc.) how to write
+**Loop** flows. When a user asks you to design a staged, self-correcting, or human-gated
+coding workflow — "set up a loop to fix X", "turn this epic into a pipeline", "automate
+this multi-step task" — author a `.loop` file using the grammar below, then let the user
+run it with `loop run file.loop`.
+
+Loop is a small natural-language DSL. A `.loop` file describes the *movement* of an AI
+coding loop: its objective, the context it may read, the actions it's allowed, how it
+verifies itself, when it stops, and where a human steps in. The five knobs —
+**objective, context, actions, verification, stopping rules** — are first-class instead
+of buried in a prompt.
+
+## When to write a `.loop`
+
+Write one when the work is a *repeatable, verifiable* loop or a sequence of them:
+bug fixes with a test, refactors gated by a check, an epic broken into stories, a
+migration with a verification step. Don't write one for a one-off question or a trivial
+edit — just do those directly.
+
+## Vocabulary (the whole language)
+
+```
+loop "<name>":            a self-correcting loop
+pipeline "<name>":        a sequence of stages (an epic)
+stage "<name>":           one stage of a pipeline (its body is a loop; a story)
+
+goal: <text>              what "done" means, in plain language
+done when <predicate>     how the loop verifies itself (see Predicates)
+look at: <files>, and the last failure   context the agent reads before acting
+allow edits automatically, but ask me before <classes>   action policy
+each cycle: plan, then act, then observe   the repeated steps (any subset, in order)
+also: <pass>, <pass>      extra finishing passes run after the goal is met
+reflect                   turn a failure into context for the next plan (the back-edge)
+
+when it passes and the goal is met: stop
+when it fails: reflect on <focus>, then plan again
+when blocked: ask a human
+after <N> tries: stop and warn "<message>"
+
+a human approves the plan first        (human authors/approves the plan before acting)
+a human reviews before stopping        (human judges the result before the loop stops)
+a human approves before <action>       (a blocking gate before a stage, e.g. deploy)
+
+plan from the archon project "<name>"  (source the plan from Archon instead of generating)
+
+use the <method> method   schedule: <when>   runner: <agent>   target: <dir>   (config tier)
+```
+
+### Predicates (`done when …`)
+
+```
+done when the test "billing.spec.ts::apostrophe" passes   # a named test
+done when "pnpm test" passes                               # a shell command, exit 0
+done when "semgrep --severity=high" finds nothing          # a shell command, empty output
+done when a human confirms "looks right at 375px"          # a human check
+```
+
+The command in a predicate runs in the user's shell with their privileges (like an npm
+script). It IS meant to be a real command. Prefer a fast, deterministic check.
+
+## Rules
+
+- **Indentation matters.** `loop` / `pipeline` at column 0; their body indented two
+  spaces; a `stage`'s body indented under the stage.
+- A `loop` needs a `goal`. A `pipeline` needs at least one `stage`.
+- **An epic → a `pipeline`; each story → a `stage`.** Stages run in order; a failing
+  stage halts the rest.
+- **Scope each loop with `look at:`** so the agent follows the existing architecture and
+  makes the smallest change, instead of writing greenfield code.
+- **Put human gates on risky work** — payments, migrations, deploys, anything
+  irreversible. Use `ask me before …` for action policy, `a human approves before …`
+  for a hard stage gate.
+- Output only valid `.loop` syntax. Comments start with `#`.
+
+## Example — a single loop
+
+```loop
+loop "fix billing apostrophe bug":
+  goal: settings save when the company name has an apostrophe
+  done when the test "billing.spec.ts::apostrophe" passes
+
+  look at: billing/form.tsx, api/settings.ts, schema/settings.ts, and the last failure
+  allow edits automatically, but ask me before migrations or pushes
+
+  each cycle: plan, then act, then observe
+  when it passes and the goal is met:  stop
+  when it fails:                        reflect on which layer broke, then plan again
+  when blocked:                         ask a human
+  also:                                 polish the code, run a security check
+  after 6 tries:                        stop and warn "thrashing"
+```
+
+## Example — an epic with stories
+
+```loop
+pipeline "epic: checkout v2":
+
+  stage "story: cart totals":
+    goal: cart shows correct totals with tax
+    look at: src/cart/, src/tax/
+    done when "pnpm test cart" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect, then plan again
+
+  stage "story: checkout submit":
+    goal: order submits and payment is captured
+    a human approves before charging the card
+    done when "pnpm test checkout" passes
+    each cycle: act, then observe
+```
+
+## Running what you wrote
+
+- `loop run file.loop` — execute it on Claude Code (plan/act/observe, reflect on failure,
+  verify with `done when`, pause at human gates).
+- `loop viz file.loop` — open a visual schematic of the flow.
+- `loop export file.loop` — emit an Archon workflow YAML (optional interop).
+
+## Authoring checklist
+
+1. One coherent objective per `loop`; one story per `stage`.
+2. A real, fast `done when` predicate — never claim done without a check.
+3. `look at:` the relevant files so the agent stays inside the architecture.
+4. A `when it fails: reflect, then plan again` so the loop self-corrects.
+5. An `after N tries` thrash guard so it can't spin forever.
+6. Human gates on anything irreversible.
