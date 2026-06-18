@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { createInterface } from "node:readline";
 import { parse } from "@loop/parser";
 import { resolvePreset } from "@loop/stdlib";
 import { run } from "./engine.js";
@@ -8,6 +9,7 @@ import { ShellVerifier } from "./verify.js";
 import { CliHumanIO } from "./human.js";
 import { ClaudeCodeRunner } from "./runners/claudeCode.js";
 import { HttpArchonPlanSource } from "./runners/archon.js";
+import { IpcHumanIO } from "./ipc.js";
 import type { LoopEvent } from "./types.js";
 
 const GLYPH: Partial<Record<LoopEvent["type"], string>> = {
@@ -124,6 +126,34 @@ async function main() {
         codebaseId: process.env.ARCHON_CODEBASE_ID,
       })
     : undefined;
+
+  // `--events`: machine-readable NDJSON protocol for a UI host (e.g. the VSCode
+  // extension) — streams Claude's live activity and answers human gates over stdin.
+  if (rest.includes("--events")) {
+    const emit = (o: unknown) => process.stdout.write(JSON.stringify(o) + "\n");
+    const ipc = new IpcHumanIO((req) => emit(req));
+    const rl = createInterface({ input: process.stdin });
+    rl.on("line", (line) => {
+      try {
+        const m = JSON.parse(line);
+        if (typeof m.id === "number") ipc.resolve(m.id, !!m.approved);
+      } catch {
+        /* ignore malformed input */
+      }
+    });
+    const outcomes = await run(file, {
+      runner: new ClaudeCodeRunner({ model, onActivity: (node, text) => emit({ kind: "agent", node, text }) }),
+      verifier: new ShellVerifier(),
+      human: ipc,
+      archon,
+      baseDir: target,
+      onEvent: (e) => emit({ kind: "event", event: e }),
+    });
+    const ok = outcomes.every((o) => o.satisfied);
+    emit({ kind: "end", ok });
+    rl.close();
+    process.exit(ok ? 0 : 1);
+  }
 
   const outcomes = await run(file, {
     runner: new ClaudeCodeRunner({ model }),

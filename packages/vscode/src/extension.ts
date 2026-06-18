@@ -160,29 +160,91 @@ function resolveCli(): string | null {
   return existsSync(dev) ? dev : null;
 }
 
+/** Render one runtime LoopEvent as a trace line (mirrors the CLI's glyphs). */
+function renderEvent(e: any): string | null {
+  switch (e?.type) {
+    case "pipeline-start": return `▶ pipeline "${e.name}"`;
+    case "stage-start": return `  ■ stage "${e.name}"`;
+    case "stage-end": return `  ■ stage "${e.name}" → ${e.satisfied ? "satisfied" : "FAILED"}`;
+    case "loop-start": return `↻ loop ${e.name ? `"${e.name}"` : ""}`.trimEnd();
+    case "node-enter": return `    · ${e.node} (try ${e.attempt})`;
+    case "observe": return `    = ${e.passed ? "PASS" : "fail"}${e.output ? ` — ${String(e.output).split("\n")[0].slice(0, 80)}` : ""}`;
+    case "transition": return `    → on ${e.on}: ${(e.actions || []).join(", ")}`;
+    case "reflect": return `    ~ reflect${e.focus ? ` (${e.focus})` : ""}`;
+    case "loop-back": return `    ↺ back to ${e.to}`;
+    case "also": return `    + also: ${e.action} → ${e.ok ? "done" : "skipped"}`;
+    case "human": return `    ? human ${e.kind}${e.answer ? `: ${e.answer}` : ""}`;
+    case "stop": return `    ◼ stop (${e.reason})${e.warn ? ` — ⚠ ${e.warn}` : ""}`;
+    case "loop-end": return `↻ done → ${e.satisfied ? "satisfied" : "not satisfied"}`;
+    case "pipeline-end": return `▶ pipeline "${e.name}" → ${e.satisfied ? "satisfied" : "FAILED"}`;
+    default: return null;
+  }
+}
+
+const HUMAN_PROMPT: Record<string, (p: string) => string> = {
+  plan: (p) => `Approve the plan for: ${p}`,
+  review: (p) => `The loop reports done for: ${p}\nApprove to finish?`,
+  gate: (p) => `Gate: ${p}\nProceed?`,
+  confirm: (p) => `Allow "${p}" actions this run?`,
+  ask: (p) => `The loop is blocked on: ${p}\nResolve, then continue.`,
+};
+
 async function runLoop(uri: vscode.Uri | undefined, output: vscode.OutputChannel) {
   const target = uri ?? vscode.window.activeTextEditor?.document.uri;
   if (!target) return void vscode.window.showErrorMessage("Loop: no .loop file to run.");
   const cli = resolveCli();
   if (!cli) return void vscode.window.showErrorMessage("Loop: could not find the `loop` CLI. Set loop.cliPath in settings.");
   const model = vscode.workspace.getConfiguration("loop").get<string>("model");
-  const args = ["run", target.fsPath, ...(model ? ["--model", model] : [])];
+  // `--events` streams NDJSON: live agent activity + human-gate requests we answer over stdin.
+  const args = ["run", target.fsPath, "--events", ...(model ? ["--model", model] : [])];
 
   output.clear();
   output.show(true);
   output.appendLine(`▶ loop run ${target.fsPath}\n`);
+
   await vscode.window.withProgress(
     { location: vscode.ProgressLocation.Notification, title: "Running loop…", cancellable: true },
     (_p, token) =>
       new Promise<void>((resolve) => {
         const child = spawn(process.execPath, [cli, ...args], { cwd: dirnameOf(target.fsPath) });
         token.onCancellationRequested(() => child.kill());
-        child.stdout.on("data", (d) => output.append(d.toString()));
-        child.stderr.on("data", (d) => output.append(d.toString()));
-        child.on("close", (code) => {
-          output.appendLine(`\n◼ exited ${code}`);
-          resolve();
+
+        let buf = "";
+        let lastNode = "";
+        const handle = (line: string) => {
+          let m: any;
+          try { m = JSON.parse(line); } catch { return; }
+          if (m.kind === "event") {
+            const text = renderEvent(m.event);
+            if (text) output.appendLine(text);
+          } else if (m.kind === "agent") {
+            // live streaming of Claude's work, grouped under the current node
+            if (m.node !== lastNode) { output.appendLine(`      ┌ ${m.node}`); lastNode = m.node; }
+            for (const ln of String(m.text).split("\n")) output.appendLine(`      │ ${ln}`);
+          } else if (m.kind === "ask") {
+            // a human gate — pop a native dialog and answer over stdin
+            const prompt = (HUMAN_PROMPT[m.human] ?? ((p: string) => p))(m.prompt);
+            const yes = m.human === "ask" ? "Continue" : "Approve";
+            const no = m.human === "ask" ? undefined : "Reject";
+            const buttons = no ? [yes, no] : [yes];
+            vscode.window.showInformationMessage(prompt, { modal: true }, ...buttons).then((choice) => {
+              const approved = choice === yes;
+              child.stdin.write(JSON.stringify({ id: m.id, approved }) + "\n");
+            });
+          } else if (m.kind === "end") {
+            output.appendLine(`\n◼ ${m.ok ? "satisfied" : "finished (not satisfied)"}`);
+          }
+        };
+        child.stdout.on("data", (d) => {
+          buf += d.toString();
+          let nl: number;
+          while ((nl = buf.indexOf("\n")) >= 0) {
+            handle(buf.slice(0, nl));
+            buf = buf.slice(nl + 1);
+          }
         });
+        child.stderr.on("data", (d) => output.append(d.toString()));
+        child.on("close", () => resolve());
         child.on("error", (err) => {
           output.appendLine(`\n✖ ${err.message}`);
           resolve();
