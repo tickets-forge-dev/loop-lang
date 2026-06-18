@@ -55,7 +55,7 @@
     "vscode:prepublish": "npm run build",
     "build": "tsc -p tsconfig.json && npm run bundle",
     "bundle": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --target=node18 --minify",
-    "package": "vsce package --no-dependencies",
+    "package": "npx --yes @vscode/vsce@latest package --no-dependencies",
     "test": "node --test test/*.test.mjs"
   },
   "devDependencies": {
