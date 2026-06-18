@@ -1,0 +1,38 @@
+# A BMAD-shaped feature, encoded as a Loop pipeline.
+# Planning phases are human-gated; each story is a build stage with its own
+# acceptance test and a reflect-on-failure dev cycle; QA gates on human review.
+# Run with: loop run examples/bmad-auth.loop
+
+pipeline "BMAD: user authentication":
+
+  stage "analyze":
+    goal: the auth requirements are clear and agreed
+    look at: docs/brief.md
+    a human approves the plan first
+    each cycle: plan, then observe
+
+  stage "architect":
+    goal: an auth design doc the team accepts
+    look at: docs/architecture.md
+    each cycle: plan, then act, then observe
+    a human reviews before stopping
+
+  stage "story: email and password login":
+    goal: users log in with email and password
+    look at: src/auth/, docs/architecture.md
+    done when "pnpm test auth/login" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect on which layer broke, then plan again
+    after 8 tries: stop and warn "login story stuck"
+
+  stage "story: password reset":
+    goal: users reset a forgotten password by email
+    look at: src/auth/, src/email/
+    done when "pnpm test auth/reset" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect, then plan again
+
+  stage "qa":
+    goal: the full suite is green and acceptance criteria are met
+    done when "pnpm test" passes
+    a human reviews before stopping
