@@ -9,6 +9,7 @@
     "vscode": "^1.85.0"
   },
   "categories": ["Programming Languages"],
+  "repository": { "type": "git", "url": "https://github.com/tickets-forge-dev/loop-lang.git", "directory": "packages/vscode" },
   "main": "./dist/extension.js",
   "activationEvents": [],
   "contributes": {
@@ -51,14 +52,14 @@
     }
   },
   "scripts": {
+    "vscode:prepublish": "npm run build",
     "build": "tsc -p tsconfig.json && npm run bundle",
     "bundle": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --target=node18 --minify",
+    "package": "vsce package --no-dependencies",
     "test": "node --test test/*.test.mjs"
   },
-  "dependencies": {
-    "@loop/parser": "0.1.0"
-  },
   "devDependencies": {
+    "@loop/parser": "0.1.0",
     "@types/vscode": "1.85.0"
   }
 }
