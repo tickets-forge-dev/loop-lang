@@ -51,7 +51,12 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json && npm run bundle",
+    "bundle": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --target=node18 --minify",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@loop/parser": "0.1.0"
   },
   "devDependencies": {
     "@types/vscode": "1.85.0"
