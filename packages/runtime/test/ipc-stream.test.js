@@ -7,11 +7,18 @@ test("interpretStreamLine: assistant text becomes activity", () => {
   assert.deepEqual(interpretStreamLine(line), { activities: ["Looking at the form"] });
 });
 
-test("interpretStreamLine: tool_use becomes a labeled action", () => {
-  const edit = JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", name: "Edit", input: { file_path: "src/auth/login.ts" } }] } });
-  assert.deepEqual(interpretStreamLine(edit).activities, ["● Edit login.ts"]);
+test("interpretStreamLine: tool_use surfaces its input (command, diff)", () => {
+  const edit = JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", name: "Edit", input: { file_path: "src/auth/login.ts", old_string: "return a - b", new_string: "return a + b" } }] } });
+  assert.deepEqual(interpretStreamLine(edit).activities, ["● Edit login.ts", "   - return a - b", "   + return a + b"]);
   const bash = JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", name: "Bash", input: { command: "npm test" } }] } });
-  assert.deepEqual(interpretStreamLine(bash).activities, ["● Bash $ npm test"]);
+  assert.deepEqual(interpretStreamLine(bash).activities, ["● Bash", "   $ npm test"]);
+});
+
+test("interpretStreamLine: thinking and tool results are surfaced", () => {
+  const think = JSON.stringify({ type: "assistant", message: { content: [{ type: "thinking", thinking: "the bug is the operator" }] } });
+  assert.deepEqual(interpretStreamLine(think).activities, ["💭 the bug is the operator"]);
+  const result = JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", content: "line1\nline2\nline3\nline4" }] } });
+  assert.deepEqual(interpretStreamLine(result).activities, ["  ⤷ line1", "  ⤷ line2", "  ⤷ line3"]);
 });
 
 test("interpretStreamLine: result line yields the final text", () => {

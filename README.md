@@ -101,6 +101,21 @@ fills the AI-prediction lane). Or ask an AI assistant to write it: drop
 plain-English request — the language reference travels with the project, so no special
 generator is needed.
 
+## Run it inside Claude Code
+
+A bundled **Claude Code skill** (`.claude/skills/loop/`) lets you create and run loops
+*inside your Claude Code conversation* — no separate process:
+
+```
+/loop fix the failing auth test in src/auth, gate any database migration
+/loop run examples/bmad-auth.loop
+```
+
+Describe work and it writes the `.loop`; name a `.loop` file and it runs the loop
+**natively in the session** — you watch every plan/act/observe/reflect step and answer
+human gates right in the chat. Copy `.claude/skills/loop/` to `~/.claude/skills/` to use it
+in any repo (it's already active inside this one).
+
 ## Methods are libraries, not syntax
 
 A method like **BMAD** is just a `.loop` file in the standard library. The core is method-agnostic; `use the BMAD method` pulls in a preset, and your own method is a fork. Sharing a method is the whole flywheel.

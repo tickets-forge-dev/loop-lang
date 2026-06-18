@@ -35,9 +35,13 @@ interface ClaudeJsonResult {
   is_error?: boolean;
 }
 
+const clip = (s: string, n: number): string => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+const firstLines = (s: string, n: number): string[] => s.replace(/\n+$/, "").split("\n").slice(0, n);
+
 /**
- * Interpret one line of `--output-format stream-json` NDJSON: pull out human-facing
- * activity (assistant text + tool-use labels) and the final result. Pure + tested.
+ * Interpret one line of `--output-format stream-json` NDJSON into human-facing activity:
+ * assistant text, thinking, tool calls *with their inputs* (commands, file paths, diffs),
+ * and tool results — i.e. enough to *watch the Claude session*, not just labels. Pure + tested.
  */
 export function interpretStreamLine(line: string): { activities: string[]; result?: string } {
   const trimmed = line.trim();
@@ -49,26 +53,56 @@ export function interpretStreamLine(line: string): { activities: string[]; resul
     return { activities: [] };
   }
   if (obj?.type === "result") return { activities: [], result: typeof obj.result === "string" ? obj.result : "" };
+
   if (obj?.type === "assistant" && Array.isArray(obj.message?.content)) {
     const activities: string[] = [];
     for (const block of obj.message.content) {
       if (block?.type === "text" && block.text?.trim()) activities.push(block.text.trim());
-      else if (block?.type === "tool_use") activities.push(toolLabel(block));
+      else if (block?.type === "thinking" && block.thinking?.trim()) activities.push("💭 " + clip(block.thinking.trim(), 200));
+      else if (block?.type === "tool_use") activities.push(...toolLines(block));
+    }
+    return { activities };
+  }
+
+  // tool results come back as a "user" message — surface a brief preview
+  if (obj?.type === "user" && Array.isArray(obj.message?.content)) {
+    const activities: string[] = [];
+    for (const block of obj.message.content) {
+      if (block?.type === "tool_result") {
+        const txt = resultText(block.content);
+        if (txt) for (const ln of firstLines(txt, 3)) activities.push("  ⤷ " + clip(ln, 120));
+      }
     }
     return { activities };
   }
   return { activities: [] };
 }
 
-function toolLabel(block: { name?: string; input?: Record<string, unknown> }): string {
+function toolLines(block: { name?: string; input?: Record<string, unknown> }): string[] {
   const name = block.name ?? "tool";
   const i = block.input ?? {};
+  const out: string[] = [];
   let suffix = "";
-  if (typeof i.file_path === "string") suffix = " " + i.file_path.split("/").pop();
-  else if (typeof i.command === "string") suffix = " $ " + i.command.slice(0, 60);
-  else if (typeof i.pattern === "string") suffix = " /" + i.pattern + "/";
+  if (typeof i.file_path === "string") suffix = " " + (i.file_path.split("/").pop() ?? i.file_path);
   else if (typeof i.path === "string") suffix = " " + i.path;
-  return "● " + name + suffix;
+  else if (typeof i.pattern === "string") suffix = " /" + i.pattern + "/";
+  out.push("● " + name + suffix);
+  if (typeof i.command === "string") out.push("   $ " + clip(i.command, 200));
+  if (typeof i.old_string === "string" && firstLines(i.old_string, 1)[0]) out.push("   - " + clip(firstLines(i.old_string, 1)[0], 100));
+  if (typeof i.new_string === "string" && firstLines(i.new_string, 1)[0]) out.push("   + " + clip(firstLines(i.new_string, 1)[0], 100));
+  if (typeof i.content === "string" && !i.old_string && firstLines(i.content, 1)[0]) out.push("   ✎ " + clip(firstLines(i.content, 1)[0], 100));
+  return out;
+}
+
+function resultText(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((c: any) => (typeof c === "string" ? c : c?.type === "text" ? c.text : ""))
+      .filter(Boolean)
+      .join("\n");
+  }
+  return "";
 }
 
 /**

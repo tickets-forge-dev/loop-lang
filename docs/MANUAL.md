@@ -247,6 +247,23 @@ ask Claude Code (or Copilot) in plain English — "set up a loop to fix the auth
 gate the deploy." The agent reads the reference and writes the `.loop` for you. The
 language travels with the project, so there's no separate generator step.
 
+### The Claude Code skill (`/loop`)
+
+The repo ships a Claude Code skill at `.claude/skills/loop/`. Copy it to `~/.claude/skills/`
+to use it in any project (it's already active inside the loop-lang repo). Then:
+
+```
+/loop fix the failing checkout tax test, gate any migration   # creates a .loop
+/loop run examples/bmad-auth.loop                             # runs one natively
+```
+
+The skill both **creates** `.loop` files from a description and **runs** them *inside your
+Claude Code session* — walking plan → act → observe → reflect, honoring each `done when`
+and thrash guard, and pausing for human gates by asking you in the chat. Because Claude
+runs the loop itself, you see every step and answer gates inline, instead of a headless
+subprocess. (The `loop run` CLI and the VSCode ▶ button remain the headless ways to run
+the same files.)
+
 ## 9. Presets (methods)
 
 A method is just a `.loop` file in the standard library. `use the BMAD method` pulls in
