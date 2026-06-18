@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { createRequire } from "node:module";
-import { contextAt, completionsFor, hoverFor } from "./language.js";
+import { contextAt, completionsFor, hoverFor, lint } from "./language.js";
 
 const HEADER = /^(loop|pipeline)\b/;
 const LOOP_SELECTOR: vscode.DocumentSelector = { language: "loop" };
@@ -118,8 +118,16 @@ async function refreshDiagnostics(doc: vscode.TextDocument, collection: vscode.D
   try {
     const { parse, ParseError } = await loadParser();
     try {
-      parse(doc.getText());
-      collection.set(doc.uri, []);
+      const spec = parse(doc.getText());
+      // Parsed cleanly — surface soft structural nudges as warnings.
+      const lines = doc.getText().split(/\r?\n/);
+      const warnings = lint(spec as { definitions: unknown[] } as any, lines).map((w) => {
+        const lineNo = Math.min(Math.max(0, w.line), doc.lineCount - 1);
+        const d = new vscode.Diagnostic(doc.lineAt(lineNo).range, w.message, vscode.DiagnosticSeverity.Warning);
+        d.source = "loop";
+        return d;
+      });
+      collection.set(doc.uri, warnings);
     } catch (err) {
       if (err instanceof ParseError) {
         const lineNo = Math.min(Math.max(0, ((err as { line?: number }).line ?? 1) - 1), doc.lineCount - 1);

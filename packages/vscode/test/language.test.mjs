@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { contextAt, completionsFor, predictNext, hoverFor } from "../dist/language.js";
+import { contextAt, completionsFor, predictNext, hoverFor, lint } from "../dist/language.js";
 
 const lines = (s) => s.split("\n");
 
@@ -55,4 +55,33 @@ test("hoverFor returns docs for vocabulary, null otherwise", () => {
   assert.match(hoverFor("reflect"), /feedback edge/);
   assert.match(hoverFor("done"), /predicate/);
   assert.equal(hoverFor("banana"), null);
+});
+
+test("lint warns on an unverifiable loop (no done when, no human review)", () => {
+  const src = 'loop "x":\n  goal: do the thing\n  each cycle: plan, then act, then observe';
+  const file = { definitions: [{ kind: "loop", name: "x" }] };
+  const w = lint(file, lines(src));
+  assert.equal(w.length, 1);
+  assert.match(w[0].message, /no way to verify/);
+  assert.equal(w[0].line, 0);
+});
+
+test("lint warns on a self-correcting loop with no thrash guard", () => {
+  const src = 'loop "y":\n  goal: g\n  done when "npm test" passes\n  when it fails: reflect, then plan again';
+  const file = { definitions: [{ kind: "loop", name: "y", doneWhen: { type: "command" }, transitions: [{ on: "fail", do: [{ action: "reflect" }, { action: "plan" }] }] }] };
+  const w = lint(file, lines(src));
+  assert.equal(w.length, 1);
+  assert.match(w[0].message, /thrash guard/);
+});
+
+test("lint stays silent on a complete loop", () => {
+  const file = { definitions: [{ kind: "loop", name: "z", doneWhen: { type: "command" }, transitions: [{ on: "fail", do: [{ action: "reflect" }] }, { on: "attempts", threshold: 6, do: [{ action: "stop" }] }] }] };
+  assert.deepEqual(lint(file, lines('loop "z":')), []);
+});
+
+test("lint checks loops inside a pipeline's stages", () => {
+  const file = { definitions: [{ kind: "pipeline", name: "p", stages: [{ name: "s", loop: { kind: "loop", name: null } }] }] };
+  const w = lint(file, lines('pipeline "p":\n  stage "s":\n    goal: g'));
+  assert.equal(w.length, 1);
+  assert.match(w[0].message, /no way to verify/);
 });

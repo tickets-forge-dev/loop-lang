@@ -121,3 +121,61 @@ export function hoverFor(word: string): string | null {
 }
 
 export const VOCABULARY = Object.keys(HOVERS);
+
+// ---- soft lint: nudge toward a complete loop, never block ----
+
+// Minimal structural shape of the parsed loop-spec (avoids a dependency on the parser).
+interface LintLoop {
+  kind: "loop";
+  name: string | null;
+  doneWhen?: unknown;
+  humanReviewBeforeStop?: boolean;
+  transitions?: Array<{ on: string; threshold?: number; do?: Array<{ action: string }> }>;
+}
+interface LintStage { name: string; loop: LintLoop }
+interface LintPipeline { kind: "pipeline"; name: string; stages: LintStage[] }
+interface LintFile { definitions: Array<LintLoop | LintPipeline> }
+
+export interface LintWarning {
+  line: number; // 0-based source line to attach the squiggle
+  message: string;
+}
+
+/** Find the source line of a `loop "name":` / `stage "name":` header (best-effort). */
+function headerLine(lines: string[], kind: "loop" | "stage", name: string | null): number {
+  if (name) {
+    const re = new RegExp(`^\\s*${kind}\\s+"${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`);
+    const i = lines.findIndex((l) => re.test(l));
+    if (i >= 0) return i;
+  }
+  const j = lines.findIndex((l) => new RegExp(`^\\s*${kind}\\b`).test(l));
+  return Math.max(0, j);
+}
+
+function checkLoop(loop: LintLoop, line: number, out: LintWarning[]) {
+  // Unverifiable: nothing decides "done" — only a thrash guard or the hard cap can stop it.
+  if (!loop.doneWhen && !loop.humanReviewBeforeStop) {
+    out.push({ line, message: "This loop has no way to verify it's done — add a `done when …` check or `a human reviews before stopping`." });
+  }
+  // Self-correcting but unbounded: re-plans on failure with no attempt ceiling.
+  const reflects = (loop.transitions ?? []).some((t) => t.on === "fail" && (t.do ?? []).some((d) => d.action === "reflect" || d.action === "plan"));
+  const guarded = (loop.transitions ?? []).some((t) => t.on === "attempts" && typeof t.threshold === "number");
+  if (reflects && !guarded) {
+    out.push({ line, message: "This loop re-plans on failure but has no thrash guard — add `after N tries: stop and warn \"…\"` (otherwise it runs to the hard cap of 25)." });
+  }
+}
+
+/** Structural warnings for a parsed spec. Pure: takes the spec + source lines, returns nudges. */
+export function lint(file: LintFile, lines: string[]): LintWarning[] {
+  const out: LintWarning[] = [];
+  for (const def of file.definitions ?? []) {
+    if ((def as LintPipeline).kind === "pipeline") {
+      for (const stage of (def as LintPipeline).stages ?? []) {
+        checkLoop(stage.loop, headerLine(lines, "stage", stage.name), out);
+      }
+    } else {
+      checkLoop(def as LintLoop, headerLine(lines, "loop", (def as LintLoop).name), out);
+    }
+  }
+  return out;
+}

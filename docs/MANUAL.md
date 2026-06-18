@@ -6,6 +6,7 @@ file, then run it natively on Claude Code. The loop's five knobs — objective, 
 actions, verification, stopping rules — are first-class and editable instead of buried in
 a prompt.
 
+- [The shape of a loop](#the-shape-of-a-loop)
 - [1. Requirements](#1-requirements)
 - [2. Install](#2-install)
 - [3. Quickstart](#3-quickstart)
@@ -20,6 +21,37 @@ a prompt.
 - [12. The loop-spec IR](#12-the-loop-spec-ir)
 
 ---
+
+## The shape of a loop
+
+Every loop has one structure with two faces. You **author five decisions** (the knobs);
+the runtime executes **five phases** (the cycle). The knobs configure the phases.
+
+```
+        what you DECIDE                     what RUNs
+        (the .loop you write)               (each iteration)
+
+        objective   →  goal:                ┌─────────────────────────────┐
+        context     →  look at:             │   plan → act → observe      │
+        actions     →  allow / ask me…      │     ▲              │        │
+        verification → done when            │     └── reflect ◄──┘ (fail) │
+        stopping    →  when… / after N      └──────────── │ ──────────────┘
+                                                     (pass) ▼
+                                                          stop
+```
+
+| Knob | The line | Configures the phase |
+|---|---|---|
+| Objective | `goal:` | what `stop` is aiming at |
+| Context | `look at:` | what `plan` may read |
+| Actions | `allow … / ask me before …` | what `act` may do |
+| Verification | `done when …` | what `observe` checks |
+| Stopping | `when …` / `after N tries` | `stop` + the `reflect` back-edge |
+
+You rarely write all five — sensible defaults cover the simple case (the cycle defaults to
+plan→act→observe; edits default to auto). The VSCode extension nudges you when a loop is
+missing something load-bearing (e.g. no way to verify "done", or a back-edge with no
+thrash guard) — a warning, never an error. Structure guides; it doesn't cage.
 
 ## 1. Requirements
 

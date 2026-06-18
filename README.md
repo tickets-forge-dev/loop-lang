@@ -14,6 +14,22 @@ Loop lets you describe that **movement once**. You don't type the app — you ty
 
 A loop has five knobs — **objective, context, actions, verification, stopping rules**. Today they're buried in a prompt. Loop makes them first-class, editable, and shareable.
 
+## The shape
+
+One structure, two faces — the five decisions you author drive the five phases that run:
+
+```
+  DECIDE                          RUN
+  objective    → goal:            plan → act → observe
+  context      → look at:           ▲            │
+  actions      → allow / ask          └ reflect ◄┘ (fail)
+  verification → done when                 │
+  stopping     → when… / after N    (pass) ▼  →  stop
+```
+
+You rarely write all five — defaults carry the simple case, and the editor *nudges*
+(never blocks) when a loop is missing something load-bearing. See [the manual](docs/MANUAL.md#the-shape-of-a-loop).
+
 ## A taste
 
 ```loop
