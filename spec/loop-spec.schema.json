@@ -42,7 +42,8 @@
         "notify": {
           "type": "string",
           "description": "Notification destination (e.g. \"slack\"). Deferred past v1."
-        }
+        },
+        "git": { "$ref": "#/$defs/gitPolicy" }
       }
     },
     "definitions": {
@@ -202,7 +203,8 @@
           "type": "array",
           "description": "The `when ...:` rules evaluated after each observe.",
           "items": { "$ref": "#/$defs/transition" }
-        }
+        },
+        "git": { "$ref": "#/$defs/gitPolicy" }
       }
     },
     "predicate": {
@@ -316,6 +318,34 @@
             "source": { "type": "string", "description": "Data file to enumerate (.yaml/.yml/.md), relative to the flow file." }
           },
           "description": "Present when this step iterates: run `ref` once per item enumerated from `source`."
+        }
+      }
+    },
+    "gitPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "isolation": {
+          "type": "string",
+          "enum": ["in-place", "branch", "worktree"],
+          "description": "How the agent isolates its work. \"branch\" = a new git branch; \"worktree\" = a git worktree; \"in-place\" = no isolation."
+        },
+        "branch": {
+          "type": "string",
+          "description": "Branch or worktree name when isolation is \"branch\" or \"worktree\"."
+        },
+        "commit": {
+          "type": "string",
+          "enum": ["done", "cycle", "story", "never"],
+          "description": "When to commit. \"done\" = after goal is met; \"cycle\" = after each cycle; \"story\" = after each story; \"never\" = never."
+        },
+        "push": {
+          "type": "boolean",
+          "description": "Whether to push to remote when done."
+        },
+        "openPr": {
+          "type": "boolean",
+          "description": "Whether to open a pull request when done."
         }
       }
     }

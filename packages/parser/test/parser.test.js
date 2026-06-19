@@ -145,3 +145,18 @@ test("flow: plain run steps still parse alongside for each (regression)", () => 
   assert.equal(flow.steps[0].forEach, undefined);
   assert.deepEqual(flow.steps[1].forEach, { var: "item", source: "plan.yaml" });
 });
+
+test("file-level git block parses to config.git", () => {
+  const file = parse('git:\n  work on a branch\n  commit when the goal is met\n  push when done\n  open a pull request\nloop "x":\n  goal: g\n  done when "t" passes');
+  assert.deepEqual(file.config.git, { isolation: "branch", commit: "done", push: true, openPr: true });
+});
+test("per-loop git block parses to loop.git", () => {
+  const loop = parse('loop "x":\n  goal: g\n  done when "t" passes\n  git:\n    commit each cycle').definitions[0];
+  assert.deepEqual(loop.git, { commit: "cycle" });
+});
+test("git isolation + dial-down forms", () => {
+  const a = parse('git:\n  work in a worktree "wt"\n  commit never\n  do not push').config.git;
+  assert.deepEqual(a, { isolation: "worktree", branch: "wt", commit: "never", push: false });
+  const b = parse('git:\n  work in place').config.git;
+  assert.deepEqual(b, { isolation: "in-place" });
+});

@@ -5,6 +5,7 @@ import {
   Definition,
   Flow,
   FlowStep,
+  GitPolicy,
   Loop,
   LoopContext,
   LoopFile,
@@ -193,6 +194,29 @@ function parseCycle(s: string, lineNo: number): CycleStep[] {
   return out;
 }
 
+function parseGitLine(g: GitPolicy, text: string, lineNo: number): void {
+  let m: RegExpMatchArray | null;
+  if (/^work in place$/i.test(text)) { g.isolation = "in-place"; return; }
+  if ((m = text.match(/^work on a branch(?:\s+"([^"]+)")?$/i))) { g.isolation = "branch"; if (m[1]) g.branch = m[1]; return; }
+  if ((m = text.match(/^work in a worktree(?:\s+"([^"]+)")?$/i))) { g.isolation = "worktree"; if (m[1]) g.branch = m[1]; return; }
+  if (/^commit when (?:the goal is met|done)$/i.test(text)) { g.commit = "done"; return; }
+  if (/^commit each cycle$/i.test(text)) { g.commit = "cycle"; return; }
+  if (/^commit each story$/i.test(text)) { g.commit = "story"; return; }
+  if (/^(?:commit never|do not commit)$/i.test(text)) { g.commit = "never"; return; }
+  if (/^(?:push when done|push)$/i.test(text)) { g.push = true; return; }
+  if (/^do not push$/i.test(text)) { g.push = false; return; }
+  if (/^open a (?:pull request|pr)$/i.test(text)) { g.openPr = true; return; }
+  throw new ParseError(`unrecognized git line: "${text}"`, lineNo);
+}
+function parseGitBlock(lines: Line[], start: number): { git: GitPolicy; next: number } {
+  const header = lines[start];
+  const { body, next } = childrenOf(lines, start + 1, header.indent);
+  if (body.length === 0) throw new ParseError(`empty git block`, header.lineNo);
+  const git: GitPolicy = {};
+  for (const ln of body) parseGitLine(git, ln.text, ln.lineNo);
+  return { git, next };
+}
+
 // ---------- loop body ----------
 
 interface LoopBodyResult {
@@ -206,66 +230,74 @@ function interpretLoopBody(name: string | null, body: Line[]): LoopBodyResult {
   let sawGoal = false;
   let sawCycle = false;
 
-  for (const ln of body) {
+  let i = 0;
+  while (i < body.length) {
+    const ln = body[i];
     const t = ln.text;
 
     let m: RegExpMatchArray | null;
 
+    if (/^git:?$/i.test(t)) {
+      const { git, next } = parseGitBlock(body, i);
+      loop.git = git;
+      i = next;
+      continue;
+    }
     if ((m = t.match(/^goal:\s*(.+)$/i))) {
       loop.goal = m[1].trim();
       sawGoal = true;
-      continue;
+      i++; continue;
     }
     if ((m = t.match(/^done when\s+(.+)$/i))) {
       loop.doneWhen = parsePredicate(m[1], ln.lineNo);
-      continue;
+      i++; continue;
     }
     if ((m = t.match(/^look at:\s*(.+)$/i))) {
       loop.context = parseContext(m[1]);
-      continue;
+      i++; continue;
     }
     if (/^allow\b/i.test(t) || /^ask me before\b/i.test(t)) {
       mergePolicy(loop, t);
-      continue;
+      i++; continue;
     }
     if ((m = t.match(/^(?:then\s+)?each cycle:\s*(.+)$/i))) {
       loop.cycle = parseCycle(m[1], ln.lineNo);
       sawCycle = true;
-      continue;
+      i++; continue;
     }
     if ((m = t.match(/^also(?:\s+do)?:\s*(.+)$/i))) {
       loop.also = m[1]
         .split(",")
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
-      continue;
+      i++; continue;
     }
     if ((m = t.match(/^plan from (?:the )?archon(?:\s+project\s+"([^"]+)")?$/i))) {
       loop.planSource = { type: "archon", ...(m[1] ? { project: m[1] } : {}) };
-      continue;
+      i++; continue;
     }
     if (/^a human approves the plan first$/i.test(t)) {
       loop.humanPlan = true;
-      continue;
+      i++; continue;
     }
     if (/^a human reviews before stopping$/i.test(t)) {
       loop.humanReviewBeforeStop = true;
-      continue;
+      i++; continue;
     }
     if ((m = t.match(/^a human approves before\s+(.+)$/i))) {
       gate = { message: `approve before ${m[1].trim()}` };
-      continue;
+      i++; continue;
     }
     if ((m = t.match(/^when\s+(.+?):\s*(.+)$/i))) {
       const base = parseWhenCondition(m[1], ln.lineNo);
       const actions = parseActions(m[2], ln.lineNo);
       (loop.transitions ??= []).push({ ...base, do: actions });
-      continue;
+      i++; continue;
     }
     if ((m = t.match(/^after\s+(\d+)\s+tries:\s*(.+)$/i))) {
       const actions = parseActions(m[2], ln.lineNo);
       (loop.transitions ??= []).push({ on: "attempts", threshold: parseInt(m[1], 10), do: actions });
-      continue;
+      i++; continue;
     }
 
     throw new ParseError(`unrecognized line: "${t}"`, ln.lineNo);
@@ -467,6 +499,10 @@ export function parse(src: string): LoopFile {
     } else if (/^flow\b/i.test(ln.text)) {
       const { flow, next } = parseFlow(lines, i);
       definitions.push(flow);
+      i = next;
+    } else if (/^git:?$/i.test(ln.text)) {
+      const { git, next } = parseGitBlock(lines, i);
+      config.git = git;
       i = next;
     } else if (parseConfigLine(config, ln)) {
       i++;

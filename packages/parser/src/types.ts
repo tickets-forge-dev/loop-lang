@@ -13,6 +13,14 @@ export interface LoopFile {
 
 export type Definition = Pipeline | Loop | Flow;
 
+export interface GitPolicy {
+  isolation?: "in-place" | "branch" | "worktree";
+  branch?: string;
+  commit?: "done" | "cycle" | "story" | "never";
+  push?: boolean;
+  openPr?: boolean;
+}
+
 export interface Config {
   use?: string;
   useOverrides?: OverrideEntry[];
@@ -20,6 +28,7 @@ export interface Config {
   schedule?: string;
   target?: string;
   notify?: string;
+  git?: GitPolicy;
 }
 
 export interface OverrideEntry {
@@ -54,6 +63,7 @@ export interface Loop {
   humanPlan?: boolean;
   humanReviewBeforeStop?: boolean;
   transitions?: Transition[];
+  git?: GitPolicy;
 }
 
 export type CycleStep = "plan" | "act" | "observe";
