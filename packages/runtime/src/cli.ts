@@ -63,6 +63,14 @@ function render(e: LoopEvent): string {
       return `  ▸ ${e.name} → ${e.satisfied ? "satisfied" : "FAILED"}`;
     case "flow-end":
       return `→ flow "${e.name}" → ${e.satisfied ? "satisfied" : "FAILED"}`;
+    case "foreach-start":
+      return `→ for each ${e.var} in ${e.source} (${e.count})`;
+    case "foreach-item-start":
+      return `  • ${e.var} ${e.index + 1}/${e.total}`;
+    case "foreach-item-end":
+      return `  • ${e.var} #${e.index + 1} → ${e.satisfied ? "satisfied" : "FAILED"}`;
+    case "foreach-end":
+      return `→ for each ${e.var} → ${e.satisfied ? "satisfied" : "FAILED"}`;
     default:
       return "";
   }
@@ -79,6 +87,8 @@ async function main() {
   const baseDir = dirname(path);
   const loadFile = (ref: string, dir: string) =>
     Promise.resolve(parse(readFileSync(resolve(dir, ref), "utf8")));
+  const readText = (ref: string, dir: string) =>
+    Promise.resolve(readFileSync(resolve(dir, ref), "utf8"));
   const src = readFileSync(path, "utf8");
   let file = parse(src);
 
@@ -158,6 +168,7 @@ async function main() {
       archon,
       baseDir: target,
       loadFile,
+      readText,
       flowStack: [path],
       onEvent: (e) => emit({ kind: "event", event: e }),
     });
@@ -174,6 +185,7 @@ async function main() {
     archon,
     baseDir: target,
     loadFile,
+    readText,
     flowStack: [path],
     onEvent: (e) => {
       const line = render(e);
