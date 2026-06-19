@@ -202,3 +202,102 @@ test("opts.upstream is threaded into the plan input", async () => {
   });
   assert.equal(runner.planCalls[0].upstream, "hello from prev step");
 });
+
+// Helpers for flow tests: small in-memory loop files + a mock loader.
+function loopSrc(name, opts = {}) {
+  const guard = opts.failFast ? '\n  after 1 tries: stop and warn "nope"' : "";
+  return `loop "${name}":\n  goal: ${name} goal\n  done when "cmd" passes\n  each cycle: plan, then act, then observe${guard}`;
+}
+function mockLoader(map) {
+  return async (ref) => map[ref] ?? (() => { throw new Error("no such file " + ref); })();
+}
+
+test("flow: runs steps in order and carries the handoff forward", async () => {
+  const files = { "one.loop": parse(loopSrc("one")), "two.loop": parse(loopSrc("two")) };
+  const flow = parse('flow "chain":\n  run "one.loop"\n  then run "two.loop"').definitions[0];
+  const runner = new MockRunner();
+  const { events, onEvent } = collect();
+  const outcome = await runDefinition(flow, {
+    runner,
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO(),
+    baseDir: "/proj",
+    loadFile: mockLoader(files),
+    flowStack: ["/proj/chain.loop"],
+    onEvent,
+  });
+  assert.equal(outcome.satisfied, true);
+  const starts = events.filter((e) => e.type === "flow-step-start").map((e) => e.name);
+  assert.deepEqual(starts, ["one", "two"], "ran in order");
+  const twoPlan = runner.planCalls.find((c) => c.goal === "two goal");
+  assert.match(twoPlan.upstream, /\[one\] satisfied/, "step two received step one's summary");
+});
+
+test("flow: a failing step halts the rest", async () => {
+  const files = { "one.loop": parse(loopSrc("one", { failFast: true })), "two.loop": parse(loopSrc("two")) };
+  const flow = parse('flow "chain":\n  run "one.loop"\n  then run "two.loop"').definitions[0];
+  const { events, onEvent } = collect();
+  const outcome = await runDefinition(flow, {
+    runner: new MockRunner(),
+    verifier: new SeqVerifier([false]),
+    human: new ScriptedHumanIO(),
+    baseDir: "/proj",
+    loadFile: mockLoader(files),
+    flowStack: ["/proj/chain.loop"],
+    onEvent,
+  });
+  assert.equal(outcome.satisfied, false);
+  assert.deepEqual(events.filter((e) => e.type === "flow-step-start").map((e) => e.name), ["one"], "two never started");
+});
+
+test("flow: 'with the result of' pulls a named earlier step's summary", async () => {
+  const files = { "a.loop": parse(loopSrc("a")), "b.loop": parse(loopSrc("b")), "c.loop": parse(loopSrc("c")) };
+  const flow = parse('flow "chain":\n  run "a.loop"\n  then run "b.loop"\n  then run "c.loop" with the result of a').definitions[0];
+  const runner = new MockRunner();
+  await runDefinition(flow, {
+    runner,
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO(),
+    baseDir: "/proj",
+    loadFile: mockLoader(files),
+    flowStack: ["/proj/chain.loop"],
+  });
+  const cPlan = runner.planCalls.find((p) => p.goal === "c goal");
+  assert.match(cPlan.upstream, /^\[a\] satisfied/, "c got a's summary, not b's");
+});
+
+test("flow: a rejected per-step gate halts the flow", async () => {
+  const files = { "a.loop": parse(loopSrc("a")), "b.loop": parse(loopSrc("b")) };
+  const flow = parse('flow "chain":\n  run "a.loop"\n  then run "b.loop":\n    a human approves first').definitions[0];
+  const runner = new MockRunner();
+  const outcome = await runDefinition(flow, {
+    runner,
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO({ gate: [false] }),
+    baseDir: "/proj",
+    loadFile: mockLoader(files),
+    flowStack: ["/proj/chain.loop"],
+  });
+  assert.equal(outcome.satisfied, false);
+  assert.equal(runner.planCalls.some((p) => p.goal === "b goal"), false, "b never ran");
+});
+
+test("flow: a cycle is detected and throws", async () => {
+  const files = {
+    "a.loop": parse('flow "a":\n  run "b.loop"'),
+    "b.loop": parse('flow "b":\n  run "a.loop"'),
+  };
+  const flow = files["a.loop"].definitions[0];
+  await assert.rejects(
+    () =>
+      runDefinition(flow, {
+        runner: new MockRunner(),
+        verifier: new SeqVerifier([true]),
+        human: new ScriptedHumanIO(),
+        baseDir: "/proj",
+        loadFile: mockLoader(files),
+        flowStack: ["/proj/a.loop"],
+      }),
+    /flow cycle: a\.loop -> b\.loop -> a\.loop/
+  );
+});

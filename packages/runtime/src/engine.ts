@@ -1,4 +1,5 @@
-import type { Loop, Pipeline, Definition, Transition, Action, LoopFile } from "@loop/parser";
+import { resolve, dirname, basename } from "node:path";
+import type { Loop, Pipeline, Flow, Definition, Transition, Action, LoopFile } from "@loop/parser";
 import type { CycleNode, LoopEvent, LoopOutcome, RunOptions, StopReason } from "./types.js";
 
 const DEFAULT_HARD_CAP = 25;
@@ -259,6 +260,60 @@ async function executePipeline(pipeline: Pipeline, opts: RunOptions): Promise<Lo
   return { satisfied: true, reason: "done", attempts: lastAttempts };
 }
 
+async function executeFlow(flow: Flow, opts: RunOptions): Promise<LoopOutcome> {
+  emit(opts, { type: "flow-start", name: flow.name });
+  const stack = opts.flowStack ?? [];
+  const summaries: Record<string, string> = {};
+  let carried = opts.upstream; // upstream from a parent flow, if any
+
+  for (const step of flow.steps) {
+    emit(opts, { type: "flow-step-start", name: step.name, ref: step.ref });
+
+    if (step.gate) {
+      emit(opts, { type: "human", kind: "gate", prompt: step.gate.message });
+      const ok = await opts.human.gate(step.gate.message);
+      if (!ok) {
+        emit(opts, { type: "flow-step-end", name: step.name, satisfied: false });
+        emit(opts, { type: "flow-end", name: flow.name, satisfied: false });
+        return { satisfied: false, reason: "blocked", attempts: 0 };
+      }
+    }
+
+    const stepPath = resolve(opts.baseDir, step.ref);
+    if (stack.includes(stepPath)) {
+      const chain = [...stack, stepPath].map((p) => basename(p)).join(" -> ");
+      throw new Error(`flow cycle: ${chain}`);
+    }
+    if (!opts.loadFile) {
+      throw new Error(`flow "${flow.name}" runs "${step.ref}" but no file loader was provided`);
+    }
+
+    const subFile = await opts.loadFile(step.ref, opts.baseDir);
+    const stepUpstream = step.fromStep ? summaries[step.fromStep] : carried;
+    const outcomes = await run(subFile, {
+      ...opts,
+      baseDir: dirname(stepPath),
+      flowStack: [...stack, stepPath],
+      upstream: stepUpstream,
+    });
+
+    const satisfied = outcomes.every((o) => o.satisfied);
+    const detail = outcomes.map((o) => o.summary).filter(Boolean).map((s) => "\n" + s).join("");
+    const summary = `[${step.name}] ${satisfied ? "satisfied" : "FAILED"}${detail}`;
+    summaries[step.name] = summary;
+    carried = summary;
+
+    emit(opts, { type: "flow-step-end", name: step.name, satisfied });
+    if (!satisfied) {
+      emit(opts, { type: "flow-end", name: flow.name, satisfied: false });
+      return { satisfied: false, reason: "blocked", attempts: 0, summary };
+    }
+  }
+
+  emit(opts, { type: "flow-end", name: flow.name, satisfied: true });
+  return { satisfied: true, reason: "done", attempts: 0 };
+}
+
 /** Run the loop's `also:` finishing passes once its goal is met. */
 async function runExtras(loop: Loop, opts: RunOptions): Promise<void> {
   if (!loop.also?.length) return;
@@ -294,7 +349,7 @@ async function writeBackArchon(loop: Loop, opts: RunOptions, satisfied: boolean)
 /** Run a single definition (a loop or a pipeline). */
 export async function runDefinition(def: Definition, opts: RunOptions): Promise<LoopOutcome> {
   if (def.kind === "pipeline") return executePipeline(def, opts);
-  if (def.kind === "flow") throw new Error("flow execution is not yet implemented");
+  if (def.kind === "flow") return executeFlow(def, opts);
   const outcome = await executeLoopFull(def, opts);
   await writeBackArchon(def, opts, outcome.satisfied);
   return outcome;
