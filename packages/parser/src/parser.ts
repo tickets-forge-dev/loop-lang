@@ -351,6 +351,34 @@ function parseLoopDef(lines: Line[], start: number): { loop: Loop; next: number 
 
 function parseFlowStep(lines: Line[], start: number): { step: FlowStep; next: number } {
   const header = lines[start];
+
+  // Handle for-each header
+  const fe = header.text.match(/^(?:then\s+)?for each\s+(\w+)\s+in\s+"([^"]+)":$/i);
+  if (fe) {
+    const varName = fe[1];
+    const source = fe[2];
+    const { body, next } = childrenOf(lines, start + 1, header.indent);
+    let template: string | null = null;
+    let gate: { message: string } | null = null;
+    for (const ln of body) {
+      const r = ln.text.match(/^run\s+"([^"]+)"$/i);
+      if (r) { template = r[1]; continue; }
+      if (/^a human approves(?:\s+(?:the plan\s+)?first)?$/i.test(ln.text)) { gate = { message: `approve before ${varName}` }; continue; }
+      const g = ln.text.match(/^a human approves before\s+(.+)$/i);
+      if (g) { gate = { message: `approve before ${g[1].trim()}` }; continue; }
+      // Only complain about unrecognized lines if we're not looking for a template child
+      if (template === null) {
+        throw new ParseError(`'for each ${varName}' needs a 'run "<template>"' child`, header.lineNo);
+      }
+      throw new ParseError(`unrecognized line in 'for each ${varName}': "${ln.text}"`, ln.lineNo);
+    }
+    if (!template) throw new ParseError(`'for each ${varName}' needs a 'run "<template>"' child`, header.lineNo);
+    const step: FlowStep = { ref: template, name: varName, forEach: { var: varName, source } };
+    if (gate) step.gate = gate;
+    return { step, next };
+  }
+
+  // Handle run header
   const m = header.text.match(/^(?:then\s+)?run\s+"([^"]+)"(?:\s+with the result of\s+([^:]+))?:?$/i);
   if (!m) throw new ParseError(`expected 'run "<file>"' in flow`, header.lineNo);
   const ref = m[1];
@@ -380,8 +408,8 @@ function parseFlow(lines: Line[], start: number): { flow: Flow; next: number } {
   const steps: FlowStep[] = [];
   let i = 0;
   while (i < body.length) {
-    if (!/^(?:then\s+)?run\b/i.test(body[i].text)) {
-      throw new ParseError(`expected 'run "<file>"' inside flow "${name}"`, body[i].lineNo);
+    if (!/^(?:then\s+)?run\b/i.test(body[i].text) && !/^(?:then\s+)?for each\b/i.test(body[i].text)) {
+      throw new ParseError(`expected 'run "<file>"' or 'for each <var> in "<file>":' inside flow "${name}"`, body[i].lineNo);
     }
     const { step, next: sn } = parseFlowStep(body, i);
     steps.push(step);

@@ -115,3 +115,29 @@ test("flow: 'with the result of' overrides the handoff source", () => {
 test("flow: a flow with no steps is a parse error", () => {
   assert.throws(() => parse('flow "f":'), /has no steps/);
 });
+
+test("flow: for each step parses to a forEach FlowStep", () => {
+  const flow = parse('flow "f":\n  for each item in "plan.yaml":\n    run "item-template.loop"').definitions[0];
+  assert.equal(flow.kind, "flow");
+  const step = flow.steps[0];
+  assert.deepEqual(step.forEach, { var: "item", source: "plan.yaml" });
+  assert.equal(step.ref, "item-template.loop");
+  assert.equal(step.name, "item");
+});
+
+test("flow: for each can carry a human gate child", () => {
+  const flow = parse('flow "f":\n  for each story in "sprint.yaml":\n    run "t.loop"\n    a human approves first').definitions[0];
+  assert.ok(flow.steps[0].gate);
+  assert.match(flow.steps[0].gate.message, /approve before story/i);
+});
+
+test("flow: for each without a run child is a parse error", () => {
+  assert.throws(() => parse('flow "f":\n  for each item in "plan.yaml":\n    goal: nope'), /needs a 'run/);
+});
+
+test("flow: plain run steps still parse alongside for each (regression)", () => {
+  const flow = parse('flow "f":\n  run "a.loop"\n  then for each item in "plan.yaml":\n    run "t.loop"').definitions[0];
+  assert.equal(flow.steps.length, 2);
+  assert.equal(flow.steps[0].forEach, undefined);
+  assert.deepEqual(flow.steps[1].forEach, { var: "item", source: "plan.yaml" });
+});

@@ -306,7 +306,17 @@
           "additionalProperties": false,
           "properties": { "message": { "type": "string" } }
         },
-        "fromStep": { "type": "string", "description": "'with the result of <name>' — upstream source override." }
+        "fromStep": { "type": "string", "description": "'with the result of <name>' — upstream source override." },
+        "forEach": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["var", "source"],
+          "properties": {
+            "var": { "type": "string", "description": "Loop variable name (e.g. \"story\")." },
+            "source": { "type": "string", "description": "Data file to enumerate (.yaml/.yml/.md), relative to the flow file." }
+          },
+          "description": "Present when this step iterates: run `ref` once per item enumerated from `source`."
+        }
       }
     }
   }

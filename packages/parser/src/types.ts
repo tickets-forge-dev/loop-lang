@@ -107,6 +107,8 @@ export interface FlowStep {
   gate?: { message: string } | null;
   /** "with the result of <name>" — pull upstream text from a named earlier step. */
   fromStep?: string;
+  /** Present when this step iterates: run `ref` once per item enumerated from `source`. */
+  forEach?: { var: string; source: string };
 }
 
 export class ParseError extends Error {
