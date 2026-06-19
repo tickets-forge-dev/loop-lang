@@ -134,7 +134,8 @@ interface LintLoop {
 }
 interface LintStage { name: string; loop: LintLoop }
 interface LintPipeline { kind: "pipeline"; name: string; stages: LintStage[] }
-interface LintFile { definitions: Array<LintLoop | LintPipeline> }
+interface LintFlow { kind: "flow"; name: string; steps: unknown[] }
+interface LintFile { definitions: Array<LintLoop | LintPipeline | LintFlow> }
 
 export interface LintWarning {
   line: number; // 0-based source line to attach the squiggle
@@ -169,13 +170,14 @@ function checkLoop(loop: LintLoop, line: number, out: LintWarning[]) {
 export function lint(file: LintFile, lines: string[]): LintWarning[] {
   const out: LintWarning[] = [];
   for (const def of file.definitions ?? []) {
-    if ((def as LintPipeline).kind === "pipeline") {
-      for (const stage of (def as LintPipeline).stages ?? []) {
+    if (def.kind === "pipeline") {
+      for (const stage of def.stages ?? []) {
         checkLoop(stage.loop, headerLine(lines, "stage", stage.name), out);
       }
-    } else {
-      checkLoop(def as LintLoop, headerLine(lines, "loop", (def as LintLoop).name), out);
+    } else if (def.kind === "loop") {
+      checkLoop(def, headerLine(lines, "loop", def.name), out);
     }
+    // flow: nothing to lint here — its referenced stories carry their own checks
   }
   return out;
 }

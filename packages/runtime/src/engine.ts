@@ -311,7 +311,7 @@ async function executeFlow(flow: Flow, opts: RunOptions): Promise<LoopOutcome> {
   }
 
   emit(opts, { type: "flow-end", name: flow.name, satisfied: true });
-  return { satisfied: true, reason: "done", attempts: 0 };
+  return { satisfied: true, reason: "done", attempts: 0, summary: carried };
 }
 
 /** Run the loop's `also:` finishing passes once its goal is met. */

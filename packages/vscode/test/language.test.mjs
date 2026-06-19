@@ -85,3 +85,10 @@ test("lint checks loops inside a pipeline's stages", () => {
   assert.equal(w.length, 1);
   assert.match(w[0].message, /no way to verify/);
 });
+
+test("lint produces zero warnings for a flow definition", () => {
+  const src = 'flow "ship":\n  run "one.loop"\n  then run "two.loop"';
+  const file = { definitions: [{ kind: "flow", name: "ship", steps: [{ ref: "one.loop", name: "one" }, { ref: "two.loop", name: "two" }] }] };
+  const w = lint(file, lines(src));
+  assert.deepEqual(w, [], "flow should produce no lint warnings");
+});

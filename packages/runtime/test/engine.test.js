@@ -282,6 +282,21 @@ test("flow: a rejected per-step gate halts the flow", async () => {
   assert.equal(runner.planCalls.some((p) => p.goal === "b goal"), false, "b never ran");
 });
 
+test("flow: success outcome carries the last step's summary", async () => {
+  const files = { "one.loop": parse(loopSrc("one")), "two.loop": parse(loopSrc("two")) };
+  const flow = parse('flow "chain":\n  run "one.loop"\n  then run "two.loop"').definitions[0];
+  const outcome = await runDefinition(flow, {
+    runner: new MockRunner(),
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO(),
+    baseDir: "/proj",
+    loadFile: mockLoader(files),
+    flowStack: ["/proj/chain.loop"],
+  });
+  assert.equal(outcome.satisfied, true);
+  assert.match(outcome.summary, /\[two\] satisfied/, "success outcome carries the last step's summary");
+});
+
 test("flow: a cycle is detected and throws", async () => {
   const files = {
     "a.loop": parse('flow "a":\n  run "b.loop"'),
