@@ -1,0 +1,5 @@
+flow "ship":
+  run "build.loop"
+  then run "test.loop"
+  then run "deploy.loop":
+    a human approves first

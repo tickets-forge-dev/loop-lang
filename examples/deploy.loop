@@ -1,0 +1,4 @@
+loop "deploy":
+  goal: deployed and healthchecks green
+  done when "./scripts/health.sh" passes
+  each cycle: act, then observe

@@ -11,7 +11,7 @@ export interface LoopFile {
   definitions: Definition[];
 }
 
-export type Definition = Pipeline | Loop;
+export type Definition = Pipeline | Loop | Flow;
 
 export interface Config {
   use?: string;
@@ -90,6 +90,23 @@ export interface Action {
   action: "stop" | "reflect" | "plan" | "act" | "observe" | "ask-human";
   focus?: string;
   warn?: string;
+}
+
+export interface Flow {
+  kind: "flow";
+  name: string;
+  steps: FlowStep[];
+}
+
+export interface FlowStep {
+  /** File path as written, e.g. "test.loop". Resolved relative to the flow file. */
+  ref: string;
+  /** Step name = ref basename without extension, e.g. "test". Used for handoff + events. */
+  name: string;
+  /** Per-step blocking human gate ("a human approves first"). */
+  gate?: { message: string } | null;
+  /** "with the result of <name>" — pull upstream text from a named earlier step. */
+  fromStep?: string;
 }
 
 export class ParseError extends Error {

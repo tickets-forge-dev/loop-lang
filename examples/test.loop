@@ -1,0 +1,7 @@
+loop "test":
+  goal: integration tests green
+  done when "pnpm test" passes
+  allow edits automatically
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 6 tries: stop and warn "tests thrashing"

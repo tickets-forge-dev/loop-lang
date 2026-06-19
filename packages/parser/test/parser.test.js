@@ -95,3 +95,23 @@ test("archon_billing: plan from archon", () => {
 test("errors carry a line number", () => {
   assert.throws(() => parse('loop "x":\n  goal: y\n  done when wat'), /line 3/);
 });
+
+test("ship_flow: flow of files with handoff + gate", () => {
+  const file = parse(read("ship_flow.loop"));
+  const flow = file.definitions[0];
+  assert.equal(flow.kind, "flow");
+  assert.equal(flow.name, "ship");
+  assert.deepEqual(flow.steps.map((s) => s.name), ["build", "test", "deploy"]);
+  assert.deepEqual(flow.steps.map((s) => s.ref), ["build.loop", "test.loop", "deploy.loop"]);
+  assert.ok(flow.steps[2].gate);
+  assert.match(flow.steps[2].gate.message, /approve before/i);
+});
+
+test("flow: 'with the result of' overrides the handoff source", () => {
+  const flow = parse('flow "f":\n  run "a.loop"\n  then run "b.loop"\n  then run "c.loop" with the result of a').definitions[0];
+  assert.equal(flow.steps[2].fromStep, "a");
+});
+
+test("flow: a flow with no steps is a parse error", () => {
+  assert.throws(() => parse('flow "f":'), /has no steps/);
+});

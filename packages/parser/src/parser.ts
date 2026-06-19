@@ -3,6 +3,8 @@ import {
   Config,
   CycleStep,
   Definition,
+  Flow,
+  FlowStep,
   Loop,
   LoopContext,
   LoopFile,
@@ -347,6 +349,48 @@ function parseLoopDef(lines: Line[], start: number): { loop: Loop; next: number 
   return { loop, next };
 }
 
+function parseFlowStep(lines: Line[], start: number): { step: FlowStep; next: number } {
+  const header = lines[start];
+  const m = header.text.match(/^(?:then\s+)?run\s+"([^"]+)"(?:\s+with the result of\s+([^:]+))?:?$/i);
+  if (!m) throw new ParseError(`expected 'run "<file>"' in flow`, header.lineNo);
+  const ref = m[1];
+  const name = (ref.split("/").pop() ?? ref).replace(/\.loop$/i, "");
+  const step: FlowStep = { ref, name };
+  if (m[2]) step.fromStep = m[2].trim();
+  const { body, next } = childrenOf(lines, start + 1, header.indent);
+  for (const ln of body) {
+    if (/^a human approves(?:\s+(?:the plan\s+)?first)?$/i.test(ln.text)) {
+      step.gate = { message: `approve before ${name}` };
+      continue;
+    }
+    const g = ln.text.match(/^a human approves before\s+(.+)$/i);
+    if (g) {
+      step.gate = { message: `approve before ${g[1].trim()}` };
+      continue;
+    }
+    throw new ParseError(`unrecognized line in flow step "${name}": "${ln.text}"`, ln.lineNo);
+  }
+  return { step, next };
+}
+
+function parseFlow(lines: Line[], start: number): { flow: Flow; next: number } {
+  const header = lines[start];
+  const name = quoted(header.text) ?? header.text.replace(/^flow\s+/i, "").replace(/:$/, "").trim();
+  const { body, next } = childrenOf(lines, start + 1, header.indent);
+  const steps: FlowStep[] = [];
+  let i = 0;
+  while (i < body.length) {
+    if (!/^(?:then\s+)?run\b/i.test(body[i].text)) {
+      throw new ParseError(`expected 'run "<file>"' inside flow "${name}"`, body[i].lineNo);
+    }
+    const { step, next: sn } = parseFlowStep(body, i);
+    steps.push(step);
+    i = sn;
+  }
+  if (steps.length === 0) throw new ParseError(`flow "${name}" has no steps`, header.lineNo);
+  return { flow: { kind: "flow", name, steps }, next };
+}
+
 // ---------- config ----------
 
 function parseConfigLine(config: Config, ln: Line): boolean {
@@ -395,6 +439,10 @@ export function parse(src: string): LoopFile {
     } else if (/^pipeline\b/i.test(ln.text)) {
       const { pipeline, next } = parsePipeline(lines, i);
       definitions.push(pipeline);
+      i = next;
+    } else if (/^flow\b/i.test(ln.text)) {
+      const { flow, next } = parseFlow(lines, i);
+      definitions.push(flow);
       i = next;
     } else if (parseConfigLine(config, ln)) {
       i++;

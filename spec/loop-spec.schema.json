@@ -51,7 +51,8 @@
       "items": {
         "oneOf": [
           { "$ref": "#/$defs/pipeline" },
-          { "$ref": "#/$defs/loop" }
+          { "$ref": "#/$defs/loop" },
+          { "$ref": "#/$defs/flow" }
         ]
       }
     }
@@ -277,6 +278,35 @@
           "type": "string",
           "description": "For stop: an optional warning message (\"thrashing\")."
         }
+      }
+    },
+    "flow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "name", "steps"],
+      "properties": {
+        "kind": { "const": "flow" },
+        "name": { "type": "string" },
+        "steps": {
+          "type": "array",
+          "description": "Files run in order, fail-fast; each step's text summary carries to the next.",
+          "items": { "$ref": "#/$defs/flowStep" }
+        }
+      }
+    },
+    "flowStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "name"],
+      "properties": {
+        "ref": { "type": "string", "description": "File path as written, resolved relative to the flow file." },
+        "name": { "type": "string", "description": "Step name = ref basename without extension." },
+        "gate": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": { "message": { "type": "string" } }
+        },
+        "fromStep": { "type": "string", "description": "'with the result of <name>' — upstream source override." }
       }
     }
   }

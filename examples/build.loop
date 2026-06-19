@@ -1,0 +1,8 @@
+loop "build":
+  goal: feature builds and unit tests pass
+  done when "pnpm build" passes
+  look at: src, and the last failure
+  allow edits automatically
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 6 tries: stop and warn "build thrashing"
