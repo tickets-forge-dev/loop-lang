@@ -1,0 +1,31 @@
+# The same per-story shape again — proving the checklist is reusable.
+# Copy a story file, change the goal + the acceptance test, and you're done.
+# (Or pull the shape from a method preset with `use the <method> method`
+#  so you don't repeat the stages at all.)
+
+pipeline "story: a new user can sign up":
+
+  stage implement:
+    goal: a new user can create an account and gets a verification email
+    look at: src/auth, src/api/signup.ts, and the last failure
+    allow edits automatically, but ask me before migrations or pushes
+    each cycle: plan, then act, then observe
+    done when the test "auth/signup.spec.ts" passes
+    when it fails: reflect on which layer broke, then plan again
+    after 6 tries: stop and warn "thrashing on signup"
+
+  stage tests:
+    goal: the full test suite is green
+    each cycle: act, then observe
+    done when "pnpm test" passes
+
+  stage security:
+    goal: no high or critical vulnerabilities introduced
+    each cycle: plan, then act, then observe
+    done when "semgrep --config auto --severity=high" finds nothing
+    after 4 tries: stop and warn "security findings need a human"
+
+  stage manual:
+    goal: signup + the verification email work end-to-end by hand
+    each cycle: observe
+    a human reviews before stopping

@@ -1,0 +1,50 @@
+# One BMAD story, run as a pipeline.
+#
+# This is the per-story checklist you do by hand every time — written ONCE,
+# as stages. Stages run top-to-bottom and fail-fast: a stage must be
+# satisfied before the next starts. Every "done when" is a REAL command, so
+# the story can't mark itself done without the tests/scanner actually passing.
+
+pipeline "story: a registered user can log in":
+
+  # 1. Build it — the self-correcting loop. Edits run automatically; it keeps
+  #    plan -> act -> observe, reflecting on each failure, until the
+  #    acceptance test passes (or it gives up after 6 tries so it can't thrash).
+  stage implement:
+    goal: a registered user can log in with email + password
+    look at: src/auth, src/api/session.ts, and the last failure
+    allow edits automatically, but ask me before migrations or pushes
+    each cycle: plan, then act, then observe
+    done when the test "auth/login.spec.ts" passes
+    when it fails: reflect on which layer broke, then plan again
+    after 6 tries: stop and warn "thrashing on login"
+
+  # 2. No regressions — the whole suite, not just the new test.
+  stage tests:
+    goal: the full test suite is green
+    each cycle: act, then observe
+    done when "pnpm test" passes
+    when it fails: reflect, then plan again
+
+  # 3. Security — a real scanner is the bar. Hand it to a person if it can't
+  #    clear high-severity findings on its own.
+  stage security:
+    goal: no high or critical vulnerabilities introduced
+    each cycle: plan, then act, then observe
+    done when "semgrep --config auto --severity=high" finds nothing
+    when it fails: reflect, then plan again
+    after 4 tries: stop and warn "security findings need a human"
+
+  # 4. Code review pass — lint + typecheck as the objective gate.
+  stage review:
+    goal: lints clean and types check
+    each cycle: act, then observe
+    done when "pnpm lint && pnpm typecheck" passes
+    when it fails: reflect, then plan again
+
+  # 5. Manual verification — a person clicks through the running app and
+  #    approves before the story is allowed to finish.
+  stage manual:
+    goal: the login flow works end-to-end when a human tries it
+    each cycle: observe
+    a human reviews before stopping

@@ -1,0 +1,17 @@
+# BMAD epic, run as a flow.
+#
+# You discovered + PRD'd + architected with BMAD and ended up with an epic
+# made of stories. Each story is its own .loop file with its OWN checklist
+# (implement -> tests -> security -> review -> manual). The epic just chains
+# them: run a story file, and when it's fully satisfied, run the next.
+#
+# Each story's result (passed/failed + the last check it ran) is handed to
+# the next story as context — so story 2's planning can see what story 1 did.
+# A story that fails halts the epic (fail-fast): you don't ship signup on top
+# of a broken login.
+
+flow "epic: authentication":
+  run "story-login.loop"
+  then run "story-signup.loop"
+  # drop in another story file and add a line — that's the whole edit:
+  # then run "story-reset-password.loop"
