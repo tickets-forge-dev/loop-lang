@@ -183,6 +183,31 @@ through the working directory as normal; the explicit channel is the text summar
 **Fail-fast.** If any step ends unsatisfied, the remaining steps are skipped and the flow
 ends unsatisfied.
 
+### Iterating over a plan (`for each`)
+
+Inside a `flow`, `for each` reads a list from a YAML or Markdown file and runs a template
+once per entry. Each entry's text becomes the template's context — what to build.
+
+```loop
+flow "deliver":
+  for each item in "plan.yaml":
+    run "item-template.loop"
+```
+
+| Element | Meaning |
+|---|---|
+| `for each <var> in "<file>":` | Read items from the file; run the body once per item. |
+| `run "<template>"` | Template to run per item; the item text arrives as context. |
+| Source `.yaml` | A flat list or a single-key list (e.g. `items:`). |
+| Source `.md` | Splits on `## ` headings — each section is one item. |
+| Failed item | The flow pauses and asks whether to continue with the next item or stop. |
+
+**A-to-Z with any method.** `for each` is method-neutral. The same syntax works whether
+the template is a BMAD story checklist, a security scan, a documentation pass, or anything
+else. See [`examples/foreach/`](../examples/foreach/) for a generic bundle (implement →
+security → lint, per work item) and [`examples/bmad/atoz/`](../examples/bmad/atoz/) for a
+BMAD flow (discover → design → for each story) as one example method.
+
 ### Inside a loop / stage body
 
 | Line | Meaning |

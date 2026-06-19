@@ -41,6 +41,8 @@ export function contextAt(lines: string[], idx: number): Context {
 const TOP: Suggestion[] = [
   { label: "loop", insert: 'loop "${1:name}":\n  goal: ${2:what done means}\n  done when ${3:the test "x" passes}\n  each cycle: plan, then act, then observe\n  when it fails: reflect, then plan again\n', detail: "a self-correcting loop", doc: "A loop: plan → act → observe, reflecting on failure until `done when` is satisfied." },
   { label: "pipeline", insert: 'pipeline "${1:name}":\n  stage "${2:story}":\n    goal: ${3:...}\n    each cycle: plan, then act, then observe\n', detail: "a sequence of stages", doc: "A pipeline runs stages in order; a failing stage halts the rest. An epic → a pipeline, each story → a stage." },
+  { label: "flow", insert: 'flow "${1:name}":\n  run "${2:first.loop}"\n  then run "${3:next.loop}"\n', detail: "chain of .loop files", doc: "Runs whole .loop files in order; each file's text summary carries forward. Fail-fast." },
+  { label: "for each", insert: 'for each ${1:item} in "${2:plan.yaml}":\n  run "${3:template.loop}"', detail: "iterate a plan, run a template per item", doc: "Inside a flow: enumerate items from a .yaml/.md file and run the template once per item (item text → context); pauses to ask continue/stop on a failed item." },
   { label: "use", insert: "use the ${1:BMAD} method", detail: "select a preset/method", doc: "Pull in a method preset (e.g. `use the BMAD method`)." },
   { label: "schedule", insert: "schedule: ${1:nightly}", detail: "when it runs", doc: "manual · nightly · on push · a cron expression." },
   { label: "runner", insert: "run with ${1:claude code}", detail: "execution backend", doc: "Which agent executes the loop. Default: claude code." },

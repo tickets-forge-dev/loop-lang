@@ -181,6 +181,10 @@ function renderEvent(e: any): string | null {
     case "flow-step-start": return `  ▸ ${e.name} (${e.ref})`;
     case "flow-step-end": return `  ▸ ${e.name} → ${e.satisfied ? "satisfied" : "FAILED"}`;
     case "flow-end": return `→ flow "${e.name}" → ${e.satisfied ? "satisfied" : "FAILED"}`;
+    case "foreach-start": return `→ for each ${e.var} in ${e.source} (${e.count})`;
+    case "foreach-item-start": return `  • ${e.var} ${e.index + 1}/${e.total}`;
+    case "foreach-item-end": return `  • ${e.var} #${e.index + 1} → ${e.satisfied ? "satisfied" : "FAILED"}`;
+    case "foreach-end": return `→ for each ${e.var} → ${e.satisfied ? "satisfied" : "FAILED"}`;
     default: return null;
   }
 }

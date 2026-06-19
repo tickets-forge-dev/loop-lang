@@ -170,7 +170,8 @@ function panel(def,oy){
     var fx=60,fy=top+8,steps=def.steps||[],j;
     for(j=0;j<steps.length;j++){
       if(j>0)s+=fwd(fx-GAP,fy+NH/2,fx);
-      s+=node(fx,fy,trunc(steps[j].name,12),"var(--fwd)");
+      var lbl = steps[j].forEach ? ("\\u21BB " + trunc(steps[j].name, 10)) : trunc(steps[j].name, 12);
+      s+=node(fx,fy,lbl,"var(--fwd)");
       if(steps[j].gate)s+=diamond(fx+NW/2,fy-18,"gate");
       fx+=NW+GAP;
     }

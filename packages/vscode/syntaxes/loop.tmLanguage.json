@@ -31,7 +31,7 @@
       "name": "keyword.other.section.loop"
     },
     "flow": {
-      "match": "(?i)\\b(when|after|reflect|stop|warn|plan|act|observe|tries|run|then)\\b",
+      "match": "(?i)\\b(when|after|reflect|stop|warn|plan|act|observe|tries|run|then|each|in)\\b",
       "name": "keyword.control.flow.loop"
     },
     "human": {

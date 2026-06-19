@@ -30,6 +30,8 @@ flow "<name>":            a chain of loop files (each step runs a whole .loop fi
   then run "<file>":      subsequent step — receives the previous result as context
     a human approves first  (optional per-step human gate before the step runs)
   with the result of <name>  (reference a named step's output instead of auto-carry)
+  for each <var> in "<file>":  iterate items from a .yaml or .md file; run the template once per item
+    run "<template>":     template receives the item text as context; fail → ask continue/stop
 
 goal: <text>              what "done" means, in plain language
 done when <predicate>     how the loop verifies itself (see Predicates)
@@ -83,6 +85,24 @@ flow "ship":
 - `then run "<file>"` — subsequent steps; automatically receive the previous step's text summary.
 - `a human approves first` — optional per-step gate; blocks until approved.
 - `with the result of <name>` — reference a named step's output explicitly instead of auto-carry.
+
+### `for each` — iterate a plan, run a template per item
+
+Inside a `flow`, `for each` reads a list from a YAML or Markdown file and runs a template
+once per entry. The entry's text becomes the template's context (what to build).
+
+```loop
+flow "deliver":
+  for each item in "plan.yaml":
+    run "item-template.loop"
+```
+
+- `for each <var> in "<file>":` — source must be a `.yaml` file (a list or a single-key
+  list like `items:`) or a `.md` file (splits on `## ` sections).
+- `run "<template>"` — the template runs once per item; the item text arrives as context.
+- A failed item pauses the flow and asks whether to continue with the next item or stop.
+- Method-neutral: works with any checklist, not only BMAD. See `examples/foreach/` for a
+  generic bundle and `examples/bmad/atoz/` for BMAD as one example method.
 
 ## Rules
 

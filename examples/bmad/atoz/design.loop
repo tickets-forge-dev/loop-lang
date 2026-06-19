@@ -1,0 +1,7 @@
+loop "design":
+  goal: turn sprint.yaml into an architecture note the team approves
+  look at: sprint.yaml, docs, and the last failure
+  allow edits automatically
+  each cycle: plan, then act, then observe
+  done when "test -s design.md" passes
+  a human reviews before stopping

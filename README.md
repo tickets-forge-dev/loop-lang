@@ -102,9 +102,24 @@ flow "ship":
 The result of `build.loop` is automatically handed to `test.loop` (text-only). Use
 `with the result of <name>` to reference a specific step's output explicitly.
 
+## Iterating over a plan: `for each`
+
+Inside a `flow`, `for each` reads a list from a YAML or Markdown file and runs a template
+once per entry — the item's text becomes the template's context:
+
+```loop
+flow "deliver":
+  for each item in "plan.yaml":
+    run "item-template.loop"
+```
+
+Each entry in `plan.yaml` triggers one full run of `item-template.loop` with that entry's
+text as context. A failed item pauses the flow and asks whether to continue or stop.
+See [`examples/foreach/`](examples/foreach/) for a full working bundle.
+
 ## The vocabulary (~15 words — learn it once)
 
-`pipeline` · `stage` · `loop` · `flow` · `run … then …` · `each cycle` · `goal` · `done when` · `look at` · `allow…/ask me before…` · `also` · `when…` · `reflect` · `a human…` · `stop` · `use` · `schedule`
+`pipeline` · `stage` · `loop` · `flow` · `for each … in …` · `run … then …` · `each cycle` · `goal` · `done when` · `look at` · `allow…/ask me before…` · `also` · `when…` · `reflect` · `a human…` · `stop` · `use` · `schedule`
 
 Power comes from **composition**, not keyword count.
 

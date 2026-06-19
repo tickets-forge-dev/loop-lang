@@ -1,0 +1,21 @@
+# Runs once per story in sprint.yaml. The current story text arrives as context.
+pipeline "story":
+
+  stage implement:
+    goal: implement the story described in the provided context
+    look at: src, and the last failure
+    allow edits automatically, but ask me before migrations or pushes
+    each cycle: plan, then act, then observe
+    done when "pnpm test" passes
+    when it fails: reflect on which layer broke, then plan again
+    after 6 tries: stop and warn "thrashing on this story"
+
+  stage security:
+    goal: no high or critical vulnerabilities introduced
+    each cycle: plan, then act, then observe
+    done when "semgrep --config auto --severity=high" finds nothing
+
+  stage manual:
+    goal: the story works end-to-end when a human tries it
+    each cycle: observe
+    a human reviews before stopping

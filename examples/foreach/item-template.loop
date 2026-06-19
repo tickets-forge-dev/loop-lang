@@ -1,0 +1,23 @@
+# Runs once per item in plan.yaml. The current item's text arrives as context
+# (what to build); the checks below are the SAME for every item.
+pipeline "work item":
+
+  stage implement:
+    goal: implement the work item described in the provided context
+    look at: src, and the last failure
+    allow edits automatically, but ask me before migrations or pushes
+    each cycle: plan, then act, then observe
+    done when "pnpm test" passes
+    when it fails: reflect on which layer broke, then plan again
+    after 6 tries: stop and warn "thrashing on this item"
+
+  stage security:
+    goal: no high or critical vulnerabilities introduced
+    each cycle: plan, then act, then observe
+    done when "semgrep --config auto --severity=high" finds nothing
+    after 4 tries: stop and warn "security needs a human"
+
+  stage review:
+    goal: lints clean and types check
+    each cycle: act, then observe
+    done when "pnpm lint && pnpm typecheck" passes
