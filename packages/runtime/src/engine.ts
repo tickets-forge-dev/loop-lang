@@ -50,6 +50,7 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
 
   let reflection: string | null = null;
   let lastPlan = "";
+  let lastOutput = "";
   let attempts = 0;
   // Confirm-class grants are asked once and remembered for the loop's lifetime.
   const grantedConfirm = new Set<string>();
@@ -68,7 +69,7 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
   const finish = (satisfied: boolean, reason: StopReason, warn?: string): LoopOutcome => {
     emit(opts, { type: "stop", reason, ...(warn ? { warn } : {}) });
     emit(opts, { type: "loop-end", name: loop.name, satisfied });
-    return { satisfied, reason, attempts };
+    return { satisfied, reason, attempts, summary: lastOutput };
   };
 
   while (true) {
@@ -100,6 +101,7 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
             files,
             includeLastFailure,
             reflection,
+            upstream: opts.upstream,
             baseDir: opts.baseDir,
           });
         }
@@ -142,6 +144,7 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
         observed = true;
         passed = v.passed;
         observeOutput = v.output;
+        lastOutput = v.output;
         emit(opts, { type: "observe", passed: v.passed, output: v.output });
         emit(opts, { type: "node-exit", node: step, attempt: attempts, ok: v.passed });
       }
@@ -201,7 +204,7 @@ async function applyActions(
         const reason: StopReason = a.warn ? "thrash" : ctx.goalMet ? "done" : "human-approved";
         emit(opts, { type: "stop", reason, ...(a.warn ? { warn: a.warn } : {}) });
         emit(opts, { type: "loop-end", name: loop.name, satisfied });
-        return { satisfied, reason, attempts: -1 };
+        return { satisfied, reason, attempts: -1, summary: ctx.output };
       }
       case "reflect": {
         const text = await opts.runner.reflect({
@@ -291,6 +294,7 @@ async function writeBackArchon(loop: Loop, opts: RunOptions, satisfied: boolean)
 /** Run a single definition (a loop or a pipeline). */
 export async function runDefinition(def: Definition, opts: RunOptions): Promise<LoopOutcome> {
   if (def.kind === "pipeline") return executePipeline(def, opts);
+  if (def.kind === "flow") throw new Error("flow execution is not yet implemented");
   const outcome = await executeLoopFull(def, opts);
   await writeBackArchon(def, opts, outcome.satisfied);
   return outcome;

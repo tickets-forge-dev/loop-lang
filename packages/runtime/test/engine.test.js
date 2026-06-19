@@ -177,3 +177,28 @@ test("pipeline halts when a stage fails", async () => {
   const pipeEnd = events.find((e) => e.type === "pipeline-end");
   assert.equal(pipeEnd.satisfied, false);
 });
+
+test("loop outcome carries a summary of the last observe output", async () => {
+  const def = parse('loop "x":\n  goal: g\n  done when "y" passes\n  each cycle: plan, then act, then observe').definitions[0];
+  const outcome = await runDefinition(def, {
+    runner: new MockRunner(),
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO(),
+    baseDir: process.cwd(),
+  });
+  assert.equal(outcome.satisfied, true);
+  assert.equal(outcome.summary, "ok"); // SeqVerifier returns "ok" on pass
+});
+
+test("opts.upstream is threaded into the plan input", async () => {
+  const def = parse('loop "x":\n  goal: g\n  done when "y" passes\n  each cycle: plan, then act, then observe').definitions[0];
+  const runner = new MockRunner();
+  await runDefinition(def, {
+    runner,
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO(),
+    baseDir: process.cwd(),
+    upstream: "hello from prev step",
+  });
+  assert.equal(runner.planCalls[0].upstream, "hello from prev step");
+});

@@ -16,7 +16,11 @@ export type LoopEvent =
   | { type: "also"; action: string; ok: boolean; detail?: string }
   | { type: "human"; kind: "plan" | "review" | "gate" | "confirm" | "ask"; prompt: string; answer?: string }
   | { type: "stop"; reason: StopReason; warn?: string }
-  | { type: "loop-end"; name: string | null; satisfied: boolean };
+  | { type: "loop-end"; name: string | null; satisfied: boolean }
+  | { type: "flow-start"; name: string }
+  | { type: "flow-step-start"; name: string; ref: string }
+  | { type: "flow-step-end"; name: string; satisfied: boolean }
+  | { type: "flow-end"; name: string; satisfied: boolean };
 
 export type CycleNode = "plan" | "act" | "observe";
 
@@ -27,6 +31,8 @@ export interface PlanInput {
   files: string[];
   includeLastFailure: boolean;
   reflection: string | null;
+  /** Text summary handed from the previous step of a flow (set by executeFlow). */
+  upstream?: string;
   baseDir: string;
 }
 
@@ -108,12 +114,20 @@ export interface RunOptions {
   onEvent?: (e: LoopEvent) => void;
   /** Absolute safety cap on cycle iterations per loop, regardless of transitions. */
   hardCap?: number;
+  /** Loads + parses a referenced .loop file. Required only when a `flow` runs. */
+  loadFile?(path: string, baseDir: string): Promise<import("@loop/parser").LoopFile>;
+  /** Upstream handoff text injected into each plan step (set by executeFlow). */
+  upstream?: string;
+  /** Resolved file paths currently executing — for flow cycle detection. */
+  flowStack?: string[];
 }
 
 export interface LoopOutcome {
   satisfied: boolean;
   reason: StopReason;
   attempts: number;
+  /** Last observe output / reflection — used as the flow handoff text. */
+  summary?: string;
 }
 
 export type { Loop };
