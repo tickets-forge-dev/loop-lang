@@ -35,7 +35,7 @@ flow "<name>":            a chain of loop files (each step runs a whole .loop fi
 
 goal: <text>              what "done" means, in plain language
 done when <predicate>     how the loop verifies itself (see Predicates)
-look at: <files>, and the last failure   context the agent reads before acting
+look at: <files>, and the last failure   context the agent reads before acting (items are file paths or plain-language descriptions the agent resolves to files)
 allow edits automatically, but ask me before <classes>   action policy
 each cycle: plan, then act, then observe   the repeated steps (any subset, in order)
 also: <pass>, <pass>      extra finishing passes run after the goal is met
@@ -112,7 +112,9 @@ flow "deliver":
 - **An epic → a `pipeline`; each story → a `stage`.** Stages run in order; a failing
   stage halts the rest.
 - **Scope each loop with `look at:`** so the agent follows the existing architecture and
-  makes the smallest change, instead of writing greenfield code.
+  makes the smallest change, instead of writing greenfield code. Items can be exact file
+  paths or plain-language descriptions (e.g. `the billing form`) — the agent resolves
+  descriptions to the actual files before planning.
 - **Put human gates on risky work** — payments, migrations, deploys, anything
   irreversible. Use `ask me before …` for action policy, `a human approves before …`
   for a hard stage gate.

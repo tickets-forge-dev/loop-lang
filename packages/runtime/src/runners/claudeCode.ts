@@ -43,7 +43,7 @@ const firstLines = (s: string, n: number): string[] => s.replace(/\n+$/, "").spl
  */
 export function buildPlanPrompt(input: PlanInput): string {
   const ctx: string[] = [];
-  if (input.files.length) ctx.push(`Relevant files: ${input.files.join(", ")}.`);
+  if (input.files.length) ctx.push(`Relevant context (each item is a file or a description of one — locate the actual file(s) first): ${input.files.join(", ")}.`);
   if (input.includeLastFailure) ctx.push("Account for the most recent failure.");
   if (input.reflection) ctx.push(`From the last attempt: ${input.reflection}`);
   if (input.upstream) ctx.push(`From the previous step in the flow:\n${input.upstream}`);

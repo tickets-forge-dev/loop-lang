@@ -314,9 +314,9 @@ done when a human confirms "the UI looks right"            # a person is the che
 <section id="context">
   <h2>4 · <code class="inl">look at</code> + action policy <span class="badge b-basic">basic</span></h2>
   <p>Scope what the agent reads, and decide what it may do on its own versus what needs your sign-off.</p>
-  <pre><code class="loop">look at: billing/form.tsx, api/settings.ts, schema/settings.ts, and the last failure
+  <pre><code class="loop">look at: the billing form, the settings API, and the last failure
 allow edits automatically, but ask me before migrations or pushes</code></pre>
-  <p><code class="inl">look at:</code> points the agent at the files that matter so it stays inside your architecture instead of wandering. The special phrase <code class="inl">and the last failure</code> feeds the previous failure's output back in.</p>
+  <p><code class="inl">look at:</code> points the agent at the context that matters. Items can be exact file paths or plain-language descriptions — the agent locates the actual files from descriptions before planning, so you don't need to know the precise path. The special phrase <code class="inl">and the last failure</code> feeds the previous failure's output back in.</p>
   <p>The policy line splits actions into <strong>auto</strong> and <strong>confirm</strong> classes. The canonical classes are <code class="inl">edit</code>, <code class="inl">migrate</code>, <code class="inl">push</code>, <code class="inl">deploy</code>, <code class="inl">delete</code> (plurals/synonyms normalize). <code class="inl">allow … automatically</code> grants without asking; <code class="inl">ask me before …</code> pauses for a one-time confirmation that's remembered for the run.</p>
   <div class="note"><b>Map to tools:</b> the runner translates classes into tool grants — <code class="inl">edit</code> → Edit/Write, <code class="inl">push</code> → <code class="inl">git push</code>, and so on. Read tools are always allowed.</div>
 </section>

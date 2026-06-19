@@ -214,7 +214,7 @@ BMAD flow (discover → design → for each story) as one example method.
 |---|---|
 | `goal: <text>` | The objective, in plain language. **Required.** |
 | `done when <predicate>` | How the loop verifies itself (see Predicates). Omit only if a human gate decides completion. |
-| `look at: <a>, <b>, and the last failure` | Files the agent reads before acting. `and the last failure` feeds the previous failure forward. |
+| `look at: <a>, <b>, and the last failure` | Context the agent reads before acting. Items are file paths or plain-language descriptions (e.g. `the billing form`) — the agent locates the actual files from descriptions before planning. `and the last failure` feeds the previous failure forward. |
 | `allow edits automatically, but ask me before <classes>` | Action policy. Auto classes run unattended; confirm classes pause for you. Classes: `edit`, `migrate`, `push`, `deploy`, `delete`. |
 | `each cycle: plan, then act, then observe` | The repeated steps — any subset of `plan` / `act` / `observe`, in order. |
 | `also: <pass>, <pass>` | Extra finishing passes run **after** the goal is met (skipped on failure). |
