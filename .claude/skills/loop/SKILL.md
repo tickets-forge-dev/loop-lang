@@ -24,6 +24,16 @@ loop "<name>":            a self-correcting loop
 pipeline "<name>":        a sequence of stages (an epic)
 stage "<name>":           one stage of a pipeline (its body is a loop; a story)
 
+flow "<name>":            a chain of whole .loop files, run in order (handoff is text)
+  run "<file.loop>"         a flow step: run that whole file
+  then run "<file.loop>"    the next step; the prior file's summary carries forward as context
+  ... with the result of <step>   pull the handoff from a named earlier step instead of the previous
+  for each <var> in "<file>":   run the child template once per item in <file>
+    run "<template.loop>"
+
+# `for each` source: .yaml/.yml (a list, or items under a single key) or .md (each `## ` section).
+# Each item's text becomes the template's context for that run.
+
 goal: <text>              what "done" means, in plain language
 done when <predicate>     how the loop verifies itself
 look at: <files>, and the last failure   context to read before acting
@@ -86,12 +96,47 @@ the user explicitly asks for the headless runner.)
      approval before acting. `a human reviews before stopping` → ask before declaring done.
      `a human approves before <X>` → ask before that stage runs.
    - **pipelines:** run stages in order; if a stage can't be satisfied, halt the rest.
+   - **flows:** run each referenced file in order, the *whole* file. After each, carry a
+     short text summary of how it went forward as context for the next file. If a file
+     isn't satisfied, halt the rest (fail-fast). `with the result of <step>` redirects
+     which earlier summary to carry.
+   - **for each `<var>` in `<file>`:** read the source file and split it into items
+     (`.yaml` list entries, or `.md` `## ` sections). Run the template loop once per item,
+     giving the template that item's text as its context. If an item's checklist fails,
+     pause and ask the user: continue to the next item, or stop the whole flow? Continuing
+     accepts that item and proceeds; reaching the end means done.
    - **`also:`** finishing passes run only after the goal is met (skip them if it failed).
 3. **Report a concise trace** — one line per cycle step (plan / act / observe = PASS|fail /
    reflect / stop), and the final outcome.
 
 Because you are the one running it, the user sees the real work — file reads, edits,
 command output — as part of this session, and answers any gate right in the chat.
+
+---
+
+## Interactive discovery (the front of an A-to-Z flow)
+
+A discovery/planning step is just a loop whose goal is to produce a planning artifact (a
+spec, PRD, or plan file). Run it as a real conversation:
+
+- Interview the user — ask the questions the method calls for — across as many turns as it
+  takes. You're naturally suspended between their answers, so a long session (even an hour)
+  is fine; there's nothing to "wait" on.
+- The step is **done when its `done when` artifact check passes** — e.g. the plan file
+  exists and has the required sections — NOT when the conversation goes quiet. Re-check the
+  artifact; when it validates, move on. (The questions come from the loop's goal/context —
+  i.e. the method — not from this skill.)
+
+So a full method, end to end, is a `flow`:
+
+    flow "deliver: <feature>":
+      run "discover.loop"          # conversation: interview → write the plan file
+      then run "design.loop"       # design from it; a human approves
+      then for each item in "plan.yaml":
+        run "item-template.loop"    # the per-item checklist, once per item
+
+`discover.loop` ends via e.g. `done when "<validator> plan.yaml"`; each item then runs the
+same checklist. (Name things to taste — a BMAD setup might use `story`/`sprint.yaml`.)
 
 ---
 
