@@ -257,7 +257,9 @@ function compileBareLoop(loop: Loop, file: LoopFile, opts: ExportOptions): Archo
 
 /** Compile one Loop definition to one Archon workflow object. */
 export function compileDefinition(def: Definition, file: LoopFile, opts: ExportOptions = {}): ArchonWorkflow {
-  return def.kind === "pipeline" ? compilePipeline(def, file, opts) : compileBareLoop(def, file, opts);
+  if (def.kind === "pipeline") return compilePipeline(def, file, opts);
+  if (def.kind === "flow") throw new Error(`Archon export does not support flow definitions — export each referenced loop file individually.`);
+  return compileBareLoop(def, file, opts);
 }
 
 /** Compile every definition in a parsed Loop file to Archon workflows. */
