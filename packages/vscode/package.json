@@ -11,7 +11,7 @@
   "categories": ["Programming Languages"],
   "repository": { "type": "git", "url": "https://github.com/tickets-forge-dev/loop-lang.git", "directory": "packages/vscode" },
   "main": "./dist/extension.js",
-  "activationEvents": [],
+  "activationEvents": ["onCommand:loop.newFromTemplate"],
   "contributes": {
     "languages": [
       {
@@ -33,7 +33,8 @@
         "command": "loop.run",
         "title": "Loop: Run this loop",
         "category": "Loop"
-      }
+      },
+      { "command": "loop.newFromTemplate", "title": "Loop: New from template" }
     ],
     "configuration": {
       "title": "Loop",

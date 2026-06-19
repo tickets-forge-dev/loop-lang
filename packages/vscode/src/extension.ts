@@ -20,7 +20,8 @@ export function activate(context: vscode.ExtensionContext) {
     // Ctrl+Space (and as-you-type) autocomplete — context-aware, deterministic.
     vscode.languages.registerCompletionItemProvider(LOOP_SELECTOR, new LoopCompletion()),
     vscode.languages.registerHoverProvider(LOOP_SELECTOR, new LoopHover()),
-    vscode.commands.registerCommand("loop.run", (uri?: vscode.Uri) => runLoop(uri, output))
+    vscode.commands.registerCommand("loop.run", (uri?: vscode.Uri) => runLoop(uri, output)),
+    vscode.commands.registerCommand("loop.newFromTemplate", () => newFromTemplate(context))
   );
 
   // Live parse diagnostics (red squiggles) — debounced.
@@ -40,6 +41,69 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {}
+
+async function newFromTemplate(context: vscode.ExtensionContext): Promise<void> {
+  const fs = await import("node:fs/promises");
+  const { join } = await import("node:path");
+  const templatesDir = join(context.extensionPath, "templates");
+
+  let names: string[];
+  try {
+    const ents = await fs.readdir(templatesDir, { withFileTypes: true });
+    names = ents.filter((d) => d.isDirectory()).map((d) => d.name);
+  } catch {
+    vscode.window.showErrorMessage("Loop: no templates bundled with the extension.");
+    return;
+  }
+  if (names.length === 0) { vscode.window.showErrorMessage("Loop: no templates found."); return; }
+
+  const blurbs: Record<string, string> = {
+    foreach: "Generic: iterate a plan, run a checklist per item",
+    bmad: "BMAD A-to-Z: discover → design → per-story checklist",
+  };
+  const pick = await vscode.window.showQuickPick(
+    names.map((n) => ({ label: n, description: blurbs[n] ?? "" })),
+    { placeHolder: "Choose a Loop template" }
+  );
+  if (!pick) return;
+
+  const ws = vscode.workspace.workspaceFolders?.[0];
+  if (!ws) { vscode.window.showErrorMessage("Loop: open a folder first."); return; }
+
+  const sub = await vscode.window.showInputBox({
+    prompt: "Copy the template into which folder (relative to the workspace)?",
+    value: pick.label,
+  });
+  if (sub === undefined) return;
+
+  const srcDir = join(templatesDir, pick.label);
+  const destDir = join(ws.uri.fsPath, sub);
+  await fs.mkdir(destDir, { recursive: true });
+
+  const files = await fs.readdir(srcDir);
+  let copied = 0;
+  let skipped = 0;
+  for (const f of files) {
+    const dest = join(destDir, f);
+    let exists = false;
+    try { await fs.access(dest); exists = true; } catch { /* missing → copy */ }
+    if (exists) {
+      const ans = await vscode.window.showWarningMessage(`${f} already exists in ${sub}. Overwrite?`, "Overwrite", "Skip");
+      if (ans !== "Overwrite") { skipped++; continue; }
+    }
+    await fs.copyFile(join(srcDir, f), dest);
+    copied++;
+  }
+
+  vscode.window.showInformationMessage(`Loop: copied ${copied} file(s) to ${sub}${skipped ? `, skipped ${skipped}` : ""}.`);
+
+  // Open the entry .loop so the user lands on the thing to run.
+  const entry = files.find((f) => /^(epic|deliver)\.loop$/.test(f)) ?? files.find((f) => f.endsWith(".loop"));
+  if (entry) {
+    const doc = await vscode.workspace.openTextDocument(join(destDir, entry));
+    await vscode.window.showTextDocument(doc);
+  }
+}
 
 /** ▶ Run lens above every loop/pipeline definition. */
 class RunCodeLensProvider implements vscode.CodeLensProvider {
