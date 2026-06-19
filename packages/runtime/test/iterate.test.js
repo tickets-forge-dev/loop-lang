@@ -34,3 +34,19 @@ test("empty text → []", () => {
 test("yaml with no list → throws", () => {
   assert.throws(() => enumerateItems("foo: bar\nbaz: qux\n", "yaml"), /no list to iterate/);
 });
+
+test("yaml root seq with a trailing non-list key does not glue onto the last item", () => {
+  const out = enumerateItems("- a\n- b\nmetadata: x\n", "yaml");
+  assert.equal(out.length, 2);
+  assert.doesNotMatch(out[1], /metadata/);
+});
+
+test("yaml key-list ends before a sibling key", () => {
+  const out = enumerateItems("stories:\n  - a\n  - b\nmeta: x\n", "yaml");
+  assert.equal(out.length, 2);
+  assert.doesNotMatch(out[1], /meta/);
+});
+
+test("yaml 'yml' alias enumerates like yaml", () => {
+  assert.equal(enumerateItems("- x\n- y\n", "yml").length, 2);
+});

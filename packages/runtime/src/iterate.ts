@@ -57,12 +57,14 @@ function chunkYaml(lines: string[]): string[] {
     const ln = lines[i];
     if (isBlank(ln)) { if (cur) cur.push(ln); continue; }
     const ind = indentOf(ln);
-    if (ind < listIndent) break; // list ended (dedent)
-    if (ind === listIndent && /^-\s+/.test(ln.trimStart())) {
+    if (ind < listIndent) break; // dedent ends the list
+    const isItem = ind === listIndent && /^-\s+/.test(ln.trimStart());
+    if (ind === listIndent && !isItem) break; // a non-item line at the item indent ends the list
+    if (isItem) {
       if (cur) chunks.push(cur.join("\n").trim());
       cur = [ln];
     } else if (cur) {
-      cur.push(ln);
+      cur.push(ln); // deeper line → continuation of the current item
     }
   }
   if (cur) chunks.push(cur.join("\n").trim());
