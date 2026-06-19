@@ -132,7 +132,11 @@ test("flow: for each can carry a human gate child", () => {
 });
 
 test("flow: for each without a run child is a parse error", () => {
-  assert.throws(() => parse('flow "f":\n  for each item in "plan.yaml":\n    goal: nope'), /needs a 'run/);
+  assert.throws(() => parse('flow "f":\n  for each item in "plan.yaml":\n    a human approves'), /needs a 'run/);
+});
+
+test("flow: for each with an unrecognized child line reports that line", () => {
+  assert.throws(() => parse('flow "f":\n  for each item in "plan.yaml":\n    run "t.loop"\n    wat'), /unrecognized line/);
 });
 
 test("flow: plain run steps still parse alongside for each (regression)", () => {

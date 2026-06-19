@@ -366,10 +366,6 @@ function parseFlowStep(lines: Line[], start: number): { step: FlowStep; next: nu
       if (/^a human approves(?:\s+(?:the plan\s+)?first)?$/i.test(ln.text)) { gate = { message: `approve before ${varName}` }; continue; }
       const g = ln.text.match(/^a human approves before\s+(.+)$/i);
       if (g) { gate = { message: `approve before ${g[1].trim()}` }; continue; }
-      // Only complain about unrecognized lines if we're not looking for a template child
-      if (template === null) {
-        throw new ParseError(`'for each ${varName}' needs a 'run "<template>"' child`, header.lineNo);
-      }
       throw new ParseError(`unrecognized line in 'for each ${varName}': "${ln.text}"`, ln.lineNo);
     }
     if (!template) throw new ParseError(`'for each ${varName}' needs a 'run "<template>"' child`, header.lineNo);
