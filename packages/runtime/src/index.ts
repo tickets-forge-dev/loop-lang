@@ -12,3 +12,4 @@ export { IpcHumanIO } from "./ipc.js";
 export type { HumanRequest } from "./ipc.js";
 export { HttpArchonPlanSource, MockArchonPlanSource } from "./runners/archon.js";
 export type { HttpArchonOptions } from "./runners/archon.js";
+export { enumerateItems } from "./iterate.js";
