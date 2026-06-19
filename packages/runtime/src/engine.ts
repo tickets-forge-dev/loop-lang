@@ -1,6 +1,7 @@
 import { resolve, dirname, basename } from "node:path";
-import type { Loop, Pipeline, Flow, Definition, Transition, Action, LoopFile } from "@loop/parser";
+import type { Loop, Pipeline, Flow, FlowStep, Definition, Transition, Action, LoopFile } from "@loop/parser";
 import type { CycleNode, LoopEvent, LoopOutcome, RunOptions, StopReason } from "./types.js";
+import { enumerateItems } from "./iterate.js";
 
 const DEFAULT_HARD_CAP = 25;
 
@@ -260,6 +261,52 @@ async function executePipeline(pipeline: Pipeline, opts: RunOptions): Promise<Lo
   return { satisfied: true, reason: "done", attempts: lastAttempts };
 }
 
+async function executeForEach(step: FlowStep, opts: RunOptions, stack: string[]): Promise<LoopOutcome> {
+  const varName = step.forEach!.var;
+  const source = step.forEach!.source;
+  if (!opts.readText) throw new Error(`flow runs 'for each ${varName}' but no text reader (readText) was provided`);
+  if (!opts.loadFile) throw new Error(`flow runs 'for each ${varName}' but no file loader was provided`);
+
+  const text = await opts.readText(source, opts.baseDir);
+  const fmt = /\.md$/i.test(source) ? "md" : "yaml";
+  const items = enumerateItems(text, fmt);
+  emit(opts, { type: "foreach-start", var: varName, source, count: items.length });
+
+  const templatePath = resolve(opts.baseDir, step.ref);
+  if (stack.includes(templatePath)) {
+    throw new Error(`flow cycle: ${[...stack, templatePath].map((p) => basename(p)).join(" -> ")}`);
+  }
+
+  let failedAccepted = 0;
+  for (let i = 0; i < items.length; i++) {
+    emit(opts, { type: "foreach-item-start", var: varName, index: i, total: items.length });
+    const tmpl = await opts.loadFile(step.ref, opts.baseDir);
+    const outcomes = await run(tmpl, {
+      ...opts,
+      baseDir: dirname(templatePath),
+      flowStack: [...stack, templatePath],
+      upstream: items[i],
+    });
+    const ok = outcomes.every((o) => o.satisfied);
+    emit(opts, { type: "foreach-item-end", var: varName, index: i, satisfied: ok });
+    if (ok) continue;
+
+    // halt-but-human-decides: on a failed item, ask whether to keep going.
+    const prompt = `${varName} ${i + 1}/${items.length} failed — continue to the next?`;
+    emit(opts, { type: "human", kind: "gate", prompt });
+    const cont = await opts.human.gate(prompt);
+    if (!cont) {
+      emit(opts, { type: "foreach-end", var: varName, satisfied: false });
+      return { satisfied: false, reason: "blocked", attempts: 0, summary: `[${varName}] stopped at ${i + 1}/${items.length} (failed)` };
+    }
+    failedAccepted++; // human chose to proceed past this failure
+  }
+
+  emit(opts, { type: "foreach-end", var: varName, satisfied: true });
+  const note = failedAccepted ? `, ${failedAccepted} failed but accepted` : "";
+  return { satisfied: true, reason: "done", attempts: 0, summary: `[${varName}] ${items.length} item(s)${note}` };
+}
+
 async function executeFlow(flow: Flow, opts: RunOptions): Promise<LoopOutcome> {
   emit(opts, { type: "flow-start", name: flow.name });
   const stack = opts.flowStack ?? [];
@@ -279,27 +326,38 @@ async function executeFlow(flow: Flow, opts: RunOptions): Promise<LoopOutcome> {
       }
     }
 
-    const stepPath = resolve(opts.baseDir, step.ref);
-    if (stack.includes(stepPath)) {
-      const chain = [...stack, stepPath].map((p) => basename(p)).join(" -> ");
-      throw new Error(`flow cycle: ${chain}`);
-    }
-    if (!opts.loadFile) {
-      throw new Error(`flow "${flow.name}" runs "${step.ref}" but no file loader was provided`);
+    let satisfied: boolean;
+    let summary: string;
+
+    if (step.forEach) {
+      const r = await executeForEach(step, opts, stack);
+      satisfied = r.satisfied;
+      summary = r.summary ?? `[${step.name}] ${satisfied ? "done" : "FAILED"}`;
+    } else {
+      const stepPath = resolve(opts.baseDir, step.ref);
+      if (stack.includes(stepPath)) {
+        const chain = [...stack, stepPath].map((p) => basename(p)).join(" -> ");
+        throw new Error(`flow cycle: ${chain}`);
+      }
+      if (!opts.loadFile) {
+        throw new Error(`flow "${flow.name}" runs "${step.ref}" but no file loader was provided`);
+      }
+
+      const subFile = await opts.loadFile(step.ref, opts.baseDir);
+      const stepUpstream = step.fromStep ? summaries[step.fromStep] : carried;
+      const outcomes = await run(subFile, {
+        ...opts,
+        baseDir: dirname(stepPath),
+        flowStack: [...stack, stepPath],
+        upstream: stepUpstream,
+      });
+
+      const ok = outcomes.every((o) => o.satisfied);
+      const detail = outcomes.map((o) => o.summary).filter(Boolean).map((s) => "\n" + s).join("");
+      satisfied = ok;
+      summary = `[${step.name}] ${satisfied ? "satisfied" : "FAILED"}${detail}`;
     }
 
-    const subFile = await opts.loadFile(step.ref, opts.baseDir);
-    const stepUpstream = step.fromStep ? summaries[step.fromStep] : carried;
-    const outcomes = await run(subFile, {
-      ...opts,
-      baseDir: dirname(stepPath),
-      flowStack: [...stack, stepPath],
-      upstream: stepUpstream,
-    });
-
-    const satisfied = outcomes.every((o) => o.satisfied);
-    const detail = outcomes.map((o) => o.summary).filter(Boolean).map((s) => "\n" + s).join("");
-    const summary = `[${step.name}] ${satisfied ? "satisfied" : "FAILED"}${detail}`;
     summaries[step.name] = summary;
     carried = summary;
 

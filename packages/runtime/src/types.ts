@@ -20,7 +20,11 @@ export type LoopEvent =
   | { type: "flow-start"; name: string }
   | { type: "flow-step-start"; name: string; ref: string }
   | { type: "flow-step-end"; name: string; satisfied: boolean }
-  | { type: "flow-end"; name: string; satisfied: boolean };
+  | { type: "flow-end"; name: string; satisfied: boolean }
+  | { type: "foreach-start"; var: string; source: string; count: number }
+  | { type: "foreach-item-start"; var: string; index: number; total: number }
+  | { type: "foreach-item-end"; var: string; index: number; satisfied: boolean }
+  | { type: "foreach-end"; var: string; satisfied: boolean };
 
 export type CycleNode = "plan" | "act" | "observe";
 
@@ -116,6 +120,8 @@ export interface RunOptions {
   hardCap?: number;
   /** Loads + parses a referenced .loop file. Required only when a `flow` runs. */
   loadFile?(path: string, baseDir: string): Promise<import("@loop/parser").LoopFile>;
+  /** Reads the raw text of a `for each` source data file. Required only when a flow uses `for each`. */
+  readText?(path: string, baseDir: string): Promise<string>;
   /** Upstream handoff text injected into each plan step (set by executeFlow). */
   upstream?: string;
   /** Resolved file paths currently executing — for flow cycle detection. */

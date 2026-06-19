@@ -316,3 +316,58 @@ test("flow: a cycle is detected and throws", async () => {
     /flow cycle: a\.loop -> b\.loop -> a\.loop/
   );
 });
+
+test("for each: runs the template once per item, item text becomes upstream", async () => {
+  const tmpl = parse('loop "t":\n  goal: do it\n  done when "x" passes\n  each cycle: plan, then act, then observe');
+  const flow = parse('flow "f":\n  for each item in "plan.yaml":\n    run "t.loop"').definitions[0];
+  const runner = new MockRunner();
+  const outcome = await runDefinition(flow, {
+    runner,
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO(),
+    baseDir: "/proj",
+    loadFile: async () => tmpl,
+    readText: async () => "- alpha\n- beta\n- gamma\n",
+  });
+  assert.equal(outcome.satisfied, true);
+  assert.equal(runner.planCalls.length, 3, "template ran once per item");
+  assert.match(runner.planCalls[0].upstream, /alpha/);
+  assert.match(runner.planCalls[1].upstream, /beta/);
+  assert.match(runner.planCalls[2].upstream, /gamma/);
+});
+
+test("for each: a failed item asks continue/stop — stop halts the flow", async () => {
+  const tmpl = parse('loop "t":\n  goal: do it\n  done when "x" passes\n  each cycle: plan, then act, then observe\n  after 1 tries: stop and warn "nope"');
+  const flow = parse('flow "f":\n  for each item in "plan.yaml":\n    run "t.loop"').definitions[0];
+  const { events, onEvent } = collect();
+  const outcome = await runDefinition(flow, {
+    runner: new MockRunner(),
+    verifier: new SeqVerifier([false]), // template never passes -> each item fails fast
+    human: new ScriptedHumanIO({ gate: [false] }), // stop at first failure
+    baseDir: "/proj",
+    loadFile: async () => tmpl,
+    readText: async () => "- alpha\n- beta\n- gamma\n",
+    onEvent,
+  });
+  assert.equal(outcome.satisfied, false);
+  const itemStarts = events.filter((e) => e.type === "foreach-item-start");
+  assert.equal(itemStarts.length, 1, "stopped after the first item");
+});
+
+test("for each: continue past failures → flow proceeds, step satisfied", async () => {
+  const tmpl = parse('loop "t":\n  goal: do it\n  done when "x" passes\n  each cycle: plan, then act, then observe\n  after 1 tries: stop and warn "nope"');
+  const flow = parse('flow "f":\n  for each item in "plan.yaml":\n    run "t.loop"').definitions[0];
+  const { events, onEvent } = collect();
+  const outcome = await runDefinition(flow, {
+    runner: new MockRunner(),
+    verifier: new SeqVerifier([false]),
+    human: new ScriptedHumanIO({ defaults: { gate: true } }), // continue every time
+    baseDir: "/proj",
+    loadFile: async () => tmpl,
+    readText: async () => "- a\n- b\n",
+    onEvent,
+  });
+  assert.equal(outcome.satisfied, true, "human accepted every failure");
+  assert.equal(events.filter((e) => e.type === "foreach-item-start").length, 2, "attempted all items");
+  assert.ok(events.some((e) => e.type === "foreach-end" && e.satisfied === true));
+});
