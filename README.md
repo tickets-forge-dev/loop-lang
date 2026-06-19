@@ -86,9 +86,25 @@ loop "fix billing":
 Each is a policy-gated Claude Code pass. When one needs its own verification, promote it
 to a full `stage` instead.
 
+## Chaining loops across files: `flow`
+
+A `flow` sequences loop files, passing the text result of each one forward as context to
+the next. Each step runs the whole file; a step that fails stops the chain:
+
+```loop
+flow "ship":
+  run "build.loop"
+  then run "test.loop"
+  then run "deploy.loop":
+    a human approves first
+```
+
+The result of `build.loop` is automatically handed to `test.loop` (text-only). Use
+`with the result of <name>` to reference a specific step's output explicitly.
+
 ## The vocabulary (~15 words — learn it once)
 
-`pipeline` · `stage` · `loop` · `each cycle` · `goal` · `done when` · `look at` · `allow…/ask me before…` · `also` · `when…` · `reflect` · `a human…` · `stop` · `use` · `schedule`
+`pipeline` · `stage` · `loop` · `flow` · `run … then …` · `each cycle` · `goal` · `done when` · `look at` · `allow…/ask me before…` · `also` · `when…` · `reflect` · `a human…` · `stop` · `use` · `schedule`
 
 Power comes from **composition**, not keyword count.
 

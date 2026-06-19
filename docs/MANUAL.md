@@ -152,6 +152,36 @@ is indented two spaces; a `stage`'s body is indented under the stage. Comments s
 - **`pipeline "<name>":`** — a sequence of stages. Requires at least one `stage`. Stages
   run in order; a failing stage halts the rest. (An epic → a pipeline.)
 - **`stage "<name>":`** — one stage of a pipeline; its body is a loop. (A story → a stage.)
+- **`flow "<name>":`** — a chain of `.loop` files. Each step runs a whole file and passes
+  its text result forward. Fail-fast: a step that ends unsatisfied stops the rest.
+
+### Chaining loops across files (`flow`)
+
+A `flow` lets you sequence independent `.loop` files into a single pipeline where the
+output of one step becomes the context for the next. This is useful when each phase lives
+in its own file and should be reusable independently:
+
+```loop
+flow "ship":
+  run "build.loop"
+  then run "test.loop"
+  then run "deploy.loop":
+    a human approves first
+```
+
+| Element | Meaning |
+|---|---|
+| `run "<file>"` | First step. Runs the whole file (plan→act→observe); text result is carried forward. |
+| `then run "<file>"` | Subsequent step. Automatically receives the previous step's text summary as upstream context. |
+| `a human approves first` | Optional per-step human gate — blocks until approved before the step runs. |
+| `with the result of <name>` | Reference a specific named step's output instead of the automatic carry. |
+
+**Text handoff.** Only the text summary (the last observe output or final plan) is passed
+between steps — not file state. File edits made by one step are visible to the next
+through the working directory as normal; the explicit channel is the text summary.
+
+**Fail-fast.** If any step ends unsatisfied, the remaining steps are skipped and the flow
+ends unsatisfied.
 
 ### Inside a loop / stage body
 
@@ -229,7 +259,7 @@ The extension (`packages/vscode`) gives `.loop` files real editor tooling:
 - **Hover docs** on the vocabulary
 - **Live error squiggles** — parses as you type and underlines the offending line
 - **Formatter** (Format Document; runs on save only if you enable `editor.formatOnSave`)
-- **▶ Run loop** CodeLens above each `loop`/`pipeline`
+- **▶ Run loop** CodeLens above each `loop`/`pipeline`/`flow`
 
 Inline AI prediction is intentionally left to Copilot/your editor's AI — write a `#`
 comment describing intent and let it draft the `.loop`.

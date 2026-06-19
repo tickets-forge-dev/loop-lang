@@ -23,7 +23,7 @@
       "end": "\""
     },
     "structure": {
-      "match": "\\b(pipeline|stage|loop)\\b",
+      "match": "\\b(pipeline|stage|loop|flow)\\b",
       "name": "keyword.control.structure.loop"
     },
     "sections": {
@@ -31,7 +31,7 @@
       "name": "keyword.other.section.loop"
     },
     "flow": {
-      "match": "(?i)\\b(when|after|reflect|stop|warn|plan|act|observe|tries)\\b",
+      "match": "(?i)\\b(when|after|reflect|stop|warn|plan|act|observe|tries|run|then)\\b",
       "name": "keyword.control.flow.loop"
     },
     "human": {

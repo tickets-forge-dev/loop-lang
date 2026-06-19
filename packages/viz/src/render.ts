@@ -165,6 +165,16 @@ function panel(def,oy){
       prev=r.bottom-20;cy=r.bottom+ROWGAP+24;
     }
     bottom=cy;
+  }else if(def.kind==="flow"){
+    s+=E("text",{x:34,y:oy+18,class:"panel-title","font-size":18},esc("\\u2192 "+name));
+    var fx=60,fy=top+8,steps=def.steps||[],j;
+    for(j=0;j<steps.length;j++){
+      if(j>0)s+=fwd(fx-GAP,fy+NH/2,fx);
+      s+=node(fx,fy,trunc(steps[j].name,12),"var(--fwd)");
+      if(steps[j].gate)s+=diamond(fx+NW/2,fy-18,"gate");
+      fx+=NW+GAP;
+    }
+    width=fx;bottom=fy+NH+40;
   }else{
     s+=E("text",{x:34,y:oy+18,class:"panel-title","font-size":18},esc("\\u21BB "+name));
     if(def.goal)s+=E("text",{x:34,y:oy+36,class:"panel-goal"},esc(def.goal));

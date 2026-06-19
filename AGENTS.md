@@ -25,6 +25,11 @@ edit — just do those directly.
 loop "<name>":            a self-correcting loop
 pipeline "<name>":        a sequence of stages (an epic)
 stage "<name>":           one stage of a pipeline (its body is a loop; a story)
+flow "<name>":            a chain of loop files (each step runs a whole .loop file)
+  run "<file>":           first step — runs the file; its text result is passed forward
+  then run "<file>":      subsequent step — receives the previous result as context
+    a human approves first  (optional per-step human gate before the step runs)
+  with the result of <name>  (reference a named step's output instead of auto-carry)
 
 goal: <text>              what "done" means, in plain language
 done when <predicate>     how the loop verifies itself (see Predicates)
@@ -60,10 +65,29 @@ done when a human confirms "looks right at 375px"          # a human check
 The command in a predicate runs in the user's shell with their privileges (like an npm
 script). It IS meant to be a real command. Prefer a fast, deterministic check.
 
+### `flow` — chaining loops across files
+
+A `flow` sequences multiple `.loop` files. Each step runs the whole file (plan→act→observe
+cycle) and passes its text result forward as context for the next step. The chain is
+fail-fast: a step that ends unsatisfied stops the rest.
+
+```loop
+flow "ship":
+  run "build.loop"
+  then run "test.loop"
+  then run "deploy.loop":
+    a human approves first
+```
+
+- `run "<file>"` — first step; the file path is relative to the flow file.
+- `then run "<file>"` — subsequent steps; automatically receive the previous step's text summary.
+- `a human approves first` — optional per-step gate; blocks until approved.
+- `with the result of <name>` — reference a named step's output explicitly instead of auto-carry.
+
 ## Rules
 
-- **Indentation matters.** `loop` / `pipeline` at column 0; their body indented two
-  spaces; a `stage`'s body indented under the stage.
+- **Indentation matters.** `loop` / `pipeline` / `flow` at column 0; their body indented
+  two spaces; a `stage`'s body indented under the stage.
 - A `loop` needs a `goal`. A `pipeline` needs at least one `stage`.
 - **An epic → a `pipeline`; each story → a `stage`.** Stages run in order; a failing
   stage halts the rest.

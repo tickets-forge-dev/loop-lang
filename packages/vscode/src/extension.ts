@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { createRequire } from "node:module";
 import { contextAt, completionsFor, hoverFor, lint } from "./language.js";
 
-const HEADER = /^(loop|pipeline)\b/;
+const HEADER = /^(loop|pipeline|flow)\b/;
 const LOOP_SELECTOR: vscode.DocumentSelector = { language: "loop" };
 
 export function activate(context: vscode.ExtensionContext) {
@@ -177,6 +177,10 @@ function renderEvent(e: any): string | null {
     case "stop": return `    ◼ stop (${e.reason})${e.warn ? ` — ⚠ ${e.warn}` : ""}`;
     case "loop-end": return `↻ done → ${e.satisfied ? "satisfied" : "not satisfied"}`;
     case "pipeline-end": return `▶ pipeline "${e.name}" → ${e.satisfied ? "satisfied" : "FAILED"}`;
+    case "flow-start": return `→ flow "${e.name}"`;
+    case "flow-step-start": return `  ▸ ${e.name} (${e.ref})`;
+    case "flow-step-end": return `  ▸ ${e.name} → ${e.satisfied ? "satisfied" : "FAILED"}`;
+    case "flow-end": return `→ flow "${e.name}" → ${e.satisfied ? "satisfied" : "FAILED"}`;
     default: return null;
   }
 }
