@@ -39,6 +39,22 @@ const clip = (s: string, n: number): string => (s.length > n ? s.slice(0, n - 1)
 const firstLines = (s: string, n: number): string[] => s.replace(/\n+$/, "").split("\n").slice(0, n);
 
 /**
+ * Build the plan-step prompt. Pure + exported so it can be tested without spawning.
+ */
+export function buildPlanPrompt(input: PlanInput): string {
+  const ctx: string[] = [];
+  if (input.files.length) ctx.push(`Relevant files: ${input.files.join(", ")}.`);
+  if (input.includeLastFailure) ctx.push("Account for the most recent failure.");
+  if (input.reflection) ctx.push(`From the last attempt: ${input.reflection}`);
+  if (input.upstream) ctx.push(`From the previous step in the flow:\n${input.upstream}`);
+  return [
+    `Goal: ${input.goal}.`,
+    ...ctx,
+    "Produce a concise, concrete step-by-step plan to achieve the goal. Do not edit files yet.",
+  ].join("\n");
+}
+
+/**
  * Interpret one line of `--output-format stream-json` NDJSON into human-facing activity:
  * assistant text, thinking, tool calls *with their inputs* (commands, file paths, diffs),
  * and tool results — i.e. enough to *watch the Claude session*, not just labels. Pure + tested.
@@ -159,15 +175,7 @@ export class ClaudeCodeRunner implements Runner {
   }
 
   async plan(input: PlanInput): Promise<string> {
-    const ctx: string[] = [];
-    if (input.files.length) ctx.push(`Relevant files: ${input.files.join(", ")}.`);
-    if (input.includeLastFailure) ctx.push("Account for the most recent failure.");
-    if (input.reflection) ctx.push(`From the last attempt: ${input.reflection}`);
-    const prompt = [
-      `Goal: ${input.goal}.`,
-      ...ctx,
-      "Produce a concise, concrete step-by-step plan to achieve the goal. Do not edit files yet.",
-    ].join("\n");
+    const prompt = buildPlanPrompt(input);
     return this.run(prompt, ["--permission-mode", "plan", "--allowedTools", ...READ_TOOLS], input.baseDir, "plan");
   }
 
