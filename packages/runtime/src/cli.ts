@@ -55,6 +55,14 @@ function render(e: LoopEvent): string {
       return `↻ done → ${e.satisfied ? "satisfied" : "not satisfied"}`;
     case "pipeline-end":
       return `▶ pipeline "${e.name}" → ${e.satisfied ? "satisfied" : "FAILED"}`;
+    case "flow-start":
+      return `→ flow "${e.name}"`;
+    case "flow-step-start":
+      return `  ▸ ${e.name} (${e.ref})`;
+    case "flow-step-end":
+      return `  ▸ ${e.name} → ${e.satisfied ? "satisfied" : "FAILED"}`;
+    case "flow-end":
+      return `→ flow "${e.name}" → ${e.satisfied ? "satisfied" : "FAILED"}`;
     default:
       return "";
   }
@@ -69,6 +77,8 @@ async function main() {
 
   const path = resolve(process.cwd(), fileArg);
   const baseDir = dirname(path);
+  const loadFile = (ref: string, dir: string) =>
+    Promise.resolve(parse(readFileSync(resolve(dir, ref), "utf8")));
   const src = readFileSync(path, "utf8");
   let file = parse(src);
 
@@ -147,6 +157,8 @@ async function main() {
       human: ipc,
       archon,
       baseDir: target,
+      loadFile,
+      flowStack: [path],
       onEvent: (e) => emit({ kind: "event", event: e }),
     });
     const ok = outcomes.every((o) => o.satisfied);
@@ -161,6 +173,8 @@ async function main() {
     human: new CliHumanIO(),
     archon,
     baseDir: target,
+    loadFile,
+    flowStack: [path],
     onEvent: (e) => {
       const line = render(e);
       if (line) console.log(line);
