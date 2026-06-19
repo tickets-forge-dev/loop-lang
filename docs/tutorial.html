@@ -109,6 +109,7 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
   <ol id="tocList">
     <li class="grp">Foundations</li>
     <li><a href="#what">1 · What is a loop</a></li>
+    <li><a href="#whenuse">· When to reach for Loop</a></li>
     <li><a href="#first">2 · Your first loop</a></li>
     <li><a href="#donewhen">3 · done when — verify</a></li>
     <li><a href="#context">4 · look at + policy</a></li>
@@ -187,6 +188,88 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
       <li><strong>You can't fake done.</strong> <code class="inl">done when</code> runs a <em>real</em> command — a test, a scanner, a script. The loop stops only when the world agrees.</li>
     </ul>
   </div>
+</section>
+
+<!-- when to use -->
+<section id="whenuse">
+  <h2>When to reach for Loop — by scope <span class="badge b-basic">orientation</span></h2>
+  <p>Loop earns its keep when work has a <strong>verifiable "done"</strong> and benefits from self-correction or human gating. The bigger and riskier the task, the more structure you reach for. Match the construct to the <em>unit of verifiable done</em>:</p>
+  <table>
+    <tr><th>Scope</th><th>Reach for</th><th>Because</th></tr>
+    <tr><td>Small code patch<br><span style="color:var(--muted)">typo, rename, one-liner</span></td><td>Usually nothing — just edit. A bare <code>loop</code> only if a check must stay green.</td><td>For a trivial edit the loop overhead costs more than it saves.</td></tr>
+    <tr><td>Bug fix</td><td>A single <code>loop</code> with <code>done when &lt;the failing test&gt; passes</code> + reflect + a thrash guard.</td><td>The reflect back-edge is built to turn a red test green, learning from each miss.</td></tr>
+    <tr><td>Feature</td><td>A <code>pipeline</code> (one story, several stages) — or a <code>flow</code> of story files.</td><td>A feature has several concerns in order — build, tests, security, UX — each its own gate.</td></tr>
+    <tr><td>Full app / epic</td><td>An A-to-Z <code>flow</code>: discover → design → <code>for each</code> story.</td><td>The stories aren't known yet; discovery produces them, then one checklist runs per story.</td></tr>
+  </table>
+
+  <h3>Recipe — a small code patch</h3>
+  <p>For a pure typo or rename, skip Loop and just make the edit. Reach for a tiny loop only when a <em>check</em> must keep passing — e.g. a dependency bump that must not break the suite:</p>
+  <pre><code class="loop">loop "bump lodash, keep tests green":
+  goal: upgrade lodash to ^4.17.21 with no regressions
+  allow edits automatically
+  each cycle: act, then observe
+  done when "pnpm test" passes
+  after 3 tries: stop and warn "upgrade breaks tests — needs a human"</code></pre>
+  <p class="cap">Use when: a mechanical change guarded by a command. No <code class="inl">plan</code> step needed — just act + observe.</p>
+
+  <h3>Recipe — a bug fix</h3>
+  <p>The bread-and-butter loop. Point it at a failing test (write one first if there isn't one), scope the files, and let the reflect edge work:</p>
+  <pre><code class="loop">loop "fix: cart total wrong with a coupon":
+  goal: the cart total is correct when a percentage coupon is applied
+  done when the test "cart.spec.ts::coupon" passes
+  look at: src/cart/total.ts, src/cart/coupon.ts, and the last failure
+  allow edits automatically, but ask me before migrations
+  each cycle: plan, then act, then observe
+  when it fails: reflect on which layer broke, then plan again
+  after 6 tries: stop and warn "thrashing — likely a spec ambiguity"</code></pre>
+  <p class="cap">Use when: a reproducible bug with a check that proves the fix. The warning is your cue that the spec itself is unclear.</p>
+
+  <h3>Recipe — a feature</h3>
+  <p>A feature bundles several concerns that should each pass before you ship. Model it as a pipeline of stages — implement, then no-regressions, then security, then a human UX review:</p>
+  <pre><code class="loop">pipeline "feature: CSV export on the reports page":
+
+  stage build:
+    goal: a user can download the current report as CSV
+    look at: src/reports/, src/export/, and the last failure
+    allow edits automatically, but ask me before migrations or pushes
+    each cycle: plan, then act, then observe
+    done when "pnpm test reports/export" passes
+    when it fails: reflect on which layer broke, then plan again
+    after 8 tries: stop and warn "export story stuck"
+
+  stage regression:
+    goal: the full suite stays green
+    each cycle: act, then observe
+    done when "pnpm test" passes
+
+  stage security:
+    goal: no high or critical vulnerabilities introduced
+    each cycle: plan, then act, then observe
+    done when "semgrep --severity=high" finds nothing
+
+  stage ui:
+    goal: the download button matches design and is keyboard-accessible
+    each cycle: plan, then act, then observe
+    a human reviews before stopping</code></pre>
+  <p class="cap">Use when: one self-contained feature with multiple gates. If it spans several independent stories you want as reusable files, use a <code class="inl">flow</code> of <code class="inl">.loop</code> files instead (Section 11).</p>
+
+  <h3>Recipe — a full app / epic</h3>
+  <p>For a large build where the stories aren't known up front, go A-to-Z. An interactive discovery interviews you and writes the plan, design gets approved, then the per-story checklist runs for every story — pausing to ask you when one fails:</p>
+  <pre><code class="loop">flow "epic: subscription billing":
+  run "discover.loop"          # interview the team -> write sprint.yaml
+  then run "design.loop"       # data model + API design; a human approves
+  then for each story in "sprint.yaml":
+    run "story-template.loop"   # plan, build, test, scan — once per story</code></pre>
+  <p class="cap">Use when: an epic or a from-scratch module. Run it in conversation (<code class="inl">/loop run</code>) so discovery can interview you (Section 13).</p>
+
+  <div class="key"><span class="kt">Rule of thumb</span>
+    <ul>
+      <li><strong>One check</strong> → a <code class="inl">loop</code>.</li>
+      <li><strong>Several ordered checks</strong> → a <code class="inl">pipeline</code> (one file) or a <code class="inl">flow</code> (many files).</li>
+      <li><strong>One check repeated over a discovered list</strong> → <code class="inl">for each</code>.</li>
+    </ul>
+  </div>
+  <div class="note"><b>Skip Loop when:</b> the task has no verifiable "done" (a pure spike/exploration), it's a trivial edit you'd finish faster by hand, or you can't yet state the goal — in that last case, do a discovery loop <em>first</em> to produce the spec, then loop the build.</div>
 </section>
 
 <!-- 2 -->
