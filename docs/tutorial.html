@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Loop — the tutorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#f6f8fb; --panel:#ffffff; --panel2:#eef2f6; --grid:rgba(30,100,120,.055);
+  --ink:#1b2733; --muted:#5c6b7a; --line:#d8e0e8;
+  --fwd:#0c8f86; --reflect:#b5760a; --stop:#1f9d57; --gate:#c2367e; --str:#2f7d2f; --blue:#2f6bd6;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0; background-color:var(--bg);
+  background-image:
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px),
+    radial-gradient(1100px 640px at 78% -8%,rgba(12,143,134,.05),transparent 60%);
+  background-size:30px 30px,30px 30px,100% 100%;
+  color:var(--ink); font-family:"Space Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  -webkit-font-smoothing:antialiased; line-height:1.65;
+}
+a{color:var(--fwd); text-decoration:none;}
+a:hover{text-decoration:underline;}
+.shell{display:flex; align-items:flex-start; max-width:1240px; margin:0 auto;}
+
+/* sidebar */
+nav.toc{position:sticky; top:0; height:100vh; width:288px; flex:0 0 288px; overflow-y:auto;
+  padding:26px 18px 60px 26px; border-right:1px solid var(--line); font-size:12.5px;}
+nav.toc .brand{font-family:"Saira Condensed",sans-serif; font-weight:800; font-size:26px;
+  letter-spacing:2px; text-transform:uppercase;
+  background:linear-gradient(92deg,var(--fwd),var(--reflect)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+nav.toc .brand::before{content:"\21BB "; -webkit-text-fill-color:var(--reflect); color:var(--reflect);}
+nav.toc .tag{color:var(--muted); font-size:11px; margin:4px 0 18px; letter-spacing:.4px;}
+nav.toc ol{list-style:none; margin:0; padding:0; counter-reset:s;}
+nav.toc li{margin:1px 0;}
+nav.toc a{display:block; color:var(--muted); padding:4px 8px; border-radius:6px; border-left:2px solid transparent;}
+nav.toc a:hover{color:var(--ink); background:var(--panel); text-decoration:none;}
+nav.toc a.active{color:var(--ink); border-left-color:var(--fwd); background:var(--panel);}
+nav.toc .grp{margin:16px 0 4px; color:var(--fwd); font-family:"Saira Condensed",sans-serif; font-weight:700;
+  letter-spacing:1.4px; text-transform:uppercase; font-size:11px;}
+
+/* main */
+main{flex:1 1 auto; min-width:0; padding:30px 46px 120px; max-width:920px;}
+header.hero{border-bottom:1px solid var(--line); padding-bottom:26px; margin-bottom:8px;}
+header.hero h1{font-family:"Saira Condensed",sans-serif; font-weight:800; font-size:46px; line-height:1.02;
+  letter-spacing:.5px; margin:.1em 0 .15em;}
+header.hero .lede{font-size:16px; color:var(--ink);}
+header.hero .sub{color:var(--muted); font-size:13.5px; margin-top:10px;}
+
+section{padding:34px 0 6px; border-top:1px solid var(--line); margin-top:14px;}
+section:first-of-type{border-top:none;}
+h2{font-family:"Saira Condensed",sans-serif; font-weight:800; font-size:27px; letter-spacing:.4px; margin:0 0 4px;}
+h3{font-family:"Saira Condensed",sans-serif; font-weight:700; font-size:18px; letter-spacing:.3px; color:var(--ink); margin:26px 0 6px;}
+p{margin:10px 0;}
+.num{color:var(--fwd); font-weight:700; margin-right:8px;}
+strong{color:#0d1722;}
+em{color:var(--reflect); font-style:normal;}
+code.inl{background:var(--panel2); border:1px solid var(--line); border-radius:5px; padding:1px 6px; font-size:13px; color:var(--ink);}
+
+.badge{display:inline-block; font-family:"Saira Condensed",sans-serif; font-weight:700; font-size:10.5px;
+  letter-spacing:1.2px; text-transform:uppercase; padding:2px 9px; border-radius:20px; vertical-align:middle; margin-left:10px;}
+.b-basic{color:var(--stop); border:1px solid color-mix(in srgb,var(--stop) 50%,transparent);}
+.b-inter{color:var(--reflect); border:1px solid color-mix(in srgb,var(--reflect) 50%,transparent);}
+.b-adv{color:var(--gate); border:1px solid color-mix(in srgb,var(--gate) 50%,transparent);}
+
+pre{background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--fwd);
+  border-radius:9px; padding:15px 17px; overflow-x:auto; margin:14px 0; font-size:13px; line-height:1.6;}
+pre.sh{border-left-color:var(--muted);}
+pre code{font-family:"Space Mono",monospace; white-space:pre;}
+.cap{display:block; color:var(--muted); font-size:11.5px; margin:-6px 0 14px;}
+
+.tok-kw{color:var(--fwd);} .tok-human{color:var(--gate);} .tok-str{color:var(--str);}
+.tok-com{color:var(--muted); font-style:italic;} .tok-num{color:var(--reflect);} .tok-name{color:var(--blue);}
+
+.note{background:linear-gradient(180deg,var(--panel2),var(--panel)); border:1px solid var(--line);
+  border-left:3px solid var(--reflect); border-radius:9px; padding:12px 16px; margin:16px 0;}
+.note b{color:var(--reflect);}
+.key{background:rgba(55,212,196,.05); border:1px solid color-mix(in srgb,var(--fwd) 26%,transparent);
+  border-radius:9px; padding:8px 16px; margin:16px 0;}
+.key .kt{font-family:"Saira Condensed",sans-serif; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+  font-size:11px; color:var(--fwd); display:block; margin:6px 0 2px;}
+.key ul{margin:4px 0 10px; padding-left:20px;} .key li{margin:3px 0; font-size:13.5px;}
+
+table{border-collapse:collapse; width:100%; margin:14px 0; font-size:13px;}
+th,td{border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top;}
+th{background:var(--panel); color:var(--fwd); font-family:"Saira Condensed",sans-serif; letter-spacing:.5px;}
+td code{color:var(--ink);}
+
+.legend{display:flex; gap:18px; flex-wrap:wrap; color:var(--muted); font-size:11px; margin:8px 0 0;}
+.legend i{display:inline-block; width:20px; height:0; border-top:2px solid; vertical-align:middle; margin-right:6px;}
+footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); margin-top:40px; padding-top:18px;}
+@media (max-width:900px){
+  nav.toc{display:none;} main{padding:24px 18px 80px;}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="toc">
+  <div class="brand">Loop</div>
+  <div class="tag">the tutorial · basics → advanced</div>
+  <ol id="tocList">
+    <li class="grp">Foundations</li>
+    <li><a href="#what">1 · What is a loop</a></li>
+    <li><a href="#first">2 · Your first loop</a></li>
+    <li><a href="#donewhen">3 · done when — verify</a></li>
+    <li><a href="#context">4 · look at + policy</a></li>
+    <li class="grp">The engine</li>
+    <li><a href="#cycle">5 · The cycle + reflect</a></li>
+    <li><a href="#transitions">6 · Transitions + guard</a></li>
+    <li><a href="#also">7 · also — finishing</a></li>
+    <li><a href="#humans">8 · Human gates</a></li>
+    <li><a href="#fullpower">9 · A full-power loop</a></li>
+    <li class="grp">Composing</li>
+    <li><a href="#pipelines">10 · Pipelines</a></li>
+    <li><a href="#flow">11 · flow — chain files</a></li>
+    <li><a href="#foreach">12 · for each — iterate</a></li>
+    <li><a href="#atoz">13 · A-to-Z</a></li>
+    <li class="grp">Going further</li>
+    <li><a href="#methods">14 · Methods are libraries</a></li>
+    <li><a href="#running">15 · Running a loop</a></li>
+    <li><a href="#cheatsheet">16 · Cheat sheet</a></li>
+    <li><a href="#bestpractice">17 · Best practices</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <h1>Loop, the tutorial</h1>
+  <div class="lede">Stop tuning prompts. Start editing the <em>loop</em>.</div>
+  <p class="sub">Loop is a small natural-language DSL for <strong>loop engineering</strong>. A <code class="inl">.loop</code> file describes a self-correcting, human-gated coding workflow — its objective, the context it may read, the actions it may take, how it verifies itself, and when it stops. This page teaches the whole language from the first line to full A-to-Z pipelines, every section grounded in a real example you can run.</p>
+
+  <svg viewBox="0 0 760 150" width="100%" style="margin-top:14px" font-family="Saira Condensed, sans-serif">
+    <defs><filter id="g" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter></defs>
+    <!-- forward path plan->act->observe->stop -->
+    <g>
+      <!-- nodes -->
+      <g><rect x="20" y="40" width="120" height="46" rx="9" fill="#ffffff" stroke="#3b7fb0" stroke-width="1.4"/><rect x="20" y="40" width="4" height="46" rx="2" fill="#3b7fb0"/><text x="80" y="68" text-anchor="middle" fill="#1b2733" font-size="16" font-weight="700">plan</text></g>
+      <g><rect x="210" y="40" width="120" height="46" rx="9" fill="#ffffff" stroke="#0c8f86" stroke-width="1.4"/><rect x="210" y="40" width="4" height="46" rx="2" fill="#0c8f86"/><text x="270" y="68" text-anchor="middle" fill="#1b2733" font-size="16" font-weight="700">act</text></g>
+      <g><rect x="400" y="40" width="120" height="46" rx="9" fill="#ffffff" stroke="#6b5bd6" stroke-width="1.4"/><rect x="400" y="40" width="4" height="46" rx="2" fill="#6b5bd6"/><text x="460" y="68" text-anchor="middle" fill="#1b2733" font-size="16" font-weight="700">observe</text></g>
+      <g><rect x="600" y="40" width="120" height="46" rx="9" fill="#ffffff" stroke="#1f9d57" stroke-width="1.4"/><rect x="600" y="40" width="4" height="46" rx="2" fill="#1f9d57"/><text x="660" y="68" text-anchor="middle" fill="#1b2733" font-size="16" font-weight="700">stop</text></g>
+      <!-- fwd arrows -->
+      <g stroke="#0c8f86" stroke-width="1.8">
+        <line x1="140" y1="63" x2="203" y2="63"/><line x1="330" y1="63" x2="393" y2="63"/><line x1="520" y1="63" x2="593" y2="63"/>
+      </g>
+      <polygon points="203,59 210,63 203,67" fill="#0c8f86"/><polygon points="393,59 400,63 393,67" fill="#0c8f86"/>
+      <polygon points="593,59 600,63 593,67" fill="#1f9d57"/>
+      <text x="557" y="34" text-anchor="middle" fill="#1f9d57" font-size="11">goal met</text>
+      <!-- reflect back-edge observe -> plan -->
+      <path d="M 460 86 C 460 140 80 140 80 92" fill="none" stroke="#b5760a" stroke-width="6" opacity=".16" filter="url(#g)"/>
+      <path d="M 460 86 C 460 140 80 140 80 92" fill="none" stroke="#b5760a" stroke-width="2.2" stroke-dasharray="7 6"/>
+      <polygon points="75,100 80,90 85,100" fill="#b5760a"/>
+      <text x="270" y="135" text-anchor="middle" fill="#b5760a" font-size="12">reflect &#8594; plan again  (on fail)</text>
+    </g>
+  </svg>
+  <div class="legend">
+    <span><i style="border-color:#0c8f86"></i>forward signal</span>
+    <span><i style="border-color:#b5760a;border-top-style:dashed"></i>reflect (feedback)</span>
+    <span><i style="border-color:#1f9d57"></i>done</span>
+    <span><i style="border-color:#c2367e"></i>human gate</span>
+  </div>
+</header>
+
+<!-- 1 -->
+<section id="what">
+  <h2>1 · What is a loop <span class="badge b-basic">basic</span></h2>
+  <p>AI writes the code now — but you are still the conductor. Every coding task is really <strong>five decisions</strong>:</p>
+  <table>
+    <tr><th>Decision</th><th>In a .loop</th><th>Question it answers</th></tr>
+    <tr><td>Objective</td><td><code class="inl">goal:</code></td><td>What are we trying to do?</td></tr>
+    <tr><td>Context</td><td><code class="inl">look at:</code></td><td>What may the agent read first?</td></tr>
+    <tr><td>Actions</td><td><code class="inl">allow… / ask me before…</code></td><td>What may it do, and what needs a human?</td></tr>
+    <tr><td>Verification</td><td><code class="inl">done when</code></td><td>How do we <em>know</em> it worked?</td></tr>
+    <tr><td>Stopping</td><td><code class="inl">when… / after N tries</code></td><td>When do we stop — done, or thrashing?</td></tr>
+  </table>
+  <p>When the model took over the building, those five decisions got <em>buried</em> in prompts. Loop promotes them to first-class, editable knobs. At runtime they drive five phases — <strong>plan → act → observe → reflect → stop</strong> — the diagram above. You don't re-tune a prompt; you <strong>edit the loop</strong>.</p>
+  <div class="key"><span class="kt">The two ideas to keep</span>
+    <ul>
+      <li><strong>Edit the loop, not the prompt.</strong> The control structure is the artifact.</li>
+      <li><strong>You can't fake done.</strong> <code class="inl">done when</code> runs a <em>real</em> command — a test, a scanner, a script. The loop stops only when the world agrees.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="first">
+  <h2>2 · Your first loop <span class="badge b-basic">basic</span></h2>
+  <p>The smallest useful loop: keep working until a test passes.</p>
+  <pre><code class="loop">loop "fix test":
+  goal: the checkout tax test passes
+  done when the test "checkout.spec.ts::tax" passes
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again</code></pre>
+  <span class="cap">examples/fix_test.loop</span>
+  <p>Read it top to bottom:</p>
+  <p><span class="num">1</span><code class="inl">loop "fix test":</code> — names a self-correcting loop. Indentation is structural (two spaces); <code class="inl">loop</code> sits at column 0; <code class="inl">#</code> starts a comment.</p>
+  <p><span class="num">2</span><code class="inl">goal:</code> — the objective, in plain language.</p>
+  <p><span class="num">3</span><code class="inl">done when the test "…" passes</code> — the verification. The runtime actually runs that test each cycle.</p>
+  <p><span class="num">4</span><code class="inl">each cycle:</code> — the repeated steps. <code class="inl">plan, then act, then observe</code> is the default, so you can omit it.</p>
+  <p><span class="num">5</span><code class="inl">when it fails: reflect, then plan again</code> — the feedback edge: on a failed check, turn the failure into context and re-plan. That's what makes it self-correcting.</p>
+  <div class="note"><b>Run it:</b> in a chat with the Loop skill, say <code class="inl">/loop run examples/fix_test.loop</code> and the assistant runs the cycle right there. Or headless: <code class="inl">loop run examples/fix_test.loop</code>.</div>
+</section>
+
+<!-- 3 -->
+<section id="donewhen">
+  <h2>3 · <code class="inl">done when</code> — how a loop verifies itself <span class="badge b-basic">basic</span></h2>
+  <p>The predicate is the spine of the whole idea. Four forms:</p>
+  <pre><code class="loop">done when the test "billing.spec.ts::apostrophe" passes   # a named test (runs via your test runner)
+done when "pnpm test" passes                               # a shell command, success = exit 0
+done when "semgrep --severity=high" finds nothing          # exit 0 AND empty output
+done when a human confirms "the UI looks right"            # a person is the check</code></pre>
+  <div class="key"><span class="kt">Why this matters</span>
+    <ul>
+      <li>A predicate is a <strong>real command run with your privileges</strong> — like an npm script or a Makefile target. So treat a <code class="inl">.loop</code> from an untrusted source as you would their shell scripts.</li>
+      <li><code class="inl">finds nothing</code> is how you say "this scanner must report zero" — it requires both exit&nbsp;0 and empty output.</li>
+      <li>The <code class="inl">a human confirms "…"</code> form is decided by a person — it's satisfied when you run the loop in conversation; the headless shell verifier returns <code class="inl">human check required: …</code> and never passes on its own.</li>
+      <li>A loop with <em>no</em> <code class="inl">done when</code> has no machine check, so it must finish through a human path — a review gate, an approved plan-first pass (a plan-only loop), or an explicit <code class="inl">when …: stop</code> — otherwise it runs to the hard cap. Always give it a real check when one exists.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="context">
+  <h2>4 · <code class="inl">look at</code> + action policy <span class="badge b-basic">basic</span></h2>
+  <p>Scope what the agent reads, and decide what it may do on its own versus what needs your sign-off.</p>
+  <pre><code class="loop">look at: billing/form.tsx, api/settings.ts, schema/settings.ts, and the last failure
+allow edits automatically, but ask me before migrations or pushes</code></pre>
+  <p><code class="inl">look at:</code> points the agent at the files that matter so it stays inside your architecture instead of wandering. The special phrase <code class="inl">and the last failure</code> feeds the previous failure's output back in.</p>
+  <p>The policy line splits actions into <strong>auto</strong> and <strong>confirm</strong> classes. The canonical classes are <code class="inl">edit</code>, <code class="inl">migrate</code>, <code class="inl">push</code>, <code class="inl">deploy</code>, <code class="inl">delete</code> (plurals/synonyms normalize). <code class="inl">allow … automatically</code> grants without asking; <code class="inl">ask me before …</code> pauses for a one-time confirmation that's remembered for the run.</p>
+  <div class="note"><b>Map to tools:</b> the runner translates classes into tool grants — <code class="inl">edit</code> → Edit/Write, <code class="inl">push</code> → <code class="inl">git push</code>, and so on. Read tools are always allowed.</div>
+</section>
+
+<!-- 5 -->
+<section id="cycle">
+  <h2>5 · The cycle and the reflect back-edge <span class="badge b-inter">intermediate</span></h2>
+  <p><code class="inl">each cycle:</code> lists the steps, in order — any subset of <code class="inl">plan</code>, <code class="inl">act</code>, <code class="inl">observe</code>:</p>
+  <pre><code class="loop">each cycle: plan, then act, then observe   # full self-correcting unit
+each cycle: act, then observe              # skip planning — just do + check</code></pre>
+  <ul>
+    <li><strong>plan</strong> — read the <code class="inl">look at:</code> files, decide the smallest change toward the goal. (Runs read-only.)</li>
+    <li><strong>act</strong> — make the change, honoring the policy.</li>
+    <li><strong>observe</strong> — run the <code class="inl">done when</code> check and read pass/fail.</li>
+  </ul>
+  <p>On a failed observe, <code class="inl">when it fails: reflect, then plan again</code> fires. <strong>reflect</strong> reads the failure output and writes a short diagnosis; that diagnosis becomes context for the next <strong>plan</strong>. This is the back-edge — the orange arc in the diagram — and it's the difference between an agent that retries blindly and one that learns from each miss.</p>
+  <div class="note"><b>Safety net:</b> regardless of your rules, the engine has an absolute hard cap of <b>25</b> cycles per loop, so a loop can never spin forever.</div>
+</section>
+
+<!-- 6 -->
+<section id="transitions">
+  <h2>6 · Transitions and the thrash guard <span class="badge b-inter">intermediate</span></h2>
+  <p><code class="inl">when …:</code> rules run after each observe. The conditions and actions:</p>
+  <pre><code class="loop">when it passes and the goal is met: stop
+when it fails:                      reflect on which layer broke, then plan again
+when blocked:                       ask a human
+after 6 tries:                      stop and warn "thrashing"</code></pre>
+  <table>
+    <tr><th>Conditions</th><th>Actions</th></tr>
+    <tr><td><code>it passes</code> · <code>it passes and the goal is met</code> · <code>it fails</code> · <code>blocked</code></td>
+        <td><code>stop</code> · <code>stop and warn "…"</code> · <code>reflect [on &lt;focus&gt;]</code> · <code>plan</code> · <code>act</code> · <code>observe</code> · <code>ask a human</code></td></tr>
+  </table>
+  <div class="key"><span class="kt">Precedence is fixed, not source-order</span>
+    <ul>
+      <li>The engine evaluates transitions in the order <strong>blocked &gt; attempts &gt; pass &gt; fail</strong>.</li>
+      <li>So <code class="inl">after N tries: stop and warn</code> — the <em>thrash guard</em> — always wins once the threshold is crossed, even if a <code class="inl">when it fails</code> rule is listed first. Put a thrash guard on every self-correcting loop; the warning is your signal that it got stuck.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="also">
+  <h2>7 · <code class="inl">also</code> — finishing passes <span class="badge b-inter">intermediate</span></h2>
+  <p>Lightweight passes that run <strong>only after the goal is met</strong>, in order — and are skipped if the loop failed:</p>
+  <pre><code class="loop">also: polish the code, run a security check, update the docs</code></pre>
+  <p>Use <code class="inl">also</code> for the chores that should happen on success but aren't part of the core verification. If a finishing pass needs its own pass/fail check, promote it to a real stage (next sections) instead.</p>
+</section>
+
+<!-- 8 -->
+<section id="humans">
+  <h2>8 · Human gates <span class="badge b-adv">human-in-the-loop</span></h2>
+  <p>Loop has five places a person steps in. The first two go inside a loop; the third is a stage gate; the fourth is a transition; the fifth is the per-run <strong>confirm</strong> prompt from the action policy (Section&nbsp;4) — <code class="inl">ask me before …</code>, asked once and remembered.</p>
+  <pre><code class="loop">a human approves the plan first      # approve the plan before any acting
+a human reviews before stopping      # judge the result before the loop may stop
+a human approves before provisioning # a hard, blocking gate (used on a stage)
+when blocked: ask a human            # unblock when the agent is stuck</code></pre>
+  <div class="key"><span class="kt">Where to use which</span>
+    <ul>
+      <li><code class="inl">a human approves the plan first</code> — high-stakes work where the plan must be right before touching anything.</li>
+      <li><code class="inl">a human reviews before stopping</code> — subjective "looks right" goals (UI, copy) where no command can decide done.</li>
+      <li><code class="inl">a human approves before &lt;X&gt;</code> — a blocking gate before a whole stage runs (deploys, provisioning).</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 9 -->
+<section id="fullpower">
+  <h2>9 · A full-power loop <span class="badge b-inter">intermediate</span></h2>
+  <p>Everything so far, in one real loop — the five decisions plus transitions, a thrash guard, finishing passes, and a confirm policy:</p>
+  <pre><code class="loop">loop "fix billing apostrophe bug":
+  goal: settings save when the company name has an apostrophe
+  done when the test "billing.spec.ts::apostrophe" passes
+
+  look at: billing/form.tsx, api/settings.ts, schema/settings.ts, and the last failure
+  allow edits automatically, but ask me before migrations or pushes
+
+  each cycle: plan, then act, then observe
+  also: polish the code, run a security check, update the docs
+  when it passes and the goal is met: stop
+  when it fails: reflect on which layer broke, then plan again
+  when blocked: ask a human
+  after 6 tries: stop and warn "thrashing"</code></pre>
+  <span class="cap">examples/billing_apostrophe.loop — read this one out loud; it's a design, not a prompt.</span>
+</section>
+
+<!-- 10 -->
+<section id="pipelines">
+  <h2>10 · Pipelines — epics and stories <span class="badge b-inter">intermediate</span></h2>
+  <p>A <code class="inl">pipeline</code> runs <code class="inl">stage</code>s in order; a failing stage halts the rest. The natural mapping: an <strong>epic → a pipeline</strong>, each <strong>story → a stage</strong>, and each stage's body is just a loop.</p>
+  <pre><code class="loop">pipeline "ship feature":
+
+  stage security:
+    goal: no high or critical vulnerabilities
+    done when "semgrep --severity=high" finds nothing
+    each cycle: plan, then act, then observe
+    when it fails: reflect, then plan again
+
+  stage build:
+    goal: feature works and tests pass
+    a human approves the plan first
+    each cycle: act, then observe
+    done when "pnpm test" passes
+
+  stage ui:
+    goal: matches design, responsive at 375px
+    each cycle: plan, then act, then observe
+    a human reviews before stopping
+
+  stage deploy:
+    a human approves before provisioning
+    goal: infra live and healthchecks green
+    done when "./scripts/health.sh" passes
+    each cycle: act, then observe</code></pre>
+  <span class="cap">examples/ship_feature.loop</span>
+  <p>Each stage carries its own verification and human gates. A real BMAD-shaped feature looks the same — analysis and architecture stages are human-gated, story stages are build loops with acceptance tests, QA gates on review:</p>
+  <pre><code class="loop">pipeline "BMAD: user authentication":
+
+  stage "analyze":
+    goal: the auth requirements are clear and agreed
+    look at: docs/brief.md
+    a human approves the plan first
+    each cycle: plan, then observe
+
+  stage "story: email and password login":
+    goal: users log in with email and password
+    look at: src/auth/, docs/architecture.md
+    done when "pnpm test auth/login" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect on which layer broke, then plan again
+    after 8 tries: stop and warn "login story stuck"
+
+  stage "qa":
+    goal: the full suite is green and acceptance criteria are met
+    done when "pnpm test" passes
+    a human reviews before stopping</code></pre>
+  <span class="cap">examples/bmad-auth.loop (abridged)</span>
+</section>
+
+<!-- 11 -->
+<section id="flow">
+  <h2>11 · <code class="inl">flow</code> — chaining whole files <span class="badge b-adv">advanced</span></h2>
+  <p>A pipeline lives in one file. A <code class="inl">flow</code> chains <strong>separate <code class="inl">.loop</code> files</strong>, run in order — so a big effort can be many small, reusable files instead of one giant one.</p>
+  <pre><code class="loop">flow "ship":
+  run "build.loop"
+  then run "test.loop"
+  then run "deploy.loop":
+    a human approves first</code></pre>
+  <span class="cap">examples/ship_flow.loop</span>
+  <div class="key"><span class="kt">flow semantics</span>
+    <ul>
+      <li><strong>Runs the whole file.</strong> <code class="inl">run "build.loop"</code> runs every definition in that file.</li>
+      <li><strong>Fail-fast.</strong> If a file isn't satisfied, the flow halts the rest.</li>
+      <li><strong>Text handoff.</strong> After each step, a short <em>text summary</em> of how it went is carried forward as context into the next file. It is text, not piped data structures — Loop stays a control language, not a data-flow language. Use <code class="inl">… with the result of &lt;step&gt;</code> to pull the handoff from a named earlier step instead of the previous one.</li>
+      <li><strong>Cycle-safe.</strong> A file that references back to one already running errors with the chain, e.g. <code class="inl">flow cycle: a.loop -&gt; b.loop -&gt; a.loop</code>.</li>
+    </ul>
+  </div>
+  <p>So an epic becomes a flow of story files, each story its own checklist pipeline:</p>
+  <pre><code class="loop">flow "epic: authentication":
+  run "story-login.loop"
+  then run "story-signup.loop"</code></pre>
+  <span class="cap">examples/bmad/epic-auth.loop</span>
+</section>
+
+<!-- 12 -->
+<section id="foreach">
+  <h2>12 · <code class="inl">for each</code> — iterate over a plan <span class="badge b-adv">advanced</span></h2>
+  <p>A <code class="inl">flow</code> names its files up front. But what if the work items are discovered at planning time and you don't know them yet? <code class="inl">for each</code> is dynamic fan-out: read a plan file and run a <strong>template</strong> once per item.</p>
+  <pre><code class="loop">flow "deliver":
+  for each item in "plan.yaml":
+    run "item-template.loop"</code></pre>
+  <span class="cap">examples/foreach/deliver.loop</span>
+  <p>The source file is enumerated by type:</p>
+  <pre><code class="loop"># plan.yaml — a list (or items under a single key)
+items:
+  - title: Parse the uploaded CSV into rows
+    detail: accept a multipart upload, stream-parse, reject malformed input
+  - title: Validate rows against the schema
+    detail: required fields, types, and sane per-row error messages</code></pre>
+  <span class="cap">examples/foreach/plan.yaml — a .md source works too: each "## " section is one item.</span>
+  <div class="key"><span class="kt">for each semantics</span>
+    <ul>
+      <li><strong>One run per item.</strong> The template loop runs once for every entry; that entry's <em>text</em> is handed in as the run's context (what to build). The checks in the template are the same for every item.</li>
+      <li><strong>Source formats.</strong> <code class="inl">.yaml/.yml</code> → a list, or the items under a single key. <code class="inl">.md</code> → each <code class="inl">## </code> section.</li>
+      <li><strong>Halt, but you decide.</strong> If an item's checklist fails, the flow <em>pauses and asks you</em>: continue to the next item, or stop? Continuing accepts that item and proceeds; reaching the end means done.</li>
+    </ul>
+  </div>
+  <p>The template is an ordinary pipeline — the per-item checklist, written once:</p>
+  <pre><code class="loop">pipeline "work item":
+
+  stage implement:
+    goal: implement the work item described in the provided context
+    look at: src, and the last failure
+    allow edits automatically, but ask me before migrations or pushes
+    each cycle: plan, then act, then observe
+    done when "pnpm test" passes
+    when it fails: reflect on which layer broke, then plan again
+    after 6 tries: stop and warn "thrashing on this item"
+
+  stage security:
+    goal: no high or critical vulnerabilities introduced
+    each cycle: plan, then act, then observe
+    done when "semgrep --config auto --severity=high" finds nothing
+    after 4 tries: stop and warn "security needs a human"
+
+  stage review:
+    goal: lints clean and types check
+    each cycle: act, then observe
+    done when "pnpm lint &amp;&amp; pnpm typecheck" passes</code></pre>
+  <span class="cap">examples/foreach/item-template.loop</span>
+</section>
+
+<!-- 13 -->
+<section id="atoz">
+  <h2>13 · A-to-Z — discover → design → for each <span class="badge b-adv">advanced</span></h2>
+  <p>Put it together and a whole feature, end to end, is a single flow: an interactive <strong>discovery</strong>, a <strong>design</strong> a human approves, then the per-item checklist run for every story.</p>
+  <pre><code class="loop">flow "epic: authentication":
+  run "discover.loop"
+  then run "design.loop"
+  then for each story in "sprint.yaml":
+    run "story-template.loop"</code></pre>
+  <span class="cap">examples/bmad/atoz/epic.loop — run this in conversation: /loop run epic.loop</span>
+  <p>The discovery step is just a loop whose goal is to produce an artifact — here, a <code class="inl">sprint.yaml</code>. Run it in conversation: the assistant interviews you across as many turns as it takes (an hour-long session is fine — between your answers the loop is simply suspended). It finishes <strong>when its <code class="inl">done when</code> artifact check passes</strong> — not when the chat goes quiet:</p>
+  <pre><code class="loop">loop "discover":
+  goal: interview the team and capture the epic as a sprint.yaml with a stories list
+  look at: docs, and the last failure
+  allow edits automatically
+  each cycle: plan, then act, then observe
+  done when "test -s sprint.yaml" passes</code></pre>
+  <span class="cap">examples/bmad/atoz/discover.loop</span>
+  <div class="note"><b>The key insight:</b> the loop never "detects that the session ended." It re-checks a done-condition and advances the moment the <em>output</em> exists and validates. Discovery, design, and execution all use the same rule — <code class="inl">done when</code>. No new concept.</div>
+</section>
+
+<!-- 14 -->
+<section id="methods">
+  <h2>14 · Methods are libraries, not syntax <span class="badge b-adv">advanced</span></h2>
+  <p>BMAD, Shape Up, your own house process — none of these are baked into the language. A <strong>method is a preset</strong> you pull in, and the language stays a small set of method-neutral primitives. Pull one in with the config tier:</p>
+  <pre><code class="loop">use the BMAD method
+run with claude code
+schedule: nightly
+target: ./src
+notify: slack</code></pre>
+  <span class="cap">examples/project.loop — the config tier: which method, which runner, when, where, who to notify.</span>
+  <p>And the plan itself can come from elsewhere. <code class="inl">plan from</code> sources the plan from an external system (e.g. an Archon project) instead of generating it — Loop just drives Claude Code to execute it and feeds results back:</p>
+  <pre><code class="loop">loop "fix billing":
+  goal: settings save when the company name has an apostrophe
+  plan from the archon project "billing"
+  look at: billing/form.tsx, api/settings.ts, and the last failure
+  allow edits automatically, but ask me before migrations or pushes
+  each cycle: act, then observe
+  done when the test "billing.spec.ts::apostrophe" passes
+  when it fails: reflect, then plan again
+  after 6 tries: stop and warn "thrashing"</code></pre>
+  <span class="cap">examples/archon_billing.loop (needs ARCHON_URL set)</span>
+</section>
+
+<!-- 15 -->
+<section id="running">
+  <h2>15 · Running a loop <span class="badge b-inter">intermediate</span></h2>
+  <h3>In conversation (recommended)</h3>
+  <p>With the Loop skill loaded, run it inside the chat — the assistant executes the cycle itself, narrates every step, and you answer gates inline:</p>
+  <pre class="sh"><code>/loop "fix the failing checkout tax test"   # write a .loop from a request
+/loop run examples/fix_test.loop            # run it, right here in the chat</code></pre>
+  <p>This is the only mode where a long interactive discovery works, because the human is already in the loop.</p>
+  <h3>Headless CLI</h3>
+  <pre class="sh"><code>loop run   examples/ship_feature.loop      # drive Claude Code, glyph trace
+loop parse examples/ship_flow.loop         # print the parsed spec (the loop-spec IR)
+loop viz   examples/ship_flow.loop         # write a self-contained HTML schematic
+loop export examples/bmad-auth.loop        # export to an Archon workflow
+# flags: --model <alias>, --out <path>, --events (NDJSON for a UI host), --json</code></pre>
+  <h3>In VS Code</h3>
+  <ul>
+    <li>Syntax highlighting, hover docs, and tab-completion for every construct.</li>
+    <li>A <strong>▶ Run</strong> CodeLens above each definition — click to run with a live trace and native dialogs for human gates.</li>
+    <li>A soft linter that nudges (never blocks): "this loop has no way to verify it's done", "add a thrash guard".</li>
+    <li><strong>Loop: New from template</strong> — scaffold a ready-to-edit method bundle (a generic <code class="inl">for each</code> setup, or a BMAD A-to-Z one) into your workspace in one pick.</li>
+  </ul>
+</section>
+
+<!-- 16 -->
+<section id="cheatsheet">
+  <h2>16 · Cheat sheet <span class="badge b-basic">reference</span></h2>
+  <table>
+    <tr><th>Construct</th><th>Meaning</th></tr>
+    <tr><td><code>loop "name":</code></td><td>a self-correcting loop</td></tr>
+    <tr><td><code>pipeline "name":</code></td><td>a sequence of stages (an epic); fail-fast</td></tr>
+    <tr><td><code>stage "name":</code></td><td>one stage of a pipeline (a story); body is a loop</td></tr>
+    <tr><td><code>flow "name":</code></td><td>chain whole .loop files in order; text handoff</td></tr>
+    <tr><td><code>goal: …</code></td><td>the objective, in plain language</td></tr>
+    <tr><td><code>done when the test "x" passes</code></td><td>verify via a named test</td></tr>
+    <tr><td><code>done when "cmd" passes</code></td><td>verify via a shell command (exit 0)</td></tr>
+    <tr><td><code>done when "cmd" finds nothing</code></td><td>exit 0 and empty output</td></tr>
+    <tr><td><code>done when a human confirms "x"</code></td><td>a person is the check</td></tr>
+    <tr><td><code>look at: a, b, and the last failure</code></td><td>context to read before acting</td></tr>
+    <tr><td><code>allow edits automatically</code></td><td>auto-grant an action class</td></tr>
+    <tr><td><code>ask me before migrations or pushes</code></td><td>confirm classes once per run</td></tr>
+    <tr><td><code>each cycle: plan, then act, then observe</code></td><td>the repeated steps (default)</td></tr>
+    <tr><td><code>also: x, y, z</code></td><td>finishing passes after the goal is met</td></tr>
+    <tr><td><code>when it fails: reflect, then plan again</code></td><td>the back-edge</td></tr>
+    <tr><td><code>when it passes and the goal is met: stop</code></td><td>success transition</td></tr>
+    <tr><td><code>when blocked: ask a human</code></td><td>unblock transition</td></tr>
+    <tr><td><code>after N tries: stop and warn "…"</code></td><td>thrash guard (beats fail rules)</td></tr>
+    <tr><td><code>a human approves the plan first</code></td><td>plan gate</td></tr>
+    <tr><td><code>a human reviews before stopping</code></td><td>review gate</td></tr>
+    <tr><td><code>a human approves before X</code></td><td>blocking stage gate</td></tr>
+    <tr><td><code>run "f.loop" / then run "f.loop"</code></td><td>flow steps</td></tr>
+    <tr><td><code>… with the result of &lt;step&gt;</code></td><td>redirect the handoff source</td></tr>
+    <tr><td><code>for each &lt;var&gt; in "file": run "t.loop"</code></td><td>run a template per item in a plan</td></tr>
+    <tr><td><code>plan from the archon project "p"</code></td><td>source the plan externally</td></tr>
+    <tr><td><code>use the &lt;X&gt; method</code></td><td>pull in a method preset</td></tr>
+    <tr><td><code>run with / schedule: / target: / notify:</code></td><td>the config tier</td></tr>
+  </table>
+</section>
+
+<!-- 17 -->
+<section id="bestpractice">
+  <h2>17 · Best practices &amp; gotchas <span class="badge b-basic">reference</span></h2>
+  <div class="key"><span class="kt">Do</span>
+    <ul>
+      <li><strong>Always give a real <code class="inl">done when</code></strong> when a command can decide it — that's "can't fake done".</li>
+      <li><strong>Always add a thrash guard</strong> (<code class="inl">after N tries: stop and warn …</code>) to any loop that reflects on failure — otherwise it runs to the hard cap of 25.</li>
+      <li><strong>Scope <code class="inl">look at:</code></strong> to the relevant module so the agent stays inside your architecture.</li>
+      <li><strong>Gate risky classes</strong> — <code class="inl">ask me before migrations or pushes</code>; <code class="inl">a human approves before</code> deploys.</li>
+      <li><strong>Split big work into files</strong> with <code class="inl">flow</code>, and into per-item runs with <code class="inl">for each</code>; keep each file focused.</li>
+    </ul>
+  </div>
+  <div class="key"><span class="kt">Watch out</span>
+    <ul>
+      <li><strong>Handoff is text, not data.</strong> A <code class="inl">flow</code>/<code class="inl">for each</code> passes a summary string, not structured fields — by design. Cross-file state lives on disk (files), which later steps <code class="inl">look at:</code>.</li>
+      <li><strong>Transition order is fixed</strong> (blocked &gt; attempts &gt; pass &gt; fail), not the order you wrote them.</li>
+      <li><strong>A loop with no <code class="inl">done when</code></strong> finishes only through a human path — a review gate, an approved plan-first pass, or an explicit <code class="inl">when …: stop</code>.</li>
+      <li><strong>Discovery ends on its artifact check</strong>, not on the conversation going quiet — point <code class="inl">done when</code> at a validator of the file it produces.</li>
+    </ul>
+  </div>
+  <p style="margin-top:22px">That's the whole language. Five decisions, five run phases, and a handful of ways to compose them — <code class="inl">loop</code> → <code class="inl">pipeline</code> → <code class="inl">flow</code> → <code class="inl">for each</code>. Now go edit a loop.</p>
+</section>
+
+<footer>
+  Loop · loop engineering · Apache-2.0. The full reference lives in <code class="inl">AGENTS.md</code> and <code class="inl">docs/MANUAL.md</code>; the IR contract is <code class="inl">spec/loop-spec.schema.json</code>. Every example on this page is a real file under <code class="inl">examples/</code>.
+</footer>
+</main>
+</div>
+
+<script>
+// ---- minimal .loop syntax highlighter (runs on <code class="loop"> blocks) ----
+(function(){
+  var HUMAN = [
+    "a human approves the plan first","a human reviews before stopping",
+    "a human approves before","a human approves first","a human confirms","ask a human","ask me before"
+  ];
+  var KW = [
+    "with the result of","the last failure","finds nothing","each cycle","done when","look at",
+    "for each","plan from","run with","use the","the test","pipeline","observe","reflect","schedule",
+    "automatically","succeeds","notify","target","runner","passes","allow","stage","after","tries",
+    "warn","when","also","goal","flow","loop","plan","stop","then","run","act","use","in"
+  ];
+  function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+  function span(c,t){return '<span class="'+c+'">'+t+'</span>';}
+  function isW(ch){return /[A-Za-z0-9_-]/.test(ch);}
+  var TOKENS=[];
+  HUMAN.forEach(function(w){TOKENS.push({word:w.toLowerCase(),cls:"tok-human"});});
+  KW.forEach(function(w){TOKENS.push({word:w.toLowerCase(),cls:"tok-kw"});});
+  TOKENS.sort(function(a,b){return b.word.length-a.word.length;});
+  // single left-to-right tokenizer: strings/comments first, then keyword phrases, then numbers
+  function hlLine(line){
+    var out="", i=0, n=line.length;
+    while(i<n){
+      var c=line.charAt(i);
+      if(c==="#"){ out+=span("tok-com",esc(line.slice(i))); break; }
+      if(c==='"'){ var e=line.indexOf('"',i+1), end=e<0?n:e+1; out+=span("tok-str",esc(line.slice(i,end))); i=end; continue; }
+      var prev=i>0?line.charAt(i-1):" ", matched=null, cls=null;
+      if(!isW(prev)){
+        var low=line.toLowerCase();
+        for(var k=0;k<TOKENS.length;k++){
+          var w=TOKENS[k].word;
+          if(low.substr(i,w.length)===w && !isW(line.charAt(i+w.length))){ matched=line.substr(i,w.length); cls=TOKENS[k].cls; break; }
+        }
+      }
+      if(matched){ out+=span(cls,esc(matched)); i+=matched.length; continue; }
+      if(!isW(prev) && c>="0" && c<="9"){ var nm=/^[0-9]+/.exec(line.slice(i))[0]; out+=span("tok-num",nm); i+=nm.length; continue; }
+      out+=esc(c); i++;
+    }
+    return out;
+  }
+  function hl(raw){return raw.split("\n").map(hlLine).join("\n");}
+  document.querySelectorAll("pre code.loop").forEach(function(el){ el.innerHTML = hl(el.textContent); });
+
+  // ---- TOC scrollspy ----
+  var links = Array.prototype.slice.call(document.querySelectorAll("nav.toc a"));
+  var map = {};
+  links.forEach(function(a){ var id=a.getAttribute("href").slice(1); if(id) map[id]=a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        links.forEach(function(a){a.classList.remove("active");});
+        var a = map[e.target.id]; if(a) a.classList.add("active");
+      }
+    });
+  }, {rootMargin:"-15% 0px -75% 0px"});
+  document.querySelectorAll("section[id]").forEach(function(s){ obs.observe(s); });
+})();
+</script>
+</body>
+</html>
