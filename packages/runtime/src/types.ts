@@ -24,7 +24,8 @@ export type LoopEvent =
   | { type: "foreach-start"; var: string; source: string; count: number }
   | { type: "foreach-item-start"; var: string; index: number; total: number }
   | { type: "foreach-item-end"; var: string; index: number; satisfied: boolean }
-  | { type: "foreach-end"; var: string; satisfied: boolean };
+  | { type: "foreach-end"; var: string; satisfied: boolean }
+  | { type: "git"; action: "branch"|"worktree"|"commit"|"push"|"pr"; detail: string };
 
 export type CycleNode = "plan" | "act" | "observe";
 
@@ -126,6 +127,14 @@ export interface RunOptions {
   upstream?: string;
   /** Resolved file paths currently executing — for flow cycle detection. */
   flowStack?: string[];
+  /** GitIO implementation for performing branch/commit/push/PR operations. */
+  git?: import("./git.js").GitIO;
+  /** File-level git policy resolved from config.git (passed through run opts). */
+  gitPolicy?: import("@loop/parser").GitPolicy;
+  /** The active branch name after git start (set by run() for inner calls). */
+  gitBranch?: string;
+  /** True once git has been started (prevents re-initialising in nested calls). */
+  gitStarted?: boolean;
 }
 
 export interface LoopOutcome {
