@@ -4,7 +4,8 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { parse } from "@loop/parser";
-import { runDefinition, MockRunner, ScriptedHumanIO, MockArchonPlanSource } from "../dist/index.js";
+import { run, runDefinition, MockRunner, ScriptedHumanIO, MockArchonPlanSource } from "../dist/index.js";
+import { MockGitIO } from "../dist/runners/mockGit.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const examples = join(here, "..", "..", "..", "examples");
@@ -370,4 +371,42 @@ test("for each: continue past failures → flow proceeds, step satisfied", async
   assert.equal(outcome.satisfied, true, "human accepted every failure");
   assert.equal(events.filter((e) => e.type === "foreach-item-start").length, 2, "attempted all items");
   assert.ok(events.some((e) => e.type === "foreach-end" && e.satisfied === true));
+});
+
+test("git: default applies a branch + commit on done", async () => {
+  const file = parse('loop "x":\n  goal: g\n  done when "t" passes\n  each cycle: plan, then act, then observe');
+  const git = new MockGitIO("loop/x");
+  await run(file, { runner: new MockRunner(), verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: "/p", git });
+  assert.ok(git.calls.includes("start:branch"), "started a branch");
+  assert.ok(git.calls.some((c) => c.startsWith("commit:")), "committed on done");
+  assert.ok(!git.calls.some((c) => c.startsWith("push:")), "no push by default");
+});
+
+test("git: push when done pushes to the safe branch", async () => {
+  const file = parse('git:\n  work on a branch\n  push when done\nloop "x":\n  goal: g\n  done when "t" passes\n  each cycle: act, then observe');
+  const git = new MockGitIO("loop/x");
+  await run(file, { runner: new MockRunner(), verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: "/p", git });
+  assert.ok(git.calls.some((c) => c === "push:loop/x"));
+});
+
+test("git: refuses to push to main (in place)", async () => {
+  const file = parse('git:\n  work in place\n  push when done\nloop "x":\n  goal: g\n  done when "t" passes\n  each cycle: act, then observe');
+  const git = new MockGitIO("main"); // start returns the current branch "main" for in-place
+  await assert.rejects(
+    () => run(file, { runner: new MockRunner(), verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: "/p", git }),
+    /refusing to push to "main"/
+  );
+});
+
+test("git: no GitIO → engine does no git (backward compat)", async () => {
+  const def = parse('loop "x":\n  goal: g\n  done when "t" passes\n  each cycle: act, then observe').definitions[0];
+  const outcome = await runDefinition(def, { runner: new MockRunner(), verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: "/p" });
+  assert.equal(outcome.satisfied, true); // unchanged, nothing thrown
+});
+
+test("git: commit each cycle commits per cycle", async () => {
+  const file = parse('git:\n  work on a branch\n  commit each cycle\nloop "x":\n  goal: g\n  done when "t" passes\n  each cycle: act, then observe\n  after 2 tries: stop and warn "stop"');
+  const git = new MockGitIO("loop/x");
+  await run(file, { runner: new MockRunner(), verifier: new SeqVerifier([false]), human: new ScriptedHumanIO(), baseDir: "/p", git });
+  assert.ok(git.calls.filter((c) => c.startsWith("commit:")).length >= 2, "committed each cycle");
 });

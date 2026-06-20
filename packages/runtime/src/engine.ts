@@ -2,12 +2,22 @@ import { resolve, dirname, basename } from "node:path";
 import type { Loop, Pipeline, Flow, FlowStep, Definition, Transition, Action, LoopFile } from "@loop/parser";
 import type { CycleNode, LoopEvent, LoopOutcome, RunOptions, StopReason } from "./types.js";
 import { enumerateItems } from "./iterate.js";
+import { resolveGit, isProtected } from "./git.js";
 
 const DEFAULT_HARD_CAP = 25;
 
 /** Action-class mapping for policy gating: a cycle's `act` may need confirm-class grants. */
 function emit(opts: RunOptions, e: LoopEvent) {
   opts.onEvent?.(e);
+}
+
+const slug = (s: string | null | undefined) =>
+  (s ?? "loop").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "loop";
+
+async function gitCommit(opts: RunOptions, message: string): Promise<void> {
+  if (!opts.git) return;
+  await opts.git.commit({ message, dir: opts.baseDir });
+  emit(opts, { type: "git", action: "commit", detail: message });
 }
 
 /**
@@ -150,6 +160,10 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
         emit(opts, { type: "observe", passed: v.passed, output: v.output });
         emit(opts, { type: "node-exit", node: step, attempt: attempts, ok: v.passed });
       }
+    }
+
+    if (opts.git && resolveGit(opts.gitPolicy, loop.git).commit === "cycle") {
+      await gitCommit(opts, `loop: ${loop.name ?? "cycle"} — cycle ${attempts}`);
     }
 
     const goalMet = loop.doneWhen ? passed : false;
@@ -415,9 +429,35 @@ export async function runDefinition(def: Definition, opts: RunOptions): Promise<
 
 /** Run every definition in a parsed file, in order. */
 export async function run(file: LoopFile, opts: RunOptions): Promise<LoopOutcome[]> {
-  const outcomes: LoopOutcome[] = [];
-  for (const def of file.definitions) {
-    outcomes.push(await runDefinition(def, opts));
+  const outer = !opts.flowStack && !opts.gitStarted && !!opts.git;
+  if (outer) {
+    const policy = resolveGit(opts.gitPolicy, file.config?.git);
+    let o: RunOptions = { ...opts, gitPolicy: file.config?.git ?? opts.gitPolicy, gitStarted: true };
+    let branch = "";
+    if (policy.isolation !== "in-place") {
+      const firstName = file.definitions[0] && ("name" in file.definitions[0] ? (file.definitions[0] as any).name : null);
+      const name = `loop/${slug(firstName)}`;
+      const ctx = await opts.git!.start({ isolation: policy.isolation, branch: policy.branch, name, baseDir: opts.baseDir });
+      branch = ctx.branch;
+      o = { ...o, baseDir: ctx.dir, gitBranch: branch };
+      emit(o, { type: "git", action: policy.isolation === "worktree" ? "worktree" : "branch", detail: branch });
+    } else {
+      const ctx = await opts.git!.start({ isolation: "in-place", branch: policy.branch, name: "loop", baseDir: opts.baseDir });
+      branch = ctx.branch;
+      o = { ...o, baseDir: ctx.dir, gitBranch: branch };
+    }
+    if (policy.push && isProtected(branch)) {
+      throw new Error(`git: refusing to push to "${branch}" — add 'work on a branch' (never push to a protected branch)`);
+    }
+    const outcomes: LoopOutcome[] = [];
+    for (const def of file.definitions) outcomes.push(await runDefinition(def, o));
+    const allOk = outcomes.every((x) => x.satisfied);
+    if (allOk && policy.commit === "done") await gitCommit(o, `loop: ${slug(file.definitions[0] && (file.definitions[0] as any).name)} — goal met`);
+    if (allOk && policy.push) { await o.git!.push({ branch, dir: o.baseDir }); emit(o, { type: "git", action: "push", detail: branch }); }
+    if (allOk && policy.openPr) { const url = await o.git!.openPr({ title: `loop: ${branch}`, branch, dir: o.baseDir }); emit(o, { type: "git", action: "pr", detail: url ?? branch }); }
+    return outcomes;
   }
+  const outcomes: LoopOutcome[] = [];
+  for (const def of file.definitions) outcomes.push(await runDefinition(def, opts));
   return outcomes;
 }
