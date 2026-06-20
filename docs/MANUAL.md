@@ -12,6 +12,7 @@ a prompt.
 - [3. Quickstart](#3-quickstart)
 - [4. The CLI](#4-the-cli)
 - [5. Language reference](#5-language-reference)
+  - [Git strategy](#git-strategy)
 - [6. How a run works](#6-how-a-run-works)
 - [7. VSCode extension](#7-vscode-extension)
 - [8. Authoring with an AI agent](#8-authoring-with-an-ai-agent)
@@ -253,6 +254,65 @@ schedule: nightly        # manual · nightly · on push · cron (parsed; run is 
 target: ./src            # working directory the loop operates in
 notify: slack            # notification destination (reserved)
 ```
+
+### Git strategy
+
+A `git:` block sets the version-control strategy for the run. It can appear at the top of
+the file (config tier, applying to all loops) or inside a single `loop` body (refining
+the commit cadence for that loop only).
+
+**Built-in default (no `git:` block):** Loop works on a branch and commits when the goal
+is met. No push happens. This default applies whenever no git block is present.
+
+**Line forms:**
+
+| Line | Meaning |
+|---|---|
+| `work in place` | Edit the current branch as-is (no new branch). |
+| `work on a branch` | Create / switch to a feature branch (the default). |
+| `work on a branch "name"` | Use a specific branch name. |
+| `work in a worktree` | Run in an isolated git worktree. |
+| `work in a worktree "name"` | Named worktree. |
+| `commit when the goal is met` | One commit when the loop succeeds (the default). |
+| `commit each cycle` | Commit after every plan→act→observe cycle. |
+| `commit each story` | Commit after each stage in a pipeline. |
+| `commit never` / `do not commit` | No automatic commits. |
+| `push when done` | Push the branch when the loop finishes. |
+| `do not push` | No push (the default). |
+| `open a pull request` | Open a PR after pushing (requires `push when done`). |
+
+**Cascade — settings resolve in three layers:**
+
+1. Built-in default — branch + commit-when-done, no push.
+2. File-level `git:` block — applies to all loops in the file.
+3. Per-loop `git:` block — placed inside the loop body; refines the commit cadence for that loop only.
+
+A `use the <method>` preset may carry a `git:` block at file level; the file's own block overrides it.
+
+**Always-on safety — unconditional, not configurable:**
+
+- **Never push to `main` or `master`.** If the current branch is protected and `push when done` is set, the error surfaces *before the loop runs*.
+- **`work in place` + `push when done` on a protected branch** is likewise rejected up front.
+
+**Example:**
+
+```loop
+git:
+  work on a branch
+  commit when the goal is met
+  push when done
+  open a pull request
+
+loop "add a healthcheck endpoint":
+  goal: GET /healthz returns 200 with a JSON status
+  done when "pnpm test health" passes
+  look at: the http server and the routes module, and the last failure
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 6 tries: stop and warn "healthcheck stuck"
+```
+
+See [`examples/git_policy.loop`](../examples/git_policy.loop) for the full working file.
 
 ## 6. How a run works
 

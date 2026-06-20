@@ -1,0 +1,15 @@
+# Safe-by-default git: even with no git block, Loop works on a branch and commits
+# when the goal is met (never pushes to main). This file opts into push + a PR.
+git:
+  work on a branch
+  commit when the goal is met
+  push when done
+  open a pull request
+
+loop "add a healthcheck endpoint":
+  goal: GET /healthz returns 200 with a JSON status
+  done when "pnpm test health" passes
+  look at: the http server and the routes module, and the last failure
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 6 tries: stop and warn "healthcheck stuck"

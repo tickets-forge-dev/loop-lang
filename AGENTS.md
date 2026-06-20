@@ -157,6 +157,68 @@ pipeline "epic: checkout v2":
     each cycle: act, then observe
 ```
 
+## Git strategy
+
+A `git:` block sets the version-control strategy for the whole file (config tier, before
+any definition) or for a single loop (inside the loop body).
+
+**Built-in default (no `git:` block):** work on a branch, commit when the goal is met,
+no push. This applies whenever no git block is present at any level.
+
+### Line forms
+
+```
+work in place                    # edit the current branch as-is
+work on a branch                 # create / switch to a feature branch (default)
+work on a branch "my-feature"    # explicit branch name
+work in a worktree               # isolated git worktree
+work in a worktree "my-worktree" # named worktree
+
+commit when the goal is met      # one commit on success (default)
+commit each cycle                # commit after every cycle
+commit each story                # commit after each stage
+commit never / do not commit     # no automatic commits
+
+push when done                   # push the branch on completion
+do not push                      # no push (default)
+
+open a pull request              # open a PR after pushing
+```
+
+### Cascade (lowest wins)
+
+1. Built-in default — branch + commit-when-done, no push.
+2. File-level `git:` block — applies to all loops in the file.
+3. Per-loop `git:` block — refines commit cadence for that loop only.
+
+A `use the <method>` preset may carry a `git:` block at file level; the file's own block
+overrides it.
+
+### Always-on safety
+
+- **Never push to `main` or `master`.** This is unconditional — no `git:` block can
+  override it. A `push when done` directive with the current branch being protected is an
+  error that surfaces before the loop runs.
+- **`work in place` + `push when done` on a protected branch** is also an up-front error.
+
+### Example
+
+```loop
+git:
+  work on a branch
+  commit when the goal is met
+  push when done
+  open a pull request
+
+loop "add a healthcheck endpoint":
+  goal: GET /healthz returns 200 with a JSON status
+  done when "pnpm test health" passes
+  look at: the http server and the routes module, and the last failure
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 6 tries: stop and warn "healthcheck stuck"
+```
+
 ## Running what you wrote
 
 - `loop run file.loop` — execute it on Claude Code (plan/act/observe, reflect on failure,

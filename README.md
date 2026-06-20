@@ -119,9 +119,25 @@ See [`examples/foreach/`](examples/foreach/) for a full working bundle.
 
 ## The vocabulary (~15 words — learn it once)
 
-`pipeline` · `stage` · `loop` · `flow` · `for each … in …` · `run … then …` · `each cycle` · `goal` · `done when` · `look at` · `allow…/ask me before…` · `also` · `when…` · `reflect` · `a human…` · `stop` · `use` · `schedule`
+`pipeline` · `stage` · `loop` · `flow` · `for each … in …` · `run … then …` · `each cycle` · `goal` · `done when` · `look at` · `allow…/ask me before…` · `also` · `when…` · `reflect` · `a human…` · `stop` · `use` · `schedule` · `git`
 
 Power comes from **composition**, not keyword count.
+
+## Git strategy (safe by default)
+
+Without any `git:` block, Loop works on a branch and commits when the goal is met — it
+never pushes to `main` or `master`. A `git:` block at the top of the file lets you opt
+into push and a pull request:
+
+```loop
+git:
+  work on a branch
+  commit when the goal is met
+  push when done
+  open a pull request
+```
+
+See [`examples/git_policy.loop`](examples/git_policy.loop) and the [manual](docs/MANUAL.md#git-strategy) for the full set of line forms and cascade rules.
 
 ## Authoring: by hand or by agent
 

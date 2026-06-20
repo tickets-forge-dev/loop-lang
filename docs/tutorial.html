@@ -126,9 +126,10 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
     <li><a href="#atoz">13 · A-to-Z</a></li>
     <li class="grp">Going further</li>
     <li><a href="#methods">14 · Methods are libraries</a></li>
-    <li><a href="#running">15 · Running a loop</a></li>
-    <li><a href="#cheatsheet">16 · Cheat sheet</a></li>
-    <li><a href="#bestpractice">17 · Best practices</a></li>
+    <li><a href="#git">15 · Git strategy</a></li>
+    <li><a href="#running">16 · Running a loop</a></li>
+    <li><a href="#cheatsheet">17 · Cheat sheet</a></li>
+    <li><a href="#bestpractice">18 · Best practices</a></li>
   </ol>
 </nav>
 
@@ -573,8 +574,55 @@ notify: slack</code></pre>
 </section>
 
 <!-- 15 -->
+<section id="git">
+  <h2>15 · Git strategy <span class="badge b-inter">intermediate</span></h2>
+  <p>By default — with no <code class="inl">git:</code> block at all — Loop works on a branch and commits when the goal is met. It <strong>never pushes to <code class="inl">main</code> or <code class="inl">master</code></strong>. This safe default applies automatically; you don't have to opt in.</p>
+  <p>A <code class="inl">git:</code> block lets you refine the strategy. Place it at the top of the file (before any loop definition) to apply to all loops in the file, or inside a single <code class="inl">loop</code> body to refine commit cadence for just that loop:</p>
+  <pre><code class="loop">git:
+  work on a branch
+  commit when the goal is met
+  push when done
+  open a pull request
+
+loop "add a healthcheck endpoint":
+  goal: GET /healthz returns 200 with a JSON status
+  done when "pnpm test health" passes
+  look at: the http server and the routes module, and the last failure
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 6 tries: stop and warn "healthcheck stuck"</code></pre>
+  <span class="cap">examples/git_policy.loop — opts into push + a PR; the built-in default (branch + commit, no push) would apply without the git: block.</span>
+
+  <h3>Line forms</h3>
+  <table>
+    <tr><th>Line</th><th>Meaning</th></tr>
+    <tr><td><code>work in place</code></td><td>Edit the current branch as-is.</td></tr>
+    <tr><td><code>work on a branch</code></td><td>Create / switch to a feature branch (the default).</td></tr>
+    <tr><td><code>work on a branch "name"</code></td><td>Use a specific branch name.</td></tr>
+    <tr><td><code>work in a worktree</code></td><td>Run in an isolated git worktree.</td></tr>
+    <tr><td><code>commit when the goal is met</code></td><td>One commit on success (the default).</td></tr>
+    <tr><td><code>commit each cycle</code></td><td>Commit after every cycle.</td></tr>
+    <tr><td><code>commit each story</code></td><td>Commit after each stage in a pipeline.</td></tr>
+    <tr><td><code>do not commit</code></td><td>No automatic commits.</td></tr>
+    <tr><td><code>push when done</code></td><td>Push the branch on completion.</td></tr>
+    <tr><td><code>do not push</code></td><td>No push (the default).</td></tr>
+    <tr><td><code>open a pull request</code></td><td>Open a PR after pushing.</td></tr>
+  </table>
+
+  <h3>Cascade</h3>
+  <p>Settings resolve in three layers — each refines the one above:</p>
+  <ol>
+    <li><strong>Built-in default</strong> — branch + commit-when-done, no push.</li>
+    <li><strong>File-level <code class="inl">git:</code> block</strong> — applies to all loops in the file.</li>
+    <li><strong>Per-loop <code class="inl">git:</code> block</strong> — refines commit cadence for that loop only.</li>
+  </ol>
+
+  <div class="note"><b>Always-on safety — not configurable:</b> pushing to <code class="inl">main</code> or <code class="inl">master</code> is always refused, and <code class="inl">work in place</code> + <code class="inl">push when done</code> on a protected branch is an up-front error — neither can be overridden by a <code class="inl">git:</code> block.</div>
+</section>
+
+<!-- 16 -->
 <section id="running">
-  <h2>15 · Running a loop <span class="badge b-inter">intermediate</span></h2>
+  <h2>16 · Running a loop <span class="badge b-inter">intermediate</span></h2>
   <h3>In conversation (recommended)</h3>
   <p>With the Loop skill loaded, run it inside the chat — the assistant executes the cycle itself, narrates every step, and you answer gates inline:</p>
   <pre class="sh"><code>/loop "fix the failing checkout tax test"   # write a .loop from a request
@@ -595,9 +643,9 @@ loop export examples/bmad-auth.loop        # export to an Archon workflow
   </ul>
 </section>
 
-<!-- 16 -->
+<!-- 17 -->
 <section id="cheatsheet">
-  <h2>16 · Cheat sheet <span class="badge b-basic">reference</span></h2>
+  <h2>17 · Cheat sheet <span class="badge b-basic">reference</span></h2>
   <table>
     <tr><th>Construct</th><th>Meaning</th></tr>
     <tr><td><code>loop "name":</code></td><td>a self-correcting loop</td></tr>
@@ -630,9 +678,9 @@ loop export examples/bmad-auth.loop        # export to an Archon workflow
   </table>
 </section>
 
-<!-- 17 -->
+<!-- 18 -->
 <section id="bestpractice">
-  <h2>17 · Best practices &amp; gotchas <span class="badge b-basic">reference</span></h2>
+  <h2>18 · Best practices &amp; gotchas <span class="badge b-basic">reference</span></h2>
   <div class="key"><span class="kt">Do</span>
     <ul>
       <li><strong>Always give a real <code class="inl">done when</code></strong> when a command can decide it — that's "can't fake done".</li>
@@ -668,9 +716,12 @@ loop export examples/bmad-auth.loop        # export to an Archon workflow
   ];
   var KW = [
     "with the result of","the last failure","finds nothing","each cycle","done when","look at",
-    "for each","plan from","run with","use the","the test","pipeline","observe","reflect","schedule",
+    "for each","plan from","run with","use the","the test","pull request","open a pull request",
+    "work on a branch","work in a worktree","work in place","push when done","do not push",
+    "do not commit","commit when","commit each","commit never",
+    "pipeline","worktree","observe","reflect","schedule","branch","commit","push","open",
     "automatically","succeeds","notify","target","runner","passes","allow","stage","after","tries",
-    "warn","when","also","goal","flow","loop","plan","stop","then","run","act","use","in"
+    "warn","when","also","goal","flow","loop","plan","stop","then","git","run","act","use","in","work"
   ];
   function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
   function span(c,t){return '<span class="'+c+'">'+t+'</span>';}

@@ -140,6 +140,58 @@ same checklist. (Name things to taste — a BMAD setup might use `story`/`sprint
 
 ---
 
+## Git strategy
+
+A `git:` block sets the version-control strategy for the whole file (config tier) or for
+a single loop. When there is no `git:` block at all the built-in default applies:
+**work on a branch, commit when the goal is met, no push**.
+
+### Line forms
+
+```
+work in place                    # edit the current branch as-is
+work on a branch                 # create / switch to a feature branch (default)
+work on a branch "my-feature"    # name the branch explicitly
+work in a worktree               # isolated git worktree
+work in a worktree "my-worktree" # named worktree
+
+commit when the goal is met      # one commit when done (default)
+commit each cycle                # commit after every plan→act→observe cycle
+commit each story                # commit after each stage in a pipeline
+commit never / do not commit     # no automatic commits
+
+push when done                   # push the branch when the loop finishes
+do not push                      # no push (default)
+
+open a pull request              # open a PR after pushing (requires push when done)
+```
+
+### Cascade
+
+Settings resolve in three layers, each refining the one above:
+
+1. **Built-in default** — branch + commit-when-done, no push.
+2. **File-level `git:` block** — placed at the top of the `.loop` file, before any loop definition; applies to every loop in the file.
+3. **Per-loop `git:` block** — placed inside a single `loop` body; refines the commit cadence for that loop only.
+
+A `use the <method>` preset may also carry a `git:` block; it applies at the file level and is then overridden by the file's own `git:` block if present.
+
+### Always-on safety
+
+Two protections are unconditional and cannot be overridden by any `git:` block:
+
+- **Never push to `main` or `master`.** If the current branch is `main` or `master` (or a branch whose name matches the protected set), any `push when done` directive is an error that surfaces *before the loop runs*, not after.
+- **`work in place` + `push when done` on a protected branch** is also rejected up front.
+
+### In-chat runner note
+
+When you run a loop *inside this conversation* (the `/loop` skill), you are the git
+operator — you execute plan/act/observe yourself. Before acting, check the `git:` block
+and honor the policy: if `push when done` is set and the current branch is `main` or
+`master`, refuse with a clear message rather than pushing.
+
+---
+
 ## Reference
 
 The full language reference is in `AGENTS.md` and `docs/MANUAL.md` of the loop-lang repo;
