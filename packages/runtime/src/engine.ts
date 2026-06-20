@@ -270,6 +270,9 @@ async function executePipeline(pipeline: Pipeline, opts: RunOptions): Promise<Lo
       emit(opts, { type: "pipeline-end", name: pipeline.name, satisfied: false });
       return { satisfied: false, reason: outcome.reason, attempts: lastAttempts };
     }
+    if (opts.git && resolveGit(opts.gitPolicy).commit === "story") {
+      await gitCommit(opts, `loop: story "${stage.name}" satisfied`);
+    }
   }
   emit(opts, { type: "pipeline-end", name: pipeline.name, satisfied: true });
   return { satisfied: true, reason: "done", attempts: lastAttempts };
@@ -379,6 +382,9 @@ async function executeFlow(flow: Flow, opts: RunOptions): Promise<LoopOutcome> {
     if (!satisfied) {
       emit(opts, { type: "flow-end", name: flow.name, satisfied: false });
       return { satisfied: false, reason: "blocked", attempts: 0, summary };
+    }
+    if (opts.git && resolveGit(opts.gitPolicy).commit === "story") {
+      await gitCommit(opts, `loop: story "${step.name}" satisfied`);
     }
   }
 
