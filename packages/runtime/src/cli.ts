@@ -10,6 +10,7 @@ import { CliHumanIO } from "./human.js";
 import { ClaudeCodeRunner } from "./runners/claudeCode.js";
 import { HttpArchonPlanSource } from "./runners/archon.js";
 import { IpcHumanIO } from "./ipc.js";
+import { ShellGitIO } from "./runners/shellGit.js";
 import type { LoopEvent } from "./types.js";
 
 const GLYPH: Partial<Record<LoopEvent["type"], string>> = {
@@ -71,6 +72,8 @@ function render(e: LoopEvent): string {
       return `  • ${e.var} #${e.index + 1} → ${e.satisfied ? "satisfied" : "FAILED"}`;
     case "foreach-end":
       return `→ for each ${e.var} → ${e.satisfied ? "satisfied" : "FAILED"}`;
+    case "git":
+      return `  ⎇ git ${e.action}: ${e.detail}`;
     default:
       return "";
   }
@@ -147,6 +150,8 @@ async function main() {
       })
     : undefined;
 
+  const git = new ShellGitIO();
+
   // `--events`: machine-readable NDJSON protocol for a UI host (e.g. the VSCode
   // extension) — streams Claude's live activity and answers human gates over stdin.
   if (rest.includes("--events")) {
@@ -166,6 +171,7 @@ async function main() {
       verifier: new ShellVerifier(),
       human: ipc,
       archon,
+      git,
       baseDir: target,
       loadFile,
       readText,
@@ -183,6 +189,7 @@ async function main() {
     verifier: new ShellVerifier(),
     human: new CliHumanIO(),
     archon,
+    git,
     baseDir: target,
     loadFile,
     readText,
