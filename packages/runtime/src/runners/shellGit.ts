@@ -74,14 +74,16 @@ export class ShellGitIO implements GitIO {
   }
 
   async commit(i: { message: string; dir: string }): Promise<void> {
-    await sh("git", ["add", "-A"], i.dir);
-    const { out } = await sh(
+    const { code: addCode, out: addOut } = await sh("git", ["add", "-A"], i.dir);
+    if (addCode !== 0) throw new Error("git add failed: " + addOut);
+    const { code: commitCode, out: commitOut } = await sh(
       "git",
       ["commit", "-m", i.message, "--no-verify"],
       i.dir
     );
     // "nothing to commit" is a normal no-op — don't throw.
-    if (out.includes("nothing to commit")) return;
+    if (commitOut.includes("nothing to commit")) return;
+    if (commitCode !== 0) throw new Error("git commit failed: " + commitOut);
   }
 
   async push(i: { branch: string; dir: string }): Promise<void> {

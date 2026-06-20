@@ -410,3 +410,18 @@ test("git: commit each cycle commits per cycle", async () => {
   await run(file, { runner: new MockRunner(), verifier: new SeqVerifier([false]), human: new ScriptedHumanIO(), baseDir: "/p", git });
   assert.ok(git.calls.filter((c) => c.startsWith("commit:")).length >= 2, "committed each cycle");
 });
+
+test("git: runs setup even when flowStack is seeded (CLI calling convention)", async () => {
+  const file = parse('loop "x":\n  goal: g\n  done when "t" passes\n  each cycle: plan, then act, then observe');
+  const git = new MockGitIO("loop/x");
+  await run(file, {
+    runner: new MockRunner(),
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO(),
+    baseDir: "/p",
+    git,
+    flowStack: ["/p/x.loop"],
+  });
+  assert.ok(git.calls.includes("start:branch"), "git setup fired even with a seeded flowStack");
+  assert.ok(git.calls.some((c) => c.startsWith("commit:")), "committed on done");
+});

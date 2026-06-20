@@ -435,7 +435,7 @@ export async function runDefinition(def: Definition, opts: RunOptions): Promise<
 
 /** Run every definition in a parsed file, in order. */
 export async function run(file: LoopFile, opts: RunOptions): Promise<LoopOutcome[]> {
-  const outer = !opts.flowStack && !opts.gitStarted && !!opts.git;
+  const outer = !opts.gitStarted && !!opts.git;
   if (outer) {
     const policy = resolveGit(opts.gitPolicy, file.config?.git);
     let o: RunOptions = { ...opts, gitPolicy: file.config?.git ?? opts.gitPolicy, gitStarted: true };
