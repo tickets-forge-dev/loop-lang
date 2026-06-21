@@ -182,3 +182,10 @@ test("models: observe tier is ignored (no observe model)", () => {
   const f = parse(`loop "x":\n  goal: g\n  done when "true" passes\n  models: observe fast, act strong\n`);
   assert.deepEqual(f.definitions[0].models, { phases: { act: "strong" } });
 });
+
+test("models: per-phase overrides all regardless of order", () => {
+  const a = parse(`loop "x":\n  goal: g\n  done when "true" passes\n  models: act fast, all strong\n`);
+  assert.deepEqual(a.definitions[0].models, { phases: { plan: "strong", act: "fast", reflect: "strong", also: "strong" } });
+  const b = parse(`loop "y":\n  goal: g\n  done when "true" passes\n  models: all strong, act fast\n`);
+  assert.deepEqual(b.definitions[0].models, { phases: { plan: "strong", act: "fast", reflect: "strong", also: "strong" } });
+});

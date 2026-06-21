@@ -222,6 +222,9 @@ const MODEL_PHASES = ["plan", "act", "reflect", "also"] as const;
 
 export function parseModelsLine(text: string, lineNo: number): ModelPolicy {
   const policy: ModelPolicy = {};
+  let allTier: "fast" | "strong" | undefined;
+  const explicitPhases = new Set<string>();
+
   for (const raw of text.split(",")) {
     const clause = raw.trim();
     if (!clause) continue;
@@ -234,7 +237,7 @@ export function parseModelsLine(text: string, lineNo: number): ModelPolicy {
     if (head === "all") {
       const tier = tierAt(1);
       if (parts.length !== 2 || !tier) throw new ParseError(`models: "all" needs a tier (fast|strong): "${clause}"`, lineNo);
-      policy.phases = { plan: tier, act: tier, reflect: tier, also: tier };
+      allTier = tier;
     } else if (head === "fast" || head === "strong") {
       if (parts.length !== 2) throw new ParseError(`models: tier "${head}" needs one model: "${clause}"`, lineNo);
       (policy.tiers ??= {})[head] = parts[1];
@@ -242,12 +245,24 @@ export function parseModelsLine(text: string, lineNo: number): ModelPolicy {
       const tier = tierAt(1);
       if (parts.length !== 2 || !tier) throw new ParseError(`models: phase "${head}" needs a tier (fast|strong): "${clause}"`, lineNo);
       (policy.phases ??= {})[head as (typeof MODEL_PHASES)[number]] = tier;
+      explicitPhases.add(head);
     } else if (head === "observe") {
       continue; // observe runs a shell command — no model. ignored.
     } else {
       throw new ParseError(`models: unrecognized clause "${clause}"`, lineNo);
     }
   }
+
+  // Apply allTier as a base: only fill phases not set by an explicit per-phase clause.
+  if (allTier !== undefined) {
+    policy.phases ??= {};
+    for (const phase of MODEL_PHASES) {
+      if (!explicitPhases.has(phase)) {
+        policy.phases[phase] = allTier;
+      }
+    }
+  }
+
   return policy;
 }
 
