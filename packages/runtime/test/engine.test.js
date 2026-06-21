@@ -425,3 +425,33 @@ test("git: runs setup even when flowStack is seeded (CLI calling convention)", a
   assert.ok(git.calls.includes("start:branch"), "git setup fired even with a seeded flowStack");
   assert.ok(git.calls.some((c) => c.startsWith("commit:")), "committed on done");
 });
+
+test("models: each node runs on its resolved tier model", async () => {
+  const f = parse(`models: fast haiku, strong opus\n\nloop "x":\n  goal: g\n  done when "true" passes\n  when it fails: reflect, then plan again\n`);
+  const runner = new MockRunner();
+  await runDefinition(f.definitions[0], {
+    runner,
+    verifier: new SeqVerifier([false, true]), // one fail (→reflect), then pass
+    human: new ScriptedHumanIO(),
+    baseDir: process.cwd(),
+    modelPolicy: f.config.models,
+  });
+  assert.equal(runner.planCalls[0].model, "haiku");
+  assert.equal(runner.actCalls[0].model, "opus");
+  assert.equal(runner.reflectCalls[0].model, "haiku");
+});
+
+test("models: --model kill switch overrides the policy", async () => {
+  const f = parse(`models: fast haiku, strong opus\n\nloop "x":\n  goal: g\n  done when "true" passes\n`);
+  const runner = new MockRunner();
+  await runDefinition(f.definitions[0], {
+    runner,
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO(),
+    baseDir: process.cwd(),
+    modelPolicy: f.config.models,
+    cliModel: "fable",
+  });
+  assert.equal(runner.planCalls[0].model, "fable");
+  assert.equal(runner.actCalls[0].model, "fable");
+});

@@ -25,7 +25,8 @@ export type LoopEvent =
   | { type: "foreach-item-start"; var: string; index: number; total: number }
   | { type: "foreach-item-end"; var: string; index: number; satisfied: boolean }
   | { type: "foreach-end"; var: string; satisfied: boolean }
-  | { type: "git"; action: "branch"|"worktree"|"commit"|"push"|"pr"; detail: string };
+  | { type: "git"; action: "branch"|"worktree"|"commit"|"push"|"pr"; detail: string }
+  | { type: "model"; node: "plan" | "act" | "reflect" | "also"; tier: "fast" | "strong"; model?: string };
 
 export type CycleNode = "plan" | "act" | "observe";
 
@@ -141,6 +142,10 @@ export interface RunOptions {
   gitBranch?: string;
   /** True once git has been started (prevents re-initialising in nested calls). */
   gitStarted?: boolean;
+  /** File-level model policy resolved from config.models. */
+  modelPolicy?: import("@loop/parser").ModelPolicy;
+  /** CLI/extension --model — kill switch that forces all phases to one model. */
+  cliModel?: string;
 }
 
 export interface LoopOutcome {

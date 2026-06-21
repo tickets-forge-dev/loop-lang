@@ -3,6 +3,7 @@ import type { Loop, Pipeline, Flow, FlowStep, Definition, Transition, Action, Lo
 import type { CycleNode, LoopEvent, LoopOutcome, RunOptions, StopReason } from "./types.js";
 import { enumerateItems } from "./iterate.js";
 import { resolveGit, isProtected } from "./git.js";
+import { resolveModels, modelForPhase } from "./models.js";
 
 const DEFAULT_HARD_CAP = 25;
 
@@ -54,6 +55,8 @@ function pickTransition(
 async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
   const hardCap = opts.hardCap ?? DEFAULT_HARD_CAP;
   emit(opts, { type: "loop-start", name: loop.name });
+  const eff = resolveModels(opts.modelPolicy, loop.models);
+  const pick = (phase: "plan" | "act" | "reflect" | "also") => modelForPhase(eff, phase, opts.cliModel);
 
   const files = loop.context?.files ?? [];
   const includeLastFailure = loop.context?.includeLastFailure ?? false;
@@ -108,6 +111,7 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
             baseDir: opts.baseDir,
           });
         } else {
+          emit(opts, { type: "model", node: "plan", tier: eff.phases.plan, model: pick("plan") });
           lastPlan = await opts.runner.plan({
             goal: loop.goal,
             files,
@@ -115,6 +119,7 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
             reflection,
             upstream: opts.upstream,
             baseDir: opts.baseDir,
+            model: pick("plan"),
           });
         }
         reflection = null; // consumed by this plan
@@ -142,11 +147,13 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
           }
         }
         const allowedClasses = [...autoClasses, ...grantedConfirm];
+        emit(opts, { type: "model", node: "act", tier: eff.phases.act, model: pick("act") });
         const res = await opts.runner.act({
           goal: loop.goal,
           plan: lastPlan,
           allowedClasses,
           baseDir: opts.baseDir,
+          model: pick("act"),
         });
         if (res.blocked) blocked = true;
         emit(opts, { type: "node-exit", node: step, attempt: attempts, ok: !res.blocked, detail: res.summary });
@@ -223,11 +230,14 @@ async function applyActions(
         return { satisfied, reason, attempts: -1, summary: ctx.output };
       }
       case "reflect": {
+        const rEff = resolveModels(opts.modelPolicy, loop.models);
+        emit(opts, { type: "model", node: "reflect", tier: rEff.phases.reflect, model: modelForPhase(rEff, "reflect", opts.cliModel) });
         const text = await opts.runner.reflect({
           goal: loop.goal,
           focus: a.focus,
           output: ctx.output,
           baseDir: opts.baseDir,
+          model: modelForPhase(rEff, "reflect", opts.cliModel),
         });
         emit(opts, { type: "reflect", focus: a.focus, text });
         ctx.setReflection(text);
@@ -396,13 +406,16 @@ async function executeFlow(flow: Flow, opts: RunOptions): Promise<LoopOutcome> {
 async function runExtras(loop: Loop, opts: RunOptions): Promise<void> {
   if (!loop.also?.length) return;
   const allowedClasses = loop.policy?.auto ?? [];
+  const eff = resolveModels(opts.modelPolicy, loop.models);
   for (const action of loop.also) {
     try {
+      emit(opts, { type: "model", node: "also", tier: eff.phases.also, model: modelForPhase(eff, "also", opts.cliModel) });
       const res = await opts.runner.act({
         goal: `${loop.goal} — finishing pass: ${action}`,
         plan: action,
         allowedClasses,
         baseDir: opts.baseDir,
+        model: modelForPhase(eff, "also", opts.cliModel),
       });
       emit(opts, { type: "also", action, ok: !res.blocked, detail: res.summary });
     } catch (err) {

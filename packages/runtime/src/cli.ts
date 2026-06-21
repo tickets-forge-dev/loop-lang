@@ -167,7 +167,7 @@ async function main() {
       }
     });
     const outcomes = await run(file, {
-      runner: new ClaudeCodeRunner({ model, onActivity: (node, text) => emit({ kind: "agent", node, text }) }),
+      runner: new ClaudeCodeRunner({ onActivity: (node, text) => emit({ kind: "agent", node, text }) }),
       verifier: new ShellVerifier(),
       human: ipc,
       archon,
@@ -176,6 +176,8 @@ async function main() {
       loadFile,
       readText,
       flowStack: [path],
+      modelPolicy: file.config?.models,
+      cliModel: model,
       onEvent: (e) => emit({ kind: "event", event: e }),
     });
     const ok = outcomes.every((o) => o.satisfied);
@@ -185,7 +187,7 @@ async function main() {
   }
 
   const outcomes = await run(file, {
-    runner: new ClaudeCodeRunner({ model }),
+    runner: new ClaudeCodeRunner({}),
     verifier: new ShellVerifier(),
     human: new CliHumanIO(),
     archon,
@@ -194,6 +196,8 @@ async function main() {
     loadFile,
     readText,
     flowStack: [path],
+    modelPolicy: file.config?.models,
+    cliModel: model,
     onEvent: (e) => {
       const line = render(e);
       if (line) console.log(line);
