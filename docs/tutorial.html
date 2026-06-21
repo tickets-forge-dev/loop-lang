@@ -182,7 +182,8 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
   <div class="brand"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="Loop"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span>Loop</div>
   <div class="tag">the tutorial · basics → advanced</div>
   <a href="workshop.html" style="display:block;margin:6px 0 6px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--fwd) 40%,var(--line));border-radius:8px;color:var(--fwd);font-weight:700;font-size:12px;text-align:center;">🛠️ Workshop — learn by doing →</a>
-  <a href="game.html" style="display:block;margin:0 0 14px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--gate) 40%,var(--line));border-radius:8px;color:var(--gate);font-weight:700;font-size:12px;text-align:center;">🎮 Loop Lab — learn by playing →</a>
+  <a href="game.html" style="display:block;margin:0 0 6px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--gate) 40%,var(--line));border-radius:8px;color:var(--gate);font-weight:700;font-size:12px;text-align:center;">🎮 Loop Lab — learn by playing →</a>
+  <a href="keywords/index.html" style="display:block;margin:0 0 14px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--blue) 40%,var(--line));border-radius:8px;color:var(--blue);font-weight:700;font-size:12px;text-align:center;">📖 Keywords — the reference →</a>
   <ol id="tocList">
     <li class="grp">Why Loop</li>
     <li><a href="#what">1 · What is a loop</a></li>
@@ -214,7 +215,7 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
     <li><a href="#running">16 · Running a loop</a></li>
     <li><a href="#skills">· Skills (Claude Code)</a></li>
     <li><a href="#memory">· Memory (AGENTS.md)</a></li>
-    <li><a href="#cheatsheet">17 · Cheat sheet</a></li>
+    <li><a href="keywords/index.html">📖 Keywords reference →</a></li>
     <li><a href="#bestpractice">18 · Best practices</a></li>
   </ol>
 </nav>
@@ -1209,55 +1210,10 @@ human-gated workflow, author a .loop file using the grammar below, then run it.
 </section>
 
 <!-- 17 -->
-<section id="cheatsheet">
-  <h2>17 · Cheat sheet <span class="badge b-basic">reference</span></h2>
-  <table>
-    <tr><th>Construct</th><th>Meaning</th></tr>
-    <tr><td><code>loop "name":</code></td><td>a self-correcting loop</td></tr>
-    <tr><td><code>pipeline "name":</code></td><td>a sequence of stages (an epic); fail-fast</td></tr>
-    <tr><td><code>stage "name":</code></td><td>one stage of a pipeline (a story); body is a loop</td></tr>
-    <tr><td><code>flow "name":</code></td><td>chain whole .loop files in order; text handoff</td></tr>
-    <tr><td><code>goal: …</code></td><td>the objective, in plain language</td></tr>
-    <tr><td><code>done when the test "x" passes</code></td><td>verify via a named test</td></tr>
-    <tr><td><code>done when "cmd" passes</code></td><td>verify via a shell command (exit 0)</td></tr>
-    <tr><td><code>done when "cmd" finds nothing</code></td><td>exit 0 and empty output</td></tr>
-    <tr><td><code>done when a human confirms "x"</code></td><td>a person is the check</td></tr>
-    <tr><td><code>look at: a, b, and the last failure</code></td><td>context to read before acting</td></tr>
-    <tr><td><code>allow edits automatically</code></td><td>auto-grant an action class</td></tr>
-    <tr><td><code>ask me before migrations or pushes</code></td><td>confirm classes once per run</td></tr>
-    <tr><td><code>each cycle: plan, then act, then observe</code></td><td>the repeated steps (default)</td></tr>
-    <tr><td><code>also: x, y, z</code></td><td>finishing passes after the goal is met</td></tr>
-    <tr><td><code>when it fails: reflect, then plan again</code></td><td>the back-edge</td></tr>
-    <tr><td><code>when it passes and the goal is met: stop</code></td><td>success transition</td></tr>
-    <tr><td><code>when blocked: ask a human</code></td><td>unblock transition</td></tr>
-    <tr><td><code>after N tries: stop and warn "…"</code></td><td>thrash guard (beats fail rules)</td></tr>
-    <tr><td><code>a human approves the plan first</code></td><td>plan gate</td></tr>
-    <tr><td><code>a human reviews before stopping</code></td><td>review gate</td></tr>
-    <tr><td><code>a human approves before X</code></td><td>blocking stage gate</td></tr>
-    <tr><td><code>run "f.loop" / then run "f.loop"</code></td><td>flow steps</td></tr>
-    <tr><td><code>… with the result of &lt;step&gt;</code></td><td>redirect the handoff source</td></tr>
-    <tr><td><code>for each &lt;var&gt; in "file": run "t.loop"</code></td><td>run a template per item in a plan</td></tr>
-    <tr><td><code>plan from the archon project "p"</code></td><td>source the plan externally</td></tr>
-    <tr><td><code>use the &lt;X&gt; method</code></td><td>pull in a method preset</td></tr>
-    <tr><td><code>run with / schedule: / target: / notify:</code></td><td>the config tier</td></tr>
-    <tr><td><code>git:</code> block</td><td>git strategy (default: branch + commit, no push)</td></tr>
-    <tr><td><code>work on a branch / in a worktree / in place</code></td><td>isolation</td></tr>
-    <tr><td><code>commit when the goal is met / each cycle / each story / never</code></td><td>commit cadence</td></tr>
-    <tr><td><code>push when done / open a pull request</code></td><td>opt-in; never to main/master</td></tr>
-  </table>
-  <p>Most of that table in a single loop:</p>
-  <pre><code class="loop">git:
-  work on a branch
-  open a pull request
-loop "add API rate limiting":
-  goal: requests are rate-limited per API key
-  done when "pnpm test rate-limit" passes
-  look at: the API and its middleware, and the last failure
-  allow edits automatically, ask me before pushes
-  each cycle: plan, then act, then observe
-  also: run a security check
-  when it fails: reflect, then plan again
-  after 6 tries: stop and warn "thrashing"</code></pre>
+<section id="keywords-ref">
+  <h2>17 · Keywords reference <span class="badge b-basic">reference</span></h2>
+  <p>The old cheat sheet grew up: every construct now has its <strong>own page</strong> — syntax, what it does, examples, and a diagram where it helps.</p>
+  <p><a href="keywords/index.html" style="display:inline-block;margin-top:6px;font-weight:700;padding:9px 16px;border-radius:10px;background:linear-gradient(180deg,#4ff0d6,#16b9a0);color:#06231f;">📖 Open the Keywords reference →</a></p>
 </section>
 
 <!-- 18 -->

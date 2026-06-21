@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>run / then run — Loop keyword</title><meta name="description" content="A step inside a flow."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css"/></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <marker id="dgA" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#5b6678"/></marker>
+  <marker id="dgAr" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ffb45a"/></marker>
+  <marker id="dgAg" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#5fd99a"/></marker>
+  <marker id="dgAp" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ff86c2"/></marker>
+</defs></svg>
+<div class="topbar">
+  <div class="brand"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="Loop"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span>Loop</div>
+  <a class="nav" href="../tutorial.html">Tutorial</a>
+  <a class="nav" href="../workshop.html">Workshop</a>
+  <a class="nav here" href="index.html">Keywords</a>
+  <a class="nav lab" href="../game.html">🎮 Loop Lab</a>
+</div>
+<main>
+<div class="crumb"><a href="index.html">Keywords</a> / run / then run</div>
+<h1><code>run / then run</code></h1>
+<div class="lede">A step inside a flow. <span class="badge cat-structure">Structure</span></div>
+<h2>Syntax</h2>
+<pre class="syntax"><code><span class="tok-kw">run</span> <span class="tok-str">"&lt;file.loop&gt;"</span>
+<span class="tok-kw">then</span> <span class="tok-kw">run</span> <span class="tok-str">"&lt;file.loop&gt;"</span>
+… with the result of &lt;step&gt;</code></pre>
+<h2>What it does</h2>
+<p>A <code class="inl">flow</code> step. <code class="inl">run "x.loop"</code> runs every definition in that file; <code class="inl">then run</code> chains the next and receives the previous step's text summary; <code class="inl">with the result of &lt;step&gt;</code> pulls the handoff from a named earlier step instead of the previous one.</p>
+<h2>Example</h2>
+<pre><code><span class="tok-kw">flow</span> <span class="tok-str">"release"</span>:
+  <span class="tok-kw">run</span> <span class="tok-str">"build.loop"</span>
+  <span class="tok-kw">then</span> <span class="tok-kw">run</span> <span class="tok-str">"test.loop"</span>
+  <span class="tok-kw">then</span> <span class="tok-kw">run</span> <span class="tok-str">"notes.loop"</span> with the result of build</code></pre><span class="cap">named handoff</span>
+<h2>How it runs</h2>
+<figure class="fig"><svg viewBox="0 0 700 150" role="img" aria-label="flow chains files">
+  <line class="dg-edge" x1="196" y1="65" x2="266" y2="65" marker-end="url(#dgA)"/><line class="dg-edge" x1="452" y1="65" x2="522" y2="65" marker-end="url(#dgA)"/>
+  <text class="dg-el-r" x="231" y="56">summary →</text><text class="dg-el-r" x="487" y="56">summary →</text>
+  <g><rect class="dg-box dg-act dg-fa" x="14" y="34" width="180" height="62" rx="11"/><text class="dg-lbl" x="104" y="62">📄 build.loop</text><text class="dg-sub" x="104" y="80">all loops inside</text></g>
+  <g><rect class="dg-box dg-act dg-fa" x="270" y="34" width="180" height="62" rx="11"/><text class="dg-lbl" x="360" y="62">📄 test.loop</text><text class="dg-sub" x="360" y="80">all loops inside</text></g>
+  <g><text class="dg-el-p" x="616" y="24">👤 approves first</text><rect class="dg-box dg-gate dg-fg" x="526" y="34" width="180" height="62" rx="11"/><text class="dg-lbl" x="616" y="62">📄 deploy.loop</text><text class="dg-sub" x="616" y="80">all loops inside</text></g>
+  <text class="dg-el" x="360" y="126">runs in order · <tspan fill="#ff86c2">✗ a file that isn't satisfied halts the rest</tspan></text>
+</svg><figcaption>A <b>flow</b> chains separate <b>.loop</b> files; after each, a short <b>text summary</b> carries into the next as context.</figcaption></figure>
+<h2>Related</h2>
+<div class="related"><a href="flow.html"><code>flow</code></a><a href="for-each.html"><code>for each</code></a></div>
+<footer>Loop · the keyword reference. New here? Start with the <a href="../tutorial.html">tutorial</a> or learn by playing <a href="../game.html">Loop Lab</a>.</footer>
+</main></body></html>

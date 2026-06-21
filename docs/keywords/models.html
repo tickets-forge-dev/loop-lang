@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>models: — Loop keyword</title><meta name="description" content="Model tiering by phase."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css"/></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <marker id="dgA" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#5b6678"/></marker>
+  <marker id="dgAr" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ffb45a"/></marker>
+  <marker id="dgAg" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#5fd99a"/></marker>
+  <marker id="dgAp" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ff86c2"/></marker>
+</defs></svg>
+<div class="topbar">
+  <div class="brand"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="Loop"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span>Loop</div>
+  <a class="nav" href="../tutorial.html">Tutorial</a>
+  <a class="nav" href="../workshop.html">Workshop</a>
+  <a class="nav here" href="index.html">Keywords</a>
+  <a class="nav lab" href="../game.html">🎮 Loop Lab</a>
+</div>
+<main>
+<div class="crumb"><a href="index.html">Keywords</a> / models:</div>
+<h1><code>models:</code></h1>
+<div class="lede">Model tiering by phase. <span class="badge cat-ops">Ops & reuse</span></div>
+<h2>Syntax</h2>
+<pre class="syntax"><code><span class="tok-kw">models</span>: <span class="tok-kw">fast</span> &lt;model&gt;, <span class="tok-kw">strong</span> &lt;model&gt;</code></pre>
+<h2>What it does</h2>
+<p>Name two tiers and the engine auto-assigns <b>plan / reflect / also → fast</b> and <b>act → strong</b> (<code class="inl">observe</code> is a shell check, no model). Override a phase or use <code class="inl">all</code>; cascades file → loop → stage; <code class="inl">--model</code> overrides everything. A stack of cheap calls plus one strong <code class="inl">act</code> — and an end-of-run per-tier cost summary so the spend is measurable.</p>
+<h2>Example</h2>
+<pre><code><span class="tok-kw">models</span>: <span class="tok-kw">fast</span> haiku, <span class="tok-kw">strong</span> opus        <span class="tok-com"># file default</span>
+<span class="tok-com"># override: `models: act fast`  or  `models: all strong`</span></code></pre><span class="cap">tier the cycle</span>
+<h2>How it runs</h2>
+<figure class="fig"><svg viewBox="0 0 720 150" role="img" aria-label="model tiering two lanes">
+  <text class="dg-cap" x="360" y="14">ONE CYCLE — SPLIT ACROSS TWO MODEL TIERS</text>
+  <text class="dg-el-g" x="70" y="52">fast lane</text>
+  <rect class="dg-box dg-plan dg-fp" x="150" y="32" width="150" height="40" rx="9"/><text class="dg-lbl" x="225" y="57">plan</text>
+  <rect class="dg-box dg-plan dg-fp" x="320" y="32" width="150" height="40" rx="9"/><text class="dg-lbl" x="395" y="57">reflect</text>
+  <rect class="dg-box dg-plan dg-fp" x="490" y="32" width="150" height="40" rx="9"/><text class="dg-lbl" x="565" y="57">also</text>
+  <text class="dg-el-p" x="70" y="112">strong lane</text>
+  <rect class="dg-box dg-act dg-fa" x="150" y="92" width="150" height="40" rx="9"/><text class="dg-lbl" x="225" y="117">act</text>
+  <text class="dg-sub" x="470" y="117">observe = shell check · no model</text>
+</svg><figcaption>Cheap model for the thinking phases, strong model for writing code. The end-of-run summary shows the call mix per tier.</figcaption></figure>
+<h2>Related</h2>
+<div class="related"><a href="git.html"><code>git:</code></a><a href="each-cycle.html"><code>each cycle</code></a><a href="use-method.html"><code>use the &lt;X&gt; method</code></a></div>
+<footer>Loop · the keyword reference. New here? Start with the <a href="../tutorial.html">tutorial</a> or learn by playing <a href="../game.html">Loop Lab</a>.</footer>
+</main></body></html>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>for each — Loop keyword</title><meta name="description" content="Run a template once per item."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css"/></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <marker id="dgA" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#5b6678"/></marker>
+  <marker id="dgAr" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ffb45a"/></marker>
+  <marker id="dgAg" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#5fd99a"/></marker>
+  <marker id="dgAp" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ff86c2"/></marker>
+</defs></svg>
+<div class="topbar">
+  <div class="brand"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="Loop"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span>Loop</div>
+  <a class="nav" href="../tutorial.html">Tutorial</a>
+  <a class="nav" href="../workshop.html">Workshop</a>
+  <a class="nav here" href="index.html">Keywords</a>
+  <a class="nav lab" href="../game.html">🎮 Loop Lab</a>
+</div>
+<main>
+<div class="crumb"><a href="index.html">Keywords</a> / for each</div>
+<h1><code>for each</code></h1>
+<div class="lede">Run a template once per item. <span class="badge cat-structure">Structure</span></div>
+<h2>Syntax</h2>
+<pre class="syntax"><code><span class="tok-kw">for each</span> &lt;var&gt; <span class="tok-kw">in</span> <span class="tok-str">"&lt;file&gt;"</span>:
+  <span class="tok-kw">run</span> <span class="tok-str">"&lt;template.loop&gt;"</span></code></pre>
+<h2>What it does</h2>
+<p>Dynamic fan-out: read a plan file (discovered at planning time) and run a <b>template</b> loop once per item — each item's text becomes that run's context. If an item's checklist fails, the flow pauses and asks: continue or stop?</p>
+<h2>Examples</h2>
+<pre><code><span class="tok-kw">flow</span> <span class="tok-str">"deliver"</span>:
+  <span class="tok-kw">for each</span> item <span class="tok-kw">in</span> <span class="tok-str">"plan.yaml"</span>:
+    <span class="tok-kw">run</span> <span class="tok-str">"item-template.loop"</span></code></pre><span class="cap">examples/foreach/deliver.loop</span>
+<pre><code><span class="tok-com"># plan.yaml — .yaml list (or .md: each "## " section is one item)</span>
+items:
+  - title: Parse the uploaded CSV into rows
+  - title: Validate rows against the schema</code></pre><span class="cap">the source file</span>
+<h2>How it runs</h2>
+<figure class="fig"><svg viewBox="0 0 720 222" role="img" aria-label="for each fan-out">
+  <path class="dg-edge" d="M 174 107 C 210 107, 214 31, 248 31" marker-end="url(#dgA)"/><line class="dg-edge" x1="174" y1="107" x2="246" y2="105" marker-end="url(#dgA)"/><path class="dg-edge" d="M 174 107 C 210 107, 214 179, 248 179" marker-end="url(#dgA)"/>
+  <line class="dg-edge" x1="400" y1="31" x2="456" y2="31" marker-end="url(#dgA)"/><line class="dg-edge" x1="400" y1="105" x2="456" y2="105" marker-end="url(#dgA)"/><line class="dg-edge" x1="400" y1="179" x2="456" y2="179" marker-end="url(#dgA)"/>
+  <g><rect class="dg-box dg-obs" x="14" y="76" width="160" height="58" rx="11"/><text class="dg-lbl" x="94" y="102">📄 plan.yaml</text><text class="dg-sub" x="94" y="119">the work list</text></g>
+  <rect class="dg-box dg-obs" x="250" y="8" width="150" height="46" rx="9"/><text class="dg-pill" x="325" y="36">item 1</text>
+  <rect class="dg-box dg-obs" x="250" y="82" width="150" height="46" rx="9"/><text class="dg-pill" x="325" y="110">item 2</text>
+  <rect class="dg-box dg-obs" x="250" y="156" width="150" height="46" rx="9"/><text class="dg-pill" x="325" y="184">item 3 …</text>
+  <rect class="dg-box dg-act dg-fa" x="460" y="8" width="210" height="46" rx="9"/><text class="dg-pill" x="565" y="36">▶ item-template.loop</text>
+  <rect class="dg-box dg-act dg-fa" x="460" y="82" width="210" height="46" rx="9"/><text class="dg-pill" x="565" y="110">▶ item-template.loop</text>
+  <rect class="dg-box dg-act dg-fa" x="460" y="156" width="210" height="46" rx="9"/><text class="dg-pill" x="565" y="184">▶ item-template.loop</text>
+  <text class="dg-el" x="360" y="216">same template, once per item — <tspan fill="#ff86c2">if one fails, it pauses and asks: continue or stop?</tspan></text>
+</svg><figcaption><b>for each</b> is dynamic fan-out: a planning step discovers the items, then the same template runs once per item.</figcaption></figure>
+<h2>Related</h2>
+<div class="related"><a href="flow.html"><code>flow</code></a><a href="run.html"><code>run / then run</code></a><a href="pipeline.html"><code>pipeline</code></a></div>
+<footer>Loop · the keyword reference. New here? Start with the <a href="../tutorial.html">tutorial</a> or learn by playing <a href="../game.html">Loop Lab</a>.</footer>
+</main></body></html>
