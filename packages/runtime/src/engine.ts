@@ -451,7 +451,7 @@ export async function run(file: LoopFile, opts: RunOptions): Promise<LoopOutcome
   const outer = !opts.gitStarted && !!opts.git;
   if (outer) {
     const policy = resolveGit(opts.gitPolicy, file.config?.git);
-    let o: RunOptions = { ...opts, gitPolicy: file.config?.git ?? opts.gitPolicy, gitStarted: true };
+    let o: RunOptions = { ...opts, gitPolicy: file.config?.git ?? opts.gitPolicy, modelPolicy: file.config?.models ?? opts.modelPolicy, gitStarted: true };
     let branch = "";
     if (policy.isolation !== "in-place") {
       const firstName = file.definitions[0] && ("name" in file.definitions[0] ? (file.definitions[0] as any).name : null);
@@ -476,7 +476,8 @@ export async function run(file: LoopFile, opts: RunOptions): Promise<LoopOutcome
     if (allOk && policy.openPr) { const url = await o.git!.openPr({ title: `loop: ${branch}`, branch, dir: o.baseDir }); emit(o, { type: "git", action: "pr", detail: url ?? branch }); }
     return outcomes;
   }
+  const fileOpts: RunOptions = { ...opts, modelPolicy: file.config?.models ?? opts.modelPolicy };
   const outcomes: LoopOutcome[] = [];
-  for (const def of file.definitions) outcomes.push(await runDefinition(def, opts));
+  for (const def of file.definitions) outcomes.push(await runDefinition(def, fileOpts));
   return outcomes;
 }

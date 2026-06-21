@@ -455,3 +455,25 @@ test("models: --model kill switch overrides the policy", async () => {
   assert.equal(runner.planCalls[0].model, "fable");
   assert.equal(runner.actCalls[0].model, "fable");
 });
+
+test("models: flow sub-file's own models: block is honored (not silently dropped)", async () => {
+  // The sub-file declares its own models policy; the parent flow has none.
+  // Before the fix, opts.modelPolicy is never updated from the sub-file's config,
+  // so plan/act run with undefined model. After the fix they should use haiku/opus.
+  const subFileSrc = `models: fast haiku, strong opus\n\nloop "sub":\n  goal: sub goal\n  done when "x" passes\n  each cycle: plan, then act, then observe\n`;
+  const subFile = parse(subFileSrc);
+  const flow = parse('flow "chain":\n  run "sub.loop"').definitions[0];
+  const runner = new MockRunner();
+  const outcome = await runDefinition(flow, {
+    runner,
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO(),
+    baseDir: "/proj",
+    loadFile: async () => subFile,
+    flowStack: ["/proj/chain.loop"],
+    // intentionally NO modelPolicy here — the parent has no models: block
+  });
+  assert.equal(outcome.satisfied, true);
+  assert.equal(runner.actCalls[0].model, "opus", "act should use the sub-file's strong model");
+  assert.equal(runner.planCalls[0].model, "haiku", "plan should use the sub-file's fast model");
+});
