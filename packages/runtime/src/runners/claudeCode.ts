@@ -39,6 +39,19 @@ const clip = (s: string, n: number): string => (s.length > n ? s.slice(0, n - 1)
 const firstLines = (s: string, n: number): string[] => s.replace(/\n+$/, "").split("\n").slice(0, n);
 
 /**
+ * Build the CLI args for a Claude Code invocation (everything except `-p <prompt>`).
+ * Pure + exported so callers can inspect args without spawning.
+ */
+export function claudeArgs(o: { stream: boolean; baseDir: string; model?: string; maxTurns?: number; flags: string[] }): string[] {
+  const args = ["--add-dir", o.baseDir, "--output-format", o.stream ? "stream-json" : "json"];
+  if (o.stream) args.push("--verbose");
+  if (o.model) args.push("--model", o.model);
+  if (o.maxTurns) args.push("--max-turns", String(o.maxTurns));
+  args.push(...o.flags);
+  return args;
+}
+
+/**
  * Build the plan-step prompt. Pure + exported so it can be tested without spawning.
  */
 export function buildPlanPrompt(input: PlanInput): string {
@@ -129,15 +142,10 @@ function resultText(content: unknown): string {
 export class ClaudeCodeRunner implements Runner {
   constructor(private opts: ClaudeCodeRunnerOptions = {}) {}
 
-  private run(prompt: string, flags: string[], baseDir: string, node: AgentNode): Promise<string> {
+  private run(prompt: string, flags: string[], baseDir: string, node: AgentNode, model?: string): Promise<string> {
     const bin = this.opts.bin ?? "claude";
     const stream = !!this.opts.onActivity;
-    const args = ["-p", prompt, "--add-dir", baseDir];
-    args.push("--output-format", stream ? "stream-json" : "json");
-    if (stream) args.push("--verbose");
-    if (this.opts.model) args.push("--model", this.opts.model);
-    if (this.opts.maxTurns) args.push("--max-turns", String(this.opts.maxTurns));
-    args.push(...flags);
+    const args = ["-p", prompt, ...claudeArgs({ stream, baseDir, model: model ?? this.opts.model, maxTurns: this.opts.maxTurns, flags })];
 
     return new Promise((resolve, reject) => {
       const child = spawn(bin, args, { cwd: baseDir });
@@ -176,7 +184,7 @@ export class ClaudeCodeRunner implements Runner {
 
   async plan(input: PlanInput): Promise<string> {
     const prompt = buildPlanPrompt(input);
-    return this.run(prompt, ["--permission-mode", "plan", "--allowedTools", ...READ_TOOLS], input.baseDir, "plan");
+    return this.run(prompt, ["--permission-mode", "plan", "--allowedTools", ...READ_TOOLS], input.baseDir, "plan", input.model);
   }
 
   async act(input: ActInput): Promise<ActResult> {
@@ -197,7 +205,8 @@ export class ClaudeCodeRunner implements Runner {
       prompt,
       ["--permission-mode", mode, "--allowedTools", ...tools],
       input.baseDir,
-      "act"
+      "act",
+      input.model
     );
     return { summary };
   }
@@ -210,7 +219,7 @@ export class ClaudeCodeRunner implements Runner {
       input.focus ? `Reflect specifically on: ${input.focus}.` : `Reflect on why it failed.`,
       `In 2-4 sentences, explain the likely cause and what to change next. Do not edit files.`,
     ].join("\n");
-    return this.run(prompt, ["--permission-mode", "plan", "--allowedTools", ...READ_TOOLS], input.baseDir, "reflect");
+    return this.run(prompt, ["--permission-mode", "plan", "--allowedTools", ...READ_TOOLS], input.baseDir, "reflect", input.model);
   }
 }
 

@@ -39,6 +39,8 @@ export interface PlanInput {
   /** Text summary handed from the previous step of a flow (set by executeFlow). */
   upstream?: string;
   baseDir: string;
+  /** Model alias/id for this call; set by the engine from the model policy. */
+  model?: string;
 }
 
 export interface ActInput {
@@ -46,6 +48,8 @@ export interface ActInput {
   plan: string;
   allowedClasses: string[];
   baseDir: string;
+  /** Model alias/id for this call; set by the engine from the model policy. */
+  model?: string;
 }
 
 export interface ActResult {
@@ -58,6 +62,8 @@ export interface ReflectInput {
   focus?: string;
   output: string;
   baseDir: string;
+  /** Model alias/id for this call; set by the engine from the model policy. */
+  model?: string;
 }
 
 /** Executes the agent-driven nodes. The real one drives Claude Code; the mock is for tests. */
