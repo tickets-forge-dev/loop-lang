@@ -12,6 +12,7 @@ import { HttpArchonPlanSource } from "./runners/archon.js";
 import { IpcHumanIO } from "./ipc.js";
 import { ShellGitIO } from "./runners/shellGit.js";
 import type { LoopEvent } from "./types.js";
+import { summarizeModels, formatModelSummary } from "./summary.js";
 
 const GLYPH: Partial<Record<LoopEvent["type"], string>> = {
   "pipeline-start": "▶ pipeline",
@@ -186,6 +187,7 @@ async function main() {
     process.exit(ok ? 0 : 1);
   }
 
+  const traceEvents: LoopEvent[] = [];
   const outcomes = await run(file, {
     runner: new ClaudeCodeRunner({}),
     verifier: new ShellVerifier(),
@@ -199,10 +201,14 @@ async function main() {
     modelPolicy: file.config?.models,
     cliModel: model,
     onEvent: (e) => {
+      traceEvents.push(e);
       const line = render(e);
       if (line) console.log(line);
     },
   });
+
+  const summary = formatModelSummary(summarizeModels(traceEvents));
+  if (summary) console.error(summary);
 
   const ok = outcomes.every((o) => o.satisfied);
   process.exit(ok ? 0 : 1);

@@ -19,3 +19,5 @@ export { MockGitIO } from "./runners/mockGit.js";
 export { ShellGitIO } from "./runners/shellGit.js";
 export { resolveModels, modelForPhase, BUILTIN_PHASES } from "./models.js";
 export type { EffectiveModels, Tier, Phase } from "./models.js";
+export { summarizeModels, formatModelSummary } from "./summary.js";
+export type { TierSummary } from "./summary.js";
