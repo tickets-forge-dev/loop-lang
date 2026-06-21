@@ -6,14 +6,14 @@
 <title>Loop — the tutorial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
 <style>
 :root{
   --bg:#0b0d12; --bg2:#14171f;
   --panel:rgba(255,255,255,.035); --panel2:rgba(255,255,255,.06); --line:rgba(255,255,255,.10);
   --ink:#eef2f7; --muted:#94a1b2;
   --fwd:#34e0c4; --reflect:#ffb45a; --stop:#5fd99a; --gate:#ff86c2; --str:#9be58f; --blue:#84b6ff;
-  --display:"Fraunces",Georgia,serif; --ui:"Hanken Grotesk",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  --display:"Ubuntu",system-ui,sans-serif; --ui:"Ubuntu",system-ui,sans-serif; --mono:"Ubuntu Mono",ui-monospace,monospace;
 }
 *{box-sizing:border-box;}
 html{scroll-behavior:smooth;}
@@ -37,11 +37,9 @@ a:hover{text-decoration:underline;}
 /* sidebar */
 nav.toc{position:sticky; top:0; height:100vh; width:288px; flex:0 0 288px; overflow-y:auto;
   padding:26px 18px 60px 26px; border-right:1px solid var(--line); font-size:12.5px;}
-nav.toc .brand{font-family:var(--display); font-weight:600; font-size:27px; letter-spacing:.3px; color:var(--ink); display:flex; align-items:center; gap:.5em;}
-nav.toc .brand::before{content:""; display:inline-block; width:.72em; height:.72em; border-radius:50%;
-  border:2px solid var(--fwd); border-right-color:var(--reflect); border-top-color:transparent;
-  box-shadow:0 0 12px rgba(52,224,196,.5); animation:spin 4.5s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
+nav.toc .brand{font-family:var(--display); font-weight:600; font-size:27px; letter-spacing:.3px; color:var(--ink); display:flex; align-items:center; gap:10px;}
+nav.toc .brand .logo{display:inline-flex;}
+.lpmark{width:30px; height:30px; display:block; filter:drop-shadow(0 0 10px rgba(52,224,196,.35));}
 nav.toc .tag{color:var(--muted); font-size:11px; margin:5px 0 18px; letter-spacing:.4px;}
 nav.toc ol{list-style:none; margin:0; padding:0; counter-reset:s;}
 nav.toc li{margin:1px 0;}
@@ -119,8 +117,51 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
 .termbody{height:330px; overflow:hidden; padding:11px 14px; font-family:var(--mono); font-size:11.5px; line-height:1.6; color:#cdd8e4;}
 .termbody .ln{white-space:pre-wrap; margin:1.5px 0;}
 .tl-dim{color:#677787;} .tl-u{color:#eaf1f8; font-weight:700;} .tl-tool{color:var(--blue);} .tl-ok{color:var(--stop);} .tl-bad{color:var(--gate);}
+.tl-plan{color:var(--fwd);} .tl-gate{color:var(--reflect); font-weight:700;}
 .termbody .tcur{display:inline-block; width:.5em; height:1.02em; background:var(--fwd); vertical-align:text-bottom; margin-left:1px; animation:tblink 1.05s steps(1) infinite;}
 @keyframes tblink{50%{opacity:0;}}
+
+/* diagrams */
+.fig{margin:22px 0; border:1px solid var(--line); border-radius:14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012)); padding:22px 20px 8px;}
+.fig svg{width:100%; height:auto; display:block; overflow:visible;}
+.fig figcaption{color:var(--muted); font-size:12px; text-align:center; line-height:1.55;
+  margin:16px auto 6px; max-width:620px;}
+.fig figcaption b{color:var(--ink);}
+.dg-box{fill:rgba(255,255,255,.03); stroke:#3a465a; stroke-width:1.4;}
+.dg-plan{stroke:var(--fwd);} .dg-act{stroke:var(--blue);} .dg-obs{stroke:#8aa0bb;}
+.dg-stop{stroke:var(--stop);} .dg-gate{stroke:var(--gate);} .dg-warn{stroke:var(--reflect);}
+.dg-fp{fill:color-mix(in srgb,var(--fwd) 11%,transparent);} .dg-fa{fill:color-mix(in srgb,var(--blue) 11%,transparent);}
+.dg-fs{fill:color-mix(in srgb,var(--stop) 11%,transparent);} .dg-fg{fill:color-mix(in srgb,var(--gate) 10%,transparent);}
+.dg-fw{fill:color-mix(in srgb,var(--reflect) 11%,transparent);}
+.dg-lbl{fill:#e7eef6; font-family:var(--ui); font-weight:700; font-size:15px; text-anchor:middle;}
+.dg-sub{fill:#9aa6b6; font-family:var(--mono); font-size:10px; text-anchor:middle;}
+.dg-tag{fill:#7f8c9d; font-family:var(--mono); font-size:11px;}
+.dg-edge{stroke:#5b6678; stroke-width:1.8; fill:none;}
+.dg-reflect{stroke:var(--reflect); stroke-width:1.8; stroke-dasharray:6 4; fill:none;}
+.dg-fail{stroke:var(--gate); stroke-width:1.8; fill:none;}
+.dg-el{fill:#8b97a8; font-family:var(--mono); font-size:11px; text-anchor:middle;}
+.dg-el-r{fill:var(--reflect); font-family:var(--mono); font-size:11px; text-anchor:middle;}
+.dg-el-g{fill:var(--stop); font-family:var(--mono); font-size:11px; text-anchor:middle;}
+.dg-el-p{fill:var(--gate); font-family:var(--mono); font-size:11px; text-anchor:middle;}
+.dg-num{fill:var(--fwd); font-family:var(--mono); font-weight:700; font-size:14px;}
+.dg-pill{fill:#e7eef6; font-family:var(--ui); font-weight:600; font-size:12.5px; text-anchor:middle;}
+.dg-pillm{fill:#cdd8e4; font-family:var(--mono); font-size:11.5px; text-anchor:middle;}
+.dg-cap{fill:#9aa6b6; font-family:var(--ui); font-weight:700; font-size:11px; letter-spacing:.8px; text-anchor:middle;}
+
+/* do / don't grid */
+.ddgrid{display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; margin:16px 0;}
+.ddhead{font-family:var(--ui); font-weight:800; font-size:12.5px; letter-spacing:.5px; padding:0 2px 2px;}
+.ddhead.do{color:var(--stop);} .ddhead.dont{color:var(--gate);}
+.ddtopic{grid-column:1 / -1; font-family:var(--ui); font-weight:700; font-size:11px; letter-spacing:1.3px;
+  text-transform:uppercase; color:var(--muted); margin:12px 0 -3px; padding-left:1px;}
+.dd{border:1px solid var(--line); border-radius:11px; padding:11px 13px; font-size:13px; line-height:1.5; color:#cdd6e0;
+  background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));}
+.dd.do{border-left:2px solid var(--stop);} .dd.dont{border-left:2px solid var(--gate);}
+.dd b{color:var(--ink);} .dd code{color:var(--ink);}
+.dd .mk{font-weight:800; margin-right:6px;} .dd.do .mk{color:var(--stop);} .dd.dont .mk{color:var(--gate);}
+@media (max-width:680px){ .ddgrid{grid-template-columns:1fr;} .ddhead{display:none;} .dd.do{margin-top:2px;} }
+
 @media (max-width:780px){ .compare{grid-template-columns:1fr;} }
 @media (max-width:900px){
   nav.toc{display:none;} main{padding:24px 18px 80px;}
@@ -129,19 +170,27 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <marker id="dgA" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#5b6678"/></marker>
+  <marker id="dgAr" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ffb45a"/></marker>
+  <marker id="dgAg" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#5fd99a"/></marker>
+  <marker id="dgAp" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ff86c2"/></marker>
+</defs></svg>
 <div class="shell">
 
 <nav class="toc">
-  <div class="brand">Loop</div>
+  <div class="brand"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="Loop"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span>Loop</div>
   <div class="tag">the tutorial · basics → advanced</div>
-  <a href="game.html" style="display:block;margin:6px 0 14px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--gate) 40%,var(--line));border-radius:8px;color:var(--gate);font-weight:700;font-size:12px;text-align:center;">🎮 Loop Lab — learn by playing →</a>
+  <a href="workshop.html" style="display:block;margin:6px 0 6px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--fwd) 40%,var(--line));border-radius:8px;color:var(--fwd);font-weight:700;font-size:12px;text-align:center;">🛠️ Workshop — learn by doing →</a>
+  <a href="game.html" style="display:block;margin:0 0 14px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--gate) 40%,var(--line));border-radius:8px;color:var(--gate);font-weight:700;font-size:12px;text-align:center;">🎮 Loop Lab — learn by playing →</a>
   <ol id="tocList">
-    <li class="grp">Foundations</li>
-    <li><a href="#start">· Getting started</a></li>
+    <li class="grp">Why Loop</li>
     <li><a href="#what">1 · What is a loop</a></li>
     <li><a href="#today">· You are the loop (today)</a></li>
     <li><a href="#vs">· Prompt vs Loop</a></li>
     <li><a href="#whenuse">· When to reach for Loop</a></li>
+    <li class="grp">Get started</li>
+    <li><a href="#start">· Getting started</a></li>
     <li><a href="#first">2 · Your first loop</a></li>
     <li><a href="#donewhen">3 · done when — verify</a></li>
     <li><a href="#context">4 · look at + policy</a></li>
@@ -162,7 +211,8 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
     <li><a href="#methods">14 · Methods are libraries</a></li>
     <li><a href="#git">15 · Git strategy</a></li>
     <li><a href="#running">16 · Running a loop</a></li>
-    <li><a href="#skillsmem">· Skills &amp; memory</a></li>
+    <li><a href="#skills">· Skills (Claude Code)</a></li>
+    <li><a href="#memory">· Memory (AGENTS.md)</a></li>
     <li><a href="#cheatsheet">17 · Cheat sheet</a></li>
     <li><a href="#bestpractice">18 · Best practices</a></li>
   </ol>
@@ -171,7 +221,7 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
 <main>
 <header class="hero">
   <h1>Loop, the tutorial</h1>
-  <div class="lede">Stop tuning prompts. Start editing the <em>loop</em>. <a href="game.html" style="color:var(--gate);font-weight:700;">Or learn it by playing → Loop Lab 🎮</a></div>
+  <div class="lede">Stop tuning prompts. Start editing the <em>loop</em>. <a href="workshop.html" style="color:var(--fwd);font-weight:700;">Hands-on? → Workshop 🛠️</a> · <a href="game.html" style="color:var(--gate);font-weight:700;">Or play → Loop Lab 🎮</a></div>
   <p class="sub">Loop is a small natural-language DSL for <strong>loop engineering</strong>. A <code class="inl">.loop</code> file describes a self-correcting, human-gated coding workflow — its objective, the context it may read, the actions it may take, how it verifies itself, and when it stops. This page teaches the whole language from the first line to full A-to-Z pipelines, every section grounded in a real example you can run.</p>
 
   <div class="compare">
@@ -192,7 +242,7 @@ git:
 loop "add API rate limiting":
   goal: requests are rate-limited per API key
   done when "pnpm test rate-limit" passes
-  look at: src/api, src/middleware, and the last failure
+  look at: the API and its middleware, and the last failure
   allow edits automatically, but ask me before pushes
   each cycle: plan, then act, then observe
   also: run a security check
@@ -203,45 +253,6 @@ loop "add API rate limiting":
   </div>
   <p class="sub" style="margin-top:12px">Left: a dozen messages, and it still pushed to main. Right: the whole job, written once — it runs, verifies, and stops only when it's really done.</p>
 </header>
-
-<!-- getting started -->
-<section id="start">
-  <h2>Getting started <span class="badge b-basic">setup</span></h2>
-  <p>Two ways to run Loop: <strong>inside a Claude Code chat</strong> (the bundled skill — recommended), or the <strong>CLI</strong> — and a <strong>VS Code extension</strong> to write loops by hand and ▶-run them. Two one-time setup steps, then your first loop:</p>
-
-  <h3>1 · Install the skill</h3>
-  <p>Copy the bundled Claude Code skill into your skills folder — then <code class="inl">/loop</code> works in any repo:</p>
-  <pre class="sh"><code>cp -r .claude/skills/loop ~/.claude/skills/</code></pre>
-
-  <h3>2 · Give the agent its memory — <code class="inl">AGENTS.md</code></h3>
-  <p>Drop Loop's <code class="inl">AGENTS.md</code> (the full language reference) into your repo. It <em>travels with the project</em>, so any agent that opens the repo already knows the Loop language — the project's persistent memory of how to write a <code class="inl">.loop</code>. Methods are shared the same way: <code class="inl">use the &lt;X&gt; method</code> pulls in a <code class="inl">.loop</code> preset another repo can reuse.</p>
-
-  <h3>3 · Run your first loop</h3>
-  <pre class="sh"><code>/loop fix the failing auth test in src/auth, gate any database migration   # writes a .loop
-/loop run examples/fix_test.loop                                          # runs it, in the chat</code></pre>
-  <p>Describe the work and the skill writes the <code class="inl">.loop</code>; name a file and it runs the loop <strong>natively in the session</strong> — you watch every plan → act → observe → reflect step and answer human gates right in the chat. Prefer a terminal? The same files run headless via the CLI — see <a href="#running">Running a loop</a>.</p>
-  <p>That first command writes a file like this — yours to read, edit, and re-run:</p>
-  <pre><code class="loop"># /loop "fix the failing auth test in src/auth, gate any database migration" writes:
-loop "fix the failing auth test":
-  goal: the auth suite passes in src/auth
-  done when "pnpm test src/auth" passes
-  look at: src/auth, and the last failure
-  ask me before migrations
-  each cycle: plan, then act, then observe
-  when it fails: reflect, then plan again
-  after 6 tries: stop and warn "stuck"</code></pre>
-
-  <h3>4 · Edit in VS Code <span class="badge b-basic">optional</span></h3>
-  <p>A <code class="inl">.loop</code> is just text — let the agent draft it, <em>or write one by hand</em>. The <strong>Loop VS Code extension</strong> makes hand-authoring first-class:</p>
-  <ul>
-    <li><strong>Syntax highlighting</strong> for the whole language — <code class="inl">goal</code>, <code class="inl">done when</code>, gates, <code class="inl">flow</code>, <code class="inl">for each</code>, <code class="inl">git:</code>.</li>
-    <li><strong>Completion + formatting</strong> — keyword snippets so you type a loop from muscle memory, not a cheat sheet.</li>
-    <li><strong>A ▶ Play button</strong> on every loop (the <em>Loop: Run this loop</em> CodeLens) — run the file you're editing without leaving the editor.</li>
-    <li><strong>New from template</strong> (command palette → <em>Loop: New from template</em>) — scaffold a ready-to-edit <code class="inl">.loop</code> bundle.</li>
-  </ul>
-  <p>So the two authoring paths are interchangeable: prompt the agent to generate a loop, or open VS Code and write the <code class="inl">.loop</code> yourself — same file, same engine.</p>
-  <div class="note"><b>Safe from the first run:</b> with no <code class="inl">git:</code> block, Loop works on a branch and commits when the goal is met, and <strong>never pushes to <code class="inl">main</code>/<code class="inl">master</code></strong> — see <a href="#git">Git strategy</a>.</div>
-</section>
 
 <!-- 1 -->
 <section id="what">
@@ -258,10 +269,34 @@ loop "fix the failing auth test":
   <p>Here are all five decisions as one real loop — every line is one of the rows above:</p>
   <pre><code class="loop">loop "fix the failing test":                       # the work
   goal: the cart total is correct with a coupon    # Objective
-  look at: src/checkout, and the last failure      # Context
+  look at: the checkout code, and the last failure      # Context
   allow edits automatically, ask me before pushes  # Actions
-  done when the test "cart.spec.ts::coupon" passes # Verification
+  done when the cart coupon tests pass # Verification
   after 6 tries: stop and warn "stuck"             # Stopping</code></pre>
+
+  <figure class="fig">
+    <svg viewBox="0 0 720 210" role="img" aria-label="The loop cycle: plan, act, observe, stop, with a reflect back-edge on failure">
+      <!-- forward arrows -->
+      <line class="dg-edge" x1="158" y1="61" x2="206" y2="61" marker-end="url(#dgA)"/>
+      <line class="dg-edge" x1="344" y1="61" x2="392" y2="61" marker-end="url(#dgA)"/>
+      <line class="dg-edge" x1="530" y1="61" x2="578" y2="61" marker-end="url(#dgA)"/>
+      <text class="dg-el-g" x="554" y="48">✓ pass</text>
+      <!-- nodes -->
+      <g><rect class="dg-box dg-plan dg-fp" x="24" y="34" width="132" height="54" rx="11"/>
+        <text class="dg-lbl" x="90" y="57">plan</text><text class="dg-sub" x="90" y="74">each cycle</text></g>
+      <g><rect class="dg-box dg-act dg-fa" x="210" y="34" width="132" height="54" rx="11"/>
+        <text class="dg-lbl" x="276" y="57">act</text><text class="dg-sub" x="276" y="74">make the change</text></g>
+      <g><rect class="dg-box dg-obs" x="396" y="34" width="132" height="54" rx="11"/>
+        <text class="dg-lbl" x="462" y="57">observe</text><text class="dg-sub" x="462" y="74">run done-when</text></g>
+      <g><rect class="dg-box dg-stop dg-fs" x="582" y="34" width="132" height="54" rx="11"/>
+        <text class="dg-lbl" x="648" y="57">stop</text><text class="dg-sub" x="648" y="74">goal met ✓</text></g>
+      <!-- reflect back-edge -->
+      <path class="dg-reflect" d="M 462 90 C 360 178, 192 178, 90 90" marker-end="url(#dgAr)"/>
+      <text class="dg-el-r" x="276" y="172">when it fails → reflect, then plan again</text>
+    </svg>
+    <figcaption>Every cycle runs <b>plan → act → observe</b>. The <b>done&nbsp;when</b> check decides: pass → <b>stop</b>; fail → <b>reflect</b>, which feeds the error into the next plan. A thrash guard (<b>after N tries</b>) stops it if it gets stuck — so a loop never spins forever.</figcaption>
+  </figure>
+
   <p>When the model took over the building, those five decisions got <em>buried</em> in prompts. Loop promotes them to first-class, editable knobs. At runtime they drive five phases — <strong>plan → act → observe → reflect → stop</strong> — the diagram above. You don't re-tune a prompt; you <strong>edit the loop</strong>.</p>
   <div class="key"><span class="kt">The two ideas to keep</span>
     <ul>
@@ -294,8 +329,8 @@ loop "fix the failing auth test":
       <div class="ph">with Loop — the loop runs itself</div>
       <pre><code class="loop">loop "fix the bug":
   goal: the failing checkout tax test passes
-  done when the test "checkout.spec.ts::tax" passes
-  look at: src/checkout, and the last failure
+  done when the checkout tax tests pass
+  look at: the checkout code, and the last failure
   each cycle: plan, then act, then observe
   when it fails: reflect, then plan again
   after 6 tries: stop and warn "stuck"</code></pre>
@@ -330,8 +365,8 @@ loop "fix the failing auth test":
   <p>The loop:</p>
   <pre><code class="loop">loop "fix the checkout tax test":
   goal: the checkout tax test passes with no regressions
-  done when the test "checkout.spec.ts::tax" passes
-  look at: src/checkout, and the last failure
+  done when the checkout tax tests pass
+  look at: the checkout code, and the last failure
   each cycle: plan, then act, then observe
   when it fails: reflect, then plan again
   after 6 tries: stop and warn "tax fix thrashing"</code></pre>
@@ -365,8 +400,8 @@ loop "fix the failing auth test":
   <p>The bread-and-butter loop. Point it at a failing test (write one first if there isn't one), scope the files, and let the reflect edge work:</p>
   <pre><code class="loop">loop "fix: cart total wrong with a coupon":
   goal: the cart total is correct when a percentage coupon is applied
-  done when the test "cart.spec.ts::coupon" passes
-  look at: src/cart/total.ts, src/cart/coupon.ts, and the last failure
+  done when the cart coupon tests pass
+  look at: the cart total and coupon code, and the last failure
   allow edits automatically, but ask me before migrations
   each cycle: plan, then act, then observe
   when it fails: reflect on which layer broke, then plan again
@@ -429,13 +464,53 @@ loop "fix the failing auth test":
   <div class="note"><b>Skip Loop when:</b> the task has no verifiable "done" (a pure spike/exploration), it's a trivial edit you'd finish faster by hand, or you can't yet state the goal — in that last case, do a discovery loop <em>first</em> to produce the spec, then loop the build.</div>
 </section>
 
+<!-- getting started -->
+<section id="start">
+  <h2>Getting started <span class="badge b-basic">setup</span></h2>
+  <p class="sub" style="font-size:14px;margin-top:0">That's the <em>why</em>. From here down is the <strong>deep dive</strong> — set Loop up once, then learn the language line by line.</p>
+  <p>Two ways to run Loop: <strong>inside a Claude Code chat</strong> (the bundled skill — recommended), or the <strong>CLI</strong> — and a <strong>VS Code extension</strong> to write loops by hand and ▶-run them. Two one-time setup steps, then your first loop:</p>
+
+  <h3>1 · Install the skill</h3>
+  <p>Copy the bundled Claude Code skill into your skills folder — then <code class="inl">/loop</code> works in any repo:</p>
+  <pre class="sh"><code>cp -r .claude/skills/loop ~/.claude/skills/</code></pre>
+
+  <h3>2 · Give the agent its memory — <code class="inl">AGENTS.md</code></h3>
+  <p>Drop Loop's <code class="inl">AGENTS.md</code> (the full language reference) into your repo. It <em>travels with the project</em>, so any agent that opens the repo already knows the Loop language — the project's persistent memory of how to write a <code class="inl">.loop</code>. Methods are shared the same way: <code class="inl">use the &lt;X&gt; method</code> pulls in a <code class="inl">.loop</code> preset another repo can reuse.</p>
+
+  <h3>3 · Run your first loop</h3>
+  <pre class="sh"><code>/loop fix the failing auth test in src/auth, gate any database migration   # writes a .loop
+/loop run examples/fix_test.loop                                          # runs it, in the chat</code></pre>
+  <p>Describe the work and the skill writes the <code class="inl">.loop</code>; name a file and it runs the loop <strong>natively in the session</strong> — you watch every plan → act → observe → reflect step and answer human gates right in the chat. Prefer a terminal? The same files run headless via the CLI — see <a href="#running">Running a loop</a>.</p>
+  <p>That first command writes a file like this — yours to read, edit, and re-run:</p>
+  <pre><code class="loop"># /loop "fix the failing auth test in src/auth, gate any database migration" writes:
+loop "fix the failing auth test":
+  goal: the auth suite passes in src/auth
+  done when "pnpm test src/auth" passes
+  look at: the auth code, and the last failure
+  ask me before migrations
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 6 tries: stop and warn "stuck"</code></pre>
+
+  <h3>4 · Edit in VS Code <span class="badge b-basic">optional</span></h3>
+  <p>A <code class="inl">.loop</code> is just text — let the agent draft it, <em>or write one by hand</em>. The <strong>Loop VS Code extension</strong> makes hand-authoring first-class:</p>
+  <ul>
+    <li><strong>Syntax highlighting</strong> for the whole language — <code class="inl">goal</code>, <code class="inl">done when</code>, gates, <code class="inl">flow</code>, <code class="inl">for each</code>, <code class="inl">git:</code>.</li>
+    <li><strong>Completion + formatting</strong> — keyword snippets so you type a loop from muscle memory, not a cheat sheet.</li>
+    <li><strong>A ▶ Play button</strong> on every loop (the <em>Loop: Run this loop</em> CodeLens) — run the file you're editing without leaving the editor.</li>
+    <li><strong>New from template</strong> (command palette → <em>Loop: New from template</em>) — scaffold a ready-to-edit <code class="inl">.loop</code> bundle.</li>
+  </ul>
+  <p>So the two authoring paths are interchangeable: prompt the agent to generate a loop, or open VS Code and write the <code class="inl">.loop</code> yourself — same file, same engine.</p>
+  <div class="note"><b>Safe from the first run:</b> with no <code class="inl">git:</code> block, Loop works on a branch and commits when the goal is met, and <strong>never pushes to <code class="inl">main</code>/<code class="inl">master</code></strong> — see <a href="#git">Git strategy</a>.</div>
+</section>
+
 <!-- 2 -->
 <section id="first">
   <h2>2 · Your first loop <span class="badge b-basic">basic</span></h2>
   <p>The smallest useful loop: keep working until a test passes.</p>
   <pre><code class="loop">loop "fix test":
   goal: the checkout tax test passes
-  done when the test "checkout.spec.ts::tax" passes
+  done when the checkout tax tests pass
 
   each cycle: plan, then act, then observe
   when it fails: reflect, then plan again</code></pre>
@@ -512,6 +587,34 @@ after 6 tries:                      stop and warn "thrashing"</code></pre>
       <li>So <code class="inl">after N tries: stop and warn</code> — the <em>thrash guard</em> — always wins once the threshold is crossed, even if a <code class="inl">when it fails</code> rule is listed first. Put a thrash guard on every self-correcting loop; the warning is your signal that it got stuck.</li>
     </ul>
   </div>
+
+  <figure class="fig">
+    <svg viewBox="0 0 680 206" role="img" aria-label="Transition precedence: blocked, then attempts, then pass, then fail">
+      <text class="dg-cap" x="340" y="14">AFTER EACH OBSERVE — CHECKED TOP-TO-BOTTOM, FIRST MATCH WINS</text>
+      <line class="dg-edge" x1="10" y1="34" x2="10" y2="190" marker-end="url(#dgA)"/>
+      <!-- row 1 -->
+      <text class="dg-num" x="24" y="51">1</text>
+      <rect class="dg-box dg-gate" x="44" y="28" width="252" height="34" rx="8"/><text class="dg-pillm" x="170" y="49">blocked?</text>
+      <line class="dg-edge" x1="298" y1="45" x2="356" y2="45" marker-end="url(#dgA)"/>
+      <rect class="dg-box dg-gate dg-fg" x="360" y="28" width="300" height="34" rx="8"/><text class="dg-pill" x="510" y="49">ask a human</text>
+      <!-- row 2 -->
+      <text class="dg-num" x="24" y="93">2</text>
+      <rect class="dg-box dg-warn" x="44" y="70" width="252" height="34" rx="8"/><text class="dg-pillm" x="170" y="91">after N tries?</text>
+      <line class="dg-edge" x1="298" y1="87" x2="356" y2="87" marker-end="url(#dgA)"/>
+      <rect class="dg-box dg-warn dg-fw" x="360" y="70" width="300" height="34" rx="8"/><text class="dg-pill" x="510" y="91">stop &amp; warn ⚠</text>
+      <!-- row 3 -->
+      <text class="dg-num" x="24" y="135">3</text>
+      <rect class="dg-box dg-stop" x="44" y="112" width="252" height="34" rx="8"/><text class="dg-pillm" x="170" y="133">passes &amp; goal met?</text>
+      <line class="dg-edge" x1="298" y1="129" x2="356" y2="129" marker-end="url(#dgA)"/>
+      <rect class="dg-box dg-stop dg-fs" x="360" y="112" width="300" height="34" rx="8"/><text class="dg-pill" x="510" y="133">stop ✓ done</text>
+      <!-- row 4 -->
+      <text class="dg-num" x="24" y="177">4</text>
+      <rect class="dg-box dg-plan" x="44" y="154" width="252" height="34" rx="8"/><text class="dg-pillm" x="170" y="175">it fails?</text>
+      <line class="dg-edge" x1="298" y1="171" x2="356" y2="171" marker-end="url(#dgA)"/>
+      <rect class="dg-box dg-plan dg-fp" x="360" y="154" width="300" height="34" rx="8"/><text class="dg-pill" x="510" y="175">reflect, then plan again</text>
+    </svg>
+    <figcaption>The order is the engine's, not yours. Because <b>attempts</b> is checked before <b>fail</b>, the thrash guard always wins once you hit the limit — so a stuck loop warns and stops instead of looping forever.</figcaption>
+  </figure>
 </section>
 
 <!-- 7 -->
@@ -588,6 +691,30 @@ when blocked: ask a human            # unblock when the agent is stuck</code></p
     done when "./scripts/health.sh" passes
     each cycle: act, then observe</code></pre>
   <span class="cap">examples/ship_feature.loop</span>
+
+  <figure class="fig">
+    <svg viewBox="0 0 720 158" role="img" aria-label="A pipeline runs stages in order; a failing stage halts the rest">
+      <!-- pass-to-next arrows -->
+      <line class="dg-edge" x1="166" y1="69" x2="186" y2="69" marker-end="url(#dgAg)"/>
+      <line class="dg-edge" x1="342" y1="69" x2="362" y2="69" marker-end="url(#dgAg)"/>
+      <line class="dg-edge" x1="518" y1="69" x2="538" y2="69" marker-end="url(#dgAg)"/>
+      <!-- stages -->
+      <g><rect class="dg-box dg-obs" x="14" y="40" width="150" height="58" rx="11"/>
+        <text class="dg-lbl" x="89" y="68">security</text><text class="dg-sub" x="89" y="85">semgrep ✓</text></g>
+      <g><text class="dg-el-p" x="265" y="28">👤 gate</text>
+        <rect class="dg-box dg-gate" x="190" y="40" width="150" height="58" rx="11"/>
+        <text class="dg-lbl" x="265" y="68">build</text><text class="dg-sub" x="265" y="85">pnpm test ✓</text></g>
+      <g><text class="dg-el-p" x="441" y="28">👤 gate</text>
+        <rect class="dg-box dg-gate" x="366" y="40" width="150" height="58" rx="11"/>
+        <text class="dg-lbl" x="441" y="68">ui</text><text class="dg-sub" x="441" y="85">human review</text></g>
+      <g><text class="dg-el-p" x="617" y="28">👤 gate</text>
+        <rect class="dg-box dg-gate" x="542" y="40" width="150" height="58" rx="11"/>
+        <text class="dg-lbl" x="617" y="68">deploy</text><text class="dg-sub" x="617" y="85">health.sh ✓</text></g>
+      <text class="dg-el" x="360" y="130">each stage runs only if the one before it passed — <tspan fill="#ff86c2">✗ a failure halts the rest</tspan></text>
+    </svg>
+    <figcaption>An <b>epic → a pipeline</b>, each <b>story → a stage</b>. Stages run left to right; each carries its own <b>done&nbsp;when</b> check and human gates (👤). A green arrow means "passed — go on"; a failure stops the pipeline there.</figcaption>
+  </figure>
+
   <p>Each stage carries its own verification and human gates. A real BMAD-shaped feature looks the same — analysis and architecture stages are human-gated, story stages are build loops with acceptance tests, QA gates on review:</p>
   <pre><code class="loop">pipeline "BMAD: user authentication":
 
@@ -622,6 +749,25 @@ when blocked: ask a human            # unblock when the agent is stuck</code></p
   then run "deploy.loop":
     a human approves first</code></pre>
   <span class="cap">examples/ship_flow.loop</span>
+
+  <figure class="fig">
+    <svg viewBox="0 0 720 150" role="img" aria-label="A flow chains separate .loop files in order, passing a text summary forward">
+      <line class="dg-edge" x1="196" y1="65" x2="266" y2="65" marker-end="url(#dgA)"/>
+      <line class="dg-edge" x1="452" y1="65" x2="522" y2="65" marker-end="url(#dgA)"/>
+      <text class="dg-el-r" x="231" y="56">summary →</text>
+      <text class="dg-el-r" x="487" y="56">summary →</text>
+      <g><rect class="dg-box dg-act dg-fa" x="14" y="34" width="180" height="62" rx="11"/>
+        <text class="dg-lbl" x="104" y="62">📄 build.loop</text><text class="dg-sub" x="104" y="80">all loops inside</text></g>
+      <g><rect class="dg-box dg-act dg-fa" x="270" y="34" width="180" height="62" rx="11"/>
+        <text class="dg-lbl" x="360" y="62">📄 test.loop</text><text class="dg-sub" x="360" y="80">all loops inside</text></g>
+      <g><text class="dg-el-p" x="616" y="24">👤 approves first</text>
+        <rect class="dg-box dg-gate dg-fg" x="526" y="34" width="180" height="62" rx="11"/>
+        <text class="dg-lbl" x="616" y="62">📄 deploy.loop</text><text class="dg-sub" x="616" y="80">all loops inside</text></g>
+      <text class="dg-el" x="360" y="126">runs in order · <tspan fill="#ff86c2">✗ a file that isn't satisfied halts the rest</tspan></text>
+    </svg>
+    <figcaption>A <b>flow</b> chains separate <b>.loop</b> files, run in order. After each, a short <b>text summary</b> of how it went is carried into the next as context — it's a control language, not a data pipe.</figcaption>
+  </figure>
+
   <div class="key"><span class="kt">flow semantics</span>
     <ul>
       <li><strong>Runs the whole file.</strong> <code class="inl">run "build.loop"</code> runs every definition in that file.</li>
@@ -645,6 +791,33 @@ when blocked: ask a human            # unblock when the agent is stuck</code></p
   for each item in "plan.yaml":
     run "item-template.loop"</code></pre>
   <span class="cap">examples/foreach/deliver.loop</span>
+
+  <figure class="fig">
+    <svg viewBox="0 0 720 222" role="img" aria-label="for each reads a plan and runs the same template once per item">
+      <!-- fan-out arrows -->
+      <path class="dg-edge" d="M 174 107 C 210 107, 214 31, 248 31" marker-end="url(#dgA)"/>
+      <line class="dg-edge" x1="174" y1="107" x2="246" y2="105" marker-end="url(#dgA)"/>
+      <path class="dg-edge" d="M 174 107 C 210 107, 214 179, 248 179" marker-end="url(#dgA)"/>
+      <!-- item -> template -->
+      <line class="dg-edge" x1="400" y1="31" x2="456" y2="31" marker-end="url(#dgA)"/>
+      <line class="dg-edge" x1="400" y1="105" x2="456" y2="105" marker-end="url(#dgA)"/>
+      <line class="dg-edge" x1="400" y1="179" x2="456" y2="179" marker-end="url(#dgA)"/>
+      <!-- plan source -->
+      <g><rect class="dg-box dg-obs" x="14" y="76" width="160" height="58" rx="11"/>
+        <text class="dg-lbl" x="94" y="102">📄 plan.yaml</text><text class="dg-sub" x="94" y="119">the work list</text></g>
+      <!-- items -->
+      <rect class="dg-box dg-obs" x="250" y="8" width="150" height="46" rx="9"/><text class="dg-pill" x="325" y="36">item 1</text>
+      <rect class="dg-box dg-obs" x="250" y="82" width="150" height="46" rx="9"/><text class="dg-pill" x="325" y="110">item 2</text>
+      <rect class="dg-box dg-obs" x="250" y="156" width="150" height="46" rx="9"/><text class="dg-pill" x="325" y="184">item 3 …</text>
+      <!-- template runs -->
+      <rect class="dg-box dg-act dg-fa" x="460" y="8" width="210" height="46" rx="9"/><text class="dg-pill" x="565" y="36">▶ item-template.loop</text>
+      <rect class="dg-box dg-act dg-fa" x="460" y="82" width="210" height="46" rx="9"/><text class="dg-pill" x="565" y="110">▶ item-template.loop</text>
+      <rect class="dg-box dg-act dg-fa" x="460" y="156" width="210" height="46" rx="9"/><text class="dg-pill" x="565" y="184">▶ item-template.loop</text>
+      <text class="dg-el" x="360" y="216">same template, once per item — <tspan fill="#ff86c2">if one fails, the flow pauses and asks: continue or stop?</tspan></text>
+    </svg>
+    <figcaption><b>for each</b> is dynamic fan-out: the items aren't known up front — a planning step discovers them, then the <b>same template</b> loop runs once for every item, each getting that item's text as its context.</figcaption>
+  </figure>
+
   <p>The source file is enumerated by type:</p>
   <pre><code class="loop"># plan.yaml — a list (or items under a single key)
 items:
@@ -695,6 +868,26 @@ items:
   then for each story in "sprint.yaml":
     run "story-template.loop"</code></pre>
   <span class="cap">examples/bmad/atoz/epic.loop — run this in conversation: /loop run epic.loop</span>
+
+  <figure class="fig">
+    <svg viewBox="0 0 720 176" role="img" aria-label="A-to-Z: discover, then a human-approved design, then a template run per story">
+      <line class="dg-edge" x1="174" y1="74" x2="208" y2="74" marker-end="url(#dgAg)"/>
+      <line class="dg-edge" x1="370" y1="74" x2="404" y2="74" marker-end="url(#dgAg)"/>
+      <line class="dg-edge" x1="556" y1="74" x2="588" y2="74" marker-end="url(#dgA)"/>
+      <g><rect class="dg-box dg-plan dg-fp" x="14" y="46" width="160" height="56" rx="11"/>
+        <text class="dg-lbl" x="94" y="72">discover</text><text class="dg-sub" x="94" y="89">→ sprint.yaml</text></g>
+      <g><text class="dg-el-p" x="290" y="34">👤 approves design</text>
+        <rect class="dg-box dg-gate dg-fg" x="210" y="46" width="160" height="56" rx="11"/>
+        <text class="dg-lbl" x="290" y="72">design</text><text class="dg-sub" x="290" y="89">approved spec</text></g>
+      <g><rect class="dg-box dg-warn dg-fw" x="406" y="46" width="150" height="56" rx="11"/>
+        <text class="dg-lbl" x="481" y="72">for each story</text><text class="dg-sub" x="481" y="89">in sprint.yaml</text></g>
+      <g><rect class="dg-box dg-act dg-fa" x="590" y="46" width="120" height="56" rx="11"/>
+        <text class="dg-pill" x="650" y="71">▶ story-</text><text class="dg-pill" x="650" y="86">template ↻</text></g>
+      <text class="dg-el" x="360" y="150">interview → human-approved design → one checklist per story · <tspan fill="#5fd99a">all three stop on the same rule: done when ✓</tspan></text>
+    </svg>
+    <figcaption>The whole feature as one <b>flow</b>. Discovery writes the <b>sprint.yaml</b>, you approve the <b>design</b>, then the <b>story-template</b> runs once per story. Each step ends the same way — when its <b>done&nbsp;when</b> artifact check passes, not when the chat goes quiet.</figcaption>
+  </figure>
+
   <p>The discovery step is just a loop whose goal is to produce an artifact — here, a <code class="inl">sprint.yaml</code>. Run it in conversation: the assistant interviews you across as many turns as it takes (an hour-long session is fine — between your answers the loop is simply suspended). It finishes <strong>when its <code class="inl">done when</code> artifact check passes</strong> — not when the chat goes quiet:</p>
   <pre><code class="loop">loop "discover":
   goal: interview the team and capture the epic as a sprint.yaml with a stories list
@@ -714,12 +907,12 @@ items:
   <h3>A ticket from Jira (the daily driver)</h3>
   <p>You picked up <code class="inl">PROJ-412 — "Applying a coupon can make the cart total negative."</code> Turn the ticket into a loop:</p>
   <ol>
-    <li><strong>Describe it.</strong> In the chat: <code class="inl">/loop PROJ-412: a coupon must never make the cart total negative; acceptance: cart.spec.ts coupon-floor passes</code> — the skill writes the <code class="inl">.loop</code>. (Or write it yourself — the ticket's acceptance criterion becomes <code class="inl">done when</code>.)</li>
+    <li><strong>Describe it.</strong> In the chat: <code class="inl">/loop PROJ-412: a coupon must never make the cart total negative; done when the coupon-floor tests pass</code> — the skill writes the <code class="inl">.loop</code>. (Or write it yourself — the ticket's acceptance criterion becomes <code class="inl">done when</code>, in plain words.)</li>
     <li><strong>What it produces:</strong></li>
   </ol>
   <pre><code class="loop">loop "PROJ-412: coupon must not make the cart total negative":
   goal: applying a coupon never produces a negative cart total
-  done when the test "cart.spec.ts::coupon-floor" passes
+  done when the coupon-floor tests pass
   look at: the cart total logic and the coupon code, and the last failure
   allow edits automatically, but ask me before migrations or pushes
   each cycle: plan, then act, then observe
@@ -841,6 +1034,25 @@ loop "add a healthcheck endpoint":
     <li><strong>Per-loop <code class="inl">git:</code> block</strong> — refines commit cadence for that loop only.</li>
   </ol>
 
+  <figure class="fig">
+    <svg viewBox="0 0 720 196" role="img" aria-label="Git settings cascade through three layers; the protected-branch rule sits outside all of them">
+      <line class="dg-edge" x1="290" y1="56" x2="290" y2="70" marker-end="url(#dgA)"/>
+      <line class="dg-edge" x1="290" y1="114" x2="290" y2="128" marker-end="url(#dgA)"/>
+      <text class="dg-el" x="360" y="66">refines ↓</text>
+      <text class="dg-el" x="360" y="124">refines ↓</text>
+      <rect class="dg-box dg-stop dg-fs" x="20" y="14" width="540" height="42" rx="10"/><text class="dg-pill" x="290" y="40">built-in default · branch + commit when done · no push</text>
+      <rect class="dg-box dg-plan dg-fp" x="20" y="72" width="540" height="42" rx="10"/><text class="dg-pill" x="290" y="98">file-level git: block · applies to every loop in the file</text>
+      <rect class="dg-box dg-act dg-fa" x="20" y="130" width="540" height="42" rx="10"/><text class="dg-pill" x="290" y="156">per-loop git: block · refines that one loop</text>
+      <rect class="dg-box dg-gate dg-fg" x="582" y="14" width="128" height="158" rx="11"/>
+      <text class="dg-pill" x="646" y="74">🔒 never</text>
+      <text class="dg-pill" x="646" y="92">push to main</text>
+      <text class="dg-sub" x="646" y="116">always on —</text>
+      <text class="dg-sub" x="646" y="131">can't be</text>
+      <text class="dg-sub" x="646" y="146">overridden</text>
+    </svg>
+    <figcaption>Three layers, each refining the one above — the most specific that's present wins. The <b>protected-branch rule</b> sits outside all of them: pushing to <b>main/master</b> is always refused, no block can turn it off.</figcaption>
+  </figure>
+
   <div class="note"><b>Always-on safety — not configurable:</b> pushing to <code class="inl">main</code> or <code class="inl">master</code> is always refused, and <code class="inl">work in place</code> + <code class="inl">push when done</code> on a protected branch is an up-front error — neither can be overridden by a <code class="inl">git:</code> block.</div>
 </section>
 
@@ -851,7 +1063,7 @@ loop "add a healthcheck endpoint":
   <pre><code class="loop"># examples/fix_test.loop
 loop "fix the failing checkout tax test":
   goal: the tax line is correct at checkout
-  done when the test "checkout.spec.ts::tax" passes
+  done when the checkout tax tests pass
   each cycle: plan, then act, then observe
   when it fails: reflect, then plan again
   after 5 tries: stop and warn "stuck"</code></pre>
@@ -859,7 +1071,34 @@ loop "fix the failing checkout tax test":
   <p>With the Loop skill loaded, run it inside the chat — the assistant executes the cycle itself, narrates every step, and you answer gates inline:</p>
   <pre class="sh"><code>/loop "fix the failing checkout tax test"   # write a .loop from a request
 /loop run examples/fix_test.loop            # run it, right here in the chat</code></pre>
-  <p>This is the only mode where a long interactive discovery works, because the human is already in the loop.</p>
+  <p>Here's what that looks like in the session — the assistant drives <strong>plan → act → observe → reflect</strong> itself, pauses at the human gate, and stops only when the real test passes:</p>
+  <div class="pane term" style="margin:14px 0;">
+    <div class="ph">claude code — running fix_test.loop<span class="dots">● ● ●</span></div>
+    <div class="termbody" style="height:auto; overflow:visible;">
+      <div class="ln tl-u">❯ /loop run examples/fix_test.loop</div>
+      <div class="ln tl-dim">  started · branch loop/fix-checkout-tax · stop after 5 tries</div>
+      <div class="ln">&nbsp;</div>
+      <div class="ln tl-dim">  cycle 1</div>
+      <div class="ln tl-plan">  plan     → read the failing test + tax helper; suspect rounding</div>
+      <div class="ln tl-tool">  ● act     Edit src/checkout/tax.ts</div>
+      <div class="ln tl-tool">  ● observe Bash pnpm test checkout</div>
+      <div class="ln tl-bad">    ✗ tax.spec.ts — expected 7.20, got 7.2000001</div>
+      <div class="ln tl-plan">  reflect  → float error; round to integer cents first</div>
+      <div class="ln">&nbsp;</div>
+      <div class="ln tl-dim">  cycle 2</div>
+      <div class="ln tl-plan">  plan     → convert to cents before formatting</div>
+      <div class="ln tl-tool">  ● act     Edit src/checkout/tax.ts</div>
+      <div class="ln tl-tool">  ● observe Bash pnpm test checkout</div>
+      <div class="ln tl-ok">    ✓ checkout tax tests pass</div>
+      <div class="ln">&nbsp;</div>
+      <div class="ln tl-gate">  ⏸ human gate — commit and open a PR? (never pushes to main)</div>
+      <div class="ln tl-u">❯ yes</div>
+      <div class="ln tl-tool">  ● Bash git commit -am "fix checkout tax rounding"</div>
+      <div class="ln tl-tool">  ● Bash gh pr create</div>
+      <div class="ln tl-ok">  ✓ done — goal met in 2 cycles · PR #214 opened</div>
+    </div>
+  </div>
+  <p>You stay in the chat the whole time: you watch each step, you answer the gate, and the loop ends on a <em>real</em> green test — not the assistant saying "done". This is the only mode where a long interactive discovery works, because the human is already in the loop.</p>
   <h3>Headless CLI</h3>
   <pre class="sh"><code>loop run   examples/ship_feature.loop      # drive Claude Code, glyph trace
 loop parse examples/ship_flow.loop         # print the parsed spec (the loop-spec IR)
@@ -876,27 +1115,70 @@ loop export examples/bmad-auth.loop        # export to an Archon workflow
 </section>
 
 <!-- skills & memory -->
-<section id="skillsmem">
-  <h2>Skills &amp; memory <span class="badge b-basic">ecosystem</span></h2>
-  <p>Loop rides two Claude Code ideas: <strong>skills</strong> (reusable capabilities the agent can invoke) and <strong>memory</strong> (what the agent knows across steps and sessions). One loop touches both:</p>
-  <pre><code class="loop">loop "ship the payments story":
-  use the team method            # skill / preset — your conventions, gates, git policy
-  goal: the payments story is shippable
-  look at: the story, and AGENTS.md   # AGENTS.md — the repo's durable memory of the language
-  each cycle: plan, then act, then observe
-  when it fails: reflect, then plan again   # reflect — the run's working memory of the last miss</code></pre>
+<section id="skills">
+  <h2>Skills — Loop <em>is</em> a Claude Code skill <span class="badge b-basic">ecosystem</span></h2>
+  <p>First, the word. <strong>"Skill" here means a Claude Code skill</strong> — the platform feature, not something Loop invented. A Claude Code skill is just a folder with a <code class="inl">SKILL.md</code> that teaches the agent a capability; when your request matches its <code class="inl">description</code>, Claude Code loads it. <strong>Loop ships as exactly one of these</strong> — that's the whole reason <code class="inl">/loop</code> exists.</p>
 
-  <h3>Loop is a skill</h3>
-  <p>Loop ships as a Claude Code <strong>skill</strong>: drop <code class="inl">.claude/skills/loop/</code> in and <code class="inl">/loop</code> works in any conversation — describe work and it writes a <code class="inl">.loop</code>; name a file and it runs the loop in the chat (see <a href="#start">Getting started</a>). Your <em>methods</em> are reusable capabilities too: <code class="inl">use the &lt;X&gt; method</code> pulls in a preset — package your team's way of working once, reuse it everywhere.</p>
+  <p>This is the real file that makes it work — <code class="inl">.claude/skills/loop/SKILL.md</code>:</p>
+  <pre><code class="loop"><span class="tok-com">---</span>
+<span class="tok-name">name</span>: loop
+<span class="tok-name">description</span>: Create and run Loop (.loop) flows — a natural-language DSL for
+  loop engineering. Use when the user wants to author, write, run, or execute a
+  self-correcting or human-gated AI coding loop … or mentions a .loop file.
+<span class="tok-com">---</span>
 
-  <h3>Memory — what the loop remembers</h3>
+<span class="tok-com"># Loop</span>
+You do two things with this skill: <span class="tok-kw">create</span> .loop files, and <span class="tok-kw">run</span> them —
+natively, in this conversation, so the user watches every step and answers gates.</code></pre>
+  <span class="cap">.claude/skills/loop/SKILL.md (abridged). The YAML frontmatter (<code>name</code> + <code>description</code>) is the Claude Code skill format; the body is the instructions the agent follows.</span>
+
+  <p><strong>Use it:</strong> copy that one folder into your skills directory, and <code class="inl">/loop</code> works in every repo afterward:</p>
+  <pre class="sh"><code>cp -r .claude/skills/loop ~/.claude/skills/   # install once
+/loop "fix the failing auth test"             # now available in any chat</code></pre>
+
+  <h3>A skill is not a method — keep them straight</h3>
+  <p>Two nearby words get confused. A Claude Code <em>skill</em> teaches the agent <strong>how to do Loop at all</strong>; a Loop <em>method</em> is a reusable <code class="inl">.loop</code> <strong>preset</strong> you import inside a loop.</p>
+  <table>
+    <tr><th></th><th>A Claude Code <em>skill</em></th><th>A Loop <em>method</em></th></tr>
+    <tr><td>What it is</td><td>A folder + <code>SKILL.md</code> that gives the agent the <code>/loop</code> capability</td><td>A <code>.loop</code> preset — a <strong>library of stages</strong> (e.g. BMAD's analyze→architect→story→qa)</td></tr>
+    <tr><td>Where it lives</td><td><code>.claude/skills/loop/</code></td><td>a <code>.loop</code> file you import</td></tr>
+    <tr><td>You use it by</td><td>installing it once, then typing <code>/loop</code></td><td><code>use the &lt;X&gt; method</code> inside a loop</td></tr>
+  </table>
+  <p>A method lets a three-line file behave like a whole hand-written pipeline:</p>
+  <pre><code class="loop">use the BMAD method   <span class="tok-com"># import the method's whole pipeline (the "library")</span>
+run with claude code   <span class="tok-com"># the agent that drives each cycle</span>
+target: ./src          <span class="tok-com"># the codebase it operates on</span></code></pre>
+  <span class="cap">examples/methods/use-bmad.loop — name a method, don't rewrite its stages. More in <a href="#methods">§14 · Methods</a>.</span>
+</section>
+
+<!-- memory -->
+<section id="memory">
+  <h2>Memory — what the loop remembers <span class="badge b-basic">ecosystem</span></h2>
+  <p>A loop doesn't make you re-explain context every time. It remembers at four levels — and the most important is a real file <strong>you own</strong>: <code class="inl">AGENTS.md</code>.</p>
+
+  <h3>AGENTS.md — durable memory, living in your repo</h3>
+  <p><code class="inl">AGENTS.md</code> is a plain markdown file at your repo root that teaches any agent the Loop language (plus your own conventions). Because it lives in the repo, it <em>travels with the project</em>: open the repo in a brand-new session and the agent already knows how to read and write a <code class="inl">.loop</code> — nothing to re-paste. This is the real one that ships with Loop:</p>
+  <pre><code class="loop"><span class="tok-com"># AGENTS.md — authoring Loop (.loop) flows</span>
+
+This file teaches an AI assistant (Claude Code, Copilot, Cursor, …) how to
+write Loop flows. When a user asks for a staged, self-correcting, or
+human-gated workflow, author a .loop file using the grammar below, then run it.
+
+<span class="tok-com">## Vocabulary (the whole language)</span>
+  loop "&lt;name&gt;":          a self-correcting loop
+  pipeline "&lt;name&gt;":      a sequence of stages (an epic)
+  goal: &lt;text&gt;           what "done" means
+  done when &lt;predicate&gt;  how the loop verifies itself
+  …</code></pre>
+  <span class="cap">AGENTS.md (abridged). <strong>Use it:</strong> drop it at your repo root. Add your team's conventions below the grammar and every loop in the repo inherits them. (<code>CLAUDE.md</code> is read the same way.)</span>
+
+  <h3>The other three layers</h3>
   <ul>
-    <li><strong>Across sessions — <code class="inl">AGENTS.md</code>.</strong> The Loop language reference lives in your repo, so any agent that opens it already knows how to read and write a <code class="inl">.loop</code> — the project's durable memory of the language. Add your own conventions to <code class="inl">AGENTS.md</code> / <code class="inl">CLAUDE.md</code> and every loop inherits them.</li>
-    <li><strong>Within a run — <code class="inl">reflect</code>.</strong> On a failed check the loop writes a short diagnosis and feeds it into the next <code class="inl">plan</code> — the loop's working memory, so it learns from each miss instead of repeating it.</li>
-    <li><strong>Across steps — the handoff.</strong> In a <code class="inl">flow</code> / <code class="inl">for each</code>, a short text summary of each step carries forward as context for the next; larger artifacts (a PRD, <code class="inl">sprint.yaml</code>) live on disk and the next step <code class="inl">look at:</code>s them.</li>
-    <li><strong>Across the team — methods.</strong> A method preset is shared memory of "how we ship" — one file, reused by every project that pulls it in.</li>
+    <li><strong>Within a run — <code class="inl">reflect</code>.</strong> On a failed check the loop writes a short diagnosis and feeds it into the next <code class="inl">plan</code> — working memory, so it learns from a miss instead of repeating it.</li>
+    <li><strong>Across steps — the handoff.</strong> In a <code class="inl">flow</code> / <code class="inl">for each</code>, a short text summary of each step carries forward as context; larger artifacts (a PRD, <code class="inl">sprint.yaml</code>) live on disk and the next step <code class="inl">look at:</code>s them.</li>
+    <li><strong>Across the team — methods.</strong> A method preset is shared memory of "how we ship" — one file, reused by every project that imports it.</li>
   </ul>
-  <div class="note"><b>Net:</b> the loop doesn't depend on you re-explaining context. <code class="inl">AGENTS.md</code> remembers the language, <code class="inl">reflect</code> remembers the last failure, the handoff remembers the last step, and methods remember how your team works.</div>
+  <div class="note"><b>Net:</b> <code class="inl">AGENTS.md</code> remembers the language, <code class="inl">reflect</code> remembers the last failure, the handoff remembers the last step, and methods remember how your team works — so you don't have to.</div>
 </section>
 
 <!-- 17 -->
@@ -943,7 +1225,7 @@ loop export examples/bmad-auth.loop        # export to an Archon workflow
 loop "add API rate limiting":
   goal: requests are rate-limited per API key
   done when "pnpm test rate-limit" passes
-  look at: src/api, src/middleware, and the last failure
+  look at: the API and its middleware, and the last failure
   allow edits automatically, ask me before pushes
   each cycle: plan, then act, then observe
   also: run a security check
@@ -954,28 +1236,48 @@ loop "add API rate limiting":
 <!-- 18 -->
 <section id="bestpractice">
   <h2>18 · Best practices &amp; gotchas <span class="badge b-basic">reference</span></h2>
-  <div class="key"><span class="kt">Do</span>
-    <ul>
-      <li><strong>Always give a real <code class="inl">done when</code></strong> when a command can decide it — that's "can't fake done".</li>
-      <li><strong>Always add a thrash guard</strong> (<code class="inl">after N tries: stop and warn …</code>) to any loop that reflects on failure — otherwise it runs to the hard cap of 25.</li>
-      <li><strong>Scope <code class="inl">look at:</code></strong> to the relevant module so the agent stays inside your architecture.</li>
-      <li><strong>Gate risky classes</strong> — <code class="inl">ask me before migrations or pushes</code>; <code class="inl">a human approves before</code> deploys.</li>
-      <li><strong>Split big work into files</strong> with <code class="inl">flow</code>, and into per-item runs with <code class="inl">for each</code>; keep each file focused.</li>
-    </ul>
-  </div>
-  <div class="key"><span class="kt">Watch out</span>
-    <ul>
-      <li><strong>Handoff is text, not data.</strong> A <code class="inl">flow</code>/<code class="inl">for each</code> passes a summary string, not structured fields — by design. Cross-file state lives on disk (files), which later steps <code class="inl">look at:</code>.</li>
-      <li><strong>Transition order is fixed</strong> (blocked &gt; attempts &gt; pass &gt; fail), not the order you wrote them.</li>
-      <li><strong>A loop with no <code class="inl">done when</code></strong> finishes only through a human path — a review gate, an approved plan-first pass, or an explicit <code class="inl">when …: stop</code>.</li>
-      <li><strong>Discovery ends on its artifact check</strong>, not on the conversation going quiet — point <code class="inl">done when</code> at a validator of the file it produces.</li>
-    </ul>
+  <p>Each row is one decision — the <span style="color:var(--stop);font-weight:700">✓ Do</span> and the <span style="color:var(--gate);font-weight:700">✗ Don't</span> side by side.</p>
+  <div class="ddgrid">
+    <div class="ddhead do">✓ DO</div>
+    <div class="ddhead dont">✗ DON'T</div>
+
+    <div class="ddtopic">Verification — "can't fake done"</div>
+    <div class="dd do"><span class="mk">✓</span>Give a real <code class="inl">done when</code> — a test, scanner, or script the world can run.</div>
+    <div class="dd dont"><span class="mk">✗</span>End because the model <b>said</b> "done". An unverified loop is just a prompt.</div>
+
+    <div class="ddtopic">Thrash guard</div>
+    <div class="dd do"><span class="mk">✓</span>Put <code class="inl">after N tries: stop and warn …</code> on every loop that reflects on failure.</div>
+    <div class="dd dont"><span class="mk">✗</span>Lean on the hard cap of 25 — it's a backstop, not a plan. No warning, wasted cycles.</div>
+
+    <div class="ddtopic">Context scope</div>
+    <div class="dd do"><span class="mk">✓</span>Point <code class="inl">look at:</code> at the relevant module <em>and the last failure</em>.</div>
+    <div class="dd dont"><span class="mk">✗</span>Leave context open and let the agent wander the whole repo.</div>
+
+    <div class="ddtopic">Risky actions</div>
+    <div class="dd do"><span class="mk">✓</span>Gate them — <code class="inl">ask me before migrations or pushes</code>; <code class="inl">a human approves before</code> deploys.</div>
+    <div class="dd dont"><span class="mk">✗</span><code class="inl">allow … automatically</code> for destructive classes. (Pushing to main is refused regardless.)</div>
+
+    <div class="ddtopic">Composition</div>
+    <div class="dd do"><span class="mk">✓</span>Split big work: <code class="inl">flow</code> across files, <code class="inl">for each</code> per item — keep each file focused.</div>
+    <div class="dd dont"><span class="mk">✗</span>Cram an epic into one giant loop you can't read or reuse.</div>
+
+    <div class="ddtopic">Cross-step state</div>
+    <div class="dd do"><span class="mk">✓</span>Persist big artifacts to disk (a PRD, <code class="inl">sprint.yaml</code>) and <code class="inl">look at:</code> them next step.</div>
+    <div class="dd dont"><span class="mk">✗</span>Expect the handoff to carry structured data — it's a <b>text summary</b>, by design.</div>
+
+    <div class="ddtopic">Transitions</div>
+    <div class="dd do"><span class="mk">✓</span>Trust the fixed precedence: <code class="inl">blocked &gt; attempts &gt; pass &gt; fail</code>.</div>
+    <div class="dd dont"><span class="mk">✗</span>Assume rules fire in the order you wrote them. They don't.</div>
+
+    <div class="ddtopic">Discovery &amp; human-only loops</div>
+    <div class="dd do"><span class="mk">✓</span>Point <code class="inl">done when</code> at a validator of the artifact the loop produces.</div>
+    <div class="dd dont"><span class="mk">✗</span>Assume a loop with no <code class="inl">done when</code> ends when the chat goes quiet — give it a human gate or a <code class="inl">when …: stop</code>.</div>
   </div>
   <p style="margin-top:22px">A loop that follows every "Do" above — real check, scoped context, gated risk, thrash guard:</p>
   <pre><code class="loop">loop "harden the upload endpoint":
   goal: uploads reject oversized and wrong-type files
   done when "pnpm test upload" passes        # real check — can't fake done
-  look at: src/upload, and the last failure   # scoped context
+  look at: the upload code, and the last failure   # scoped context
   ask me before migrations or pushes          # gate risky classes
   each cycle: plan, then act, then observe
   when it fails: reflect, then plan again

@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Loop — the workshop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#0b0d12; --bg2:#14171f;
+  --panel:rgba(255,255,255,.035); --panel2:rgba(255,255,255,.06); --line:rgba(255,255,255,.10);
+  --ink:#eef2f7; --muted:#94a1b2;
+  --fwd:#34e0c4; --reflect:#ffb45a; --stop:#5fd99a; --gate:#ff86c2; --str:#9be58f; --blue:#84b6ff;
+  --display:"Ubuntu",system-ui,sans-serif; --ui:"Ubuntu",system-ui,sans-serif; --mono:"Ubuntu Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0; color:var(--ink); font-family:var(--ui); -webkit-font-smoothing:antialiased; line-height:1.6; background:var(--bg);}
+body::before{content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
+  background:
+    radial-gradient(60% 46% at 88% -6%, rgba(52,224,196,.16), transparent 60%),
+    radial-gradient(52% 44% at 2% 102%, rgba(255,180,90,.12), transparent 60%),
+    radial-gradient(40% 40% at 50% 40%, rgba(132,182,255,.045), transparent 70%),
+    var(--bg);}
+a{color:var(--fwd); text-decoration:none;} a:hover{text-decoration:underline;}
+
+.topbar{display:flex; align-items:center; gap:18px; max-width:920px; margin:0 auto; padding:18px 24px 0;}
+.topbar .brand{font-family:var(--display); font-weight:600; font-size:22px; display:flex; align-items:center; gap:9px; margin-right:auto;}
+.lpmark{width:26px; height:26px; display:block; filter:drop-shadow(0 0 10px rgba(52,224,196,.35));}
+.topbar a.nav{color:var(--muted); font-size:13px; font-weight:600; padding:5px 11px; border-radius:8px; border:1px solid transparent;}
+.topbar a.nav:hover{color:var(--ink); background:var(--panel); text-decoration:none;}
+.topbar a.nav.here{color:var(--ink); border-color:var(--line); background:var(--panel);}
+.topbar a.lab{color:var(--gate); border:1px solid color-mix(in srgb,var(--gate) 40%,var(--line));}
+
+main{max-width:920px; margin:0 auto; padding:14px 24px 120px;}
+header.hero{border-bottom:1px solid var(--line); padding:18px 0 26px; margin-bottom:8px;}
+header.hero h1{font-family:var(--display); font-weight:600; font-size:48px; line-height:1.0; letter-spacing:-.5px; margin:.1em 0 .25em;}
+header.hero .lede{font-size:17px; color:var(--ink);}
+header.hero .sub{color:var(--muted); font-size:14px; margin-top:10px;}
+header.hero .sub b{color:var(--ink);}
+
+/* track switch */
+.tracks{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:24px 0 6px;}
+.track{display:flex; flex-direction:column; gap:3px; text-align:left; cursor:pointer; padding:15px 17px; border-radius:14px;
+  border:1px solid var(--line); background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015)); color:var(--ink);
+  font-family:var(--ui); transition:border-color .15s, box-shadow .15s, background .15s;}
+.track .tt{font-weight:800; font-size:16px; letter-spacing:.2px;}
+.track .td{color:var(--muted); font-size:12.5px;}
+.track:hover{border-color:color-mix(in srgb,var(--fwd) 35%,var(--line));}
+.track.on{border-color:color-mix(in srgb,var(--fwd) 60%,var(--line)); background:color-mix(in srgb,var(--fwd) 9%,transparent); box-shadow:0 0 44px -22px var(--fwd);}
+.track.on .tt{color:var(--fwd);}
+.trackhint{color:var(--muted); font-size:12px; text-align:center; margin:2px 0 0;}
+
+/* progress */
+.prog{display:flex; align-items:center; gap:13px; margin:22px 0 6px;}
+.prog .bar{flex:1 1 auto; height:10px; background:rgba(3,6,12,.6); border:1px solid var(--line); border-radius:6px; overflow:hidden;}
+.prog .fill{height:100%; width:0%; background:linear-gradient(90deg,#4ff0d6,#16b9a0); box-shadow:0 0 14px rgba(52,224,196,.45); transition:width .35s ease;}
+.prog .lbl{font-family:var(--mono); font-size:12px; color:var(--muted); white-space:nowrap;}
+.prog .reset{font-family:var(--ui); font-weight:700; font-size:11.5px; letter-spacing:.3px; background:transparent; color:var(--muted);
+  border:1px solid var(--line); border-radius:8px; padding:6px 11px; cursor:pointer;}
+.prog .reset:hover{color:var(--ink); border-color:color-mix(in srgb,var(--gate) 40%,var(--line));}
+
+/* task cards */
+.task{border:1px solid var(--line); border-radius:14px; background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012));
+  padding:18px 19px; margin:14px 0; transition:opacity .2s, border-color .2s;}
+.task.done{border-color:color-mix(in srgb,var(--stop) 38%,var(--line)); background:color-mix(in srgb,var(--stop) 6%,transparent);}
+.task .top{display:flex; align-items:center; gap:12px; margin-bottom:4px;}
+.task .nC{flex:0 0 auto; width:30px; height:30px; border-radius:9px; display:grid; place-items:center; font-family:var(--mono);
+  font-weight:700; font-size:14px; color:var(--fwd); background:color-mix(in srgb,var(--fwd) 12%,transparent); border:1px solid color-mix(in srgb,var(--fwd) 35%,transparent);}
+.task.done .nC{color:var(--stop); background:color-mix(in srgb,var(--stop) 14%,transparent); border-color:color-mix(in srgb,var(--stop) 45%,transparent);}
+.task h3{font-family:var(--display); font-weight:600; font-size:20px; margin:0; flex:1 1 auto;}
+.task .tag{font-family:var(--ui); font-weight:700; font-size:9.5px; letter-spacing:1.4px; text-transform:uppercase;
+  padding:3px 9px; border-radius:20px; color:var(--reflect); border:1px solid color-mix(in srgb,var(--reflect) 45%,transparent);}
+.lead{color:#cdd6e0; font-size:14px; margin:8px 0 0;}
+.do, .see{display:flex; gap:9px; font-size:13.5px; margin:11px 0 0; align-items:baseline;}
+.do .k, .see .k{flex:0 0 auto; font-family:var(--ui); font-weight:700; font-size:10.5px; letter-spacing:1px; text-transform:uppercase; padding-top:1px;}
+.do .k{color:var(--blue);} .see .k{color:var(--stop);}
+.do .v, .see .v{color:#cdd6e0;}
+.do .v b, .see .v b{color:var(--ink);}
+pre{background:rgba(3,6,12,.6); border:1px solid var(--line); border-left:2px solid var(--fwd); border-radius:11px;
+  padding:12px 14px; overflow-x:auto; margin:10px 0 2px; font-size:13px; line-height:1.6;}
+pre.sh{border-left-color:var(--muted);} pre.ui{border-left-color:var(--blue);}
+pre code{font-family:var(--mono); white-space:pre; color:var(--ink);}
+.cmt{color:var(--muted);} .kw{color:var(--fwd);} .str{color:var(--str);} .num{color:var(--reflect);} .gate{color:var(--gate);}
+.markbtn{font-family:var(--ui); font-weight:700; font-size:13px; letter-spacing:.2px; margin-top:14px;
+  background:transparent; color:var(--muted); border:1px solid var(--line); border-radius:9px; padding:8px 15px; cursor:pointer; transition:all .15s;}
+.markbtn:hover{color:var(--ink); border-color:color-mix(in srgb,var(--stop) 40%,var(--line));}
+.task.done .markbtn{color:var(--stop); border-color:color-mix(in srgb,var(--stop) 45%,transparent); background:color-mix(in srgb,var(--stop) 10%,transparent);}
+
+.note{background:linear-gradient(180deg,rgba(255,180,90,.07),rgba(255,255,255,.02)); border:1px solid var(--line);
+  border-left:2px solid var(--reflect); border-radius:12px; padding:12px 15px; margin:18px 0; font-size:13.5px; color:#cdd6e0;}
+.note b{color:var(--reflect);}
+
+.fin{display:none; text-align:center; border:1px solid color-mix(in srgb,var(--stop) 45%,var(--line)); border-radius:18px;
+  padding:30px 26px; margin:22px 0; background:color-mix(in srgb,var(--stop) 9%,transparent); box-shadow:0 0 70px -26px var(--stop);}
+.fin.show{display:block;}
+.fin h2{font-family:var(--display); font-weight:600; font-size:28px; margin:0 0 6px; color:#bdf0d4;}
+.fin p{color:#cdd6e0; margin:6px 0 14px;}
+.fin a.btn{display:inline-block; margin:4px 6px 0; font-weight:700; font-size:13px; padding:9px 17px; border-radius:10px;
+  background:linear-gradient(180deg,#4ff0d6,#16b9a0); color:#06231f;}
+.fin a.btn.alt{background:transparent; color:var(--gate); border:1px solid color-mix(in srgb,var(--gate) 45%,transparent);}
+
+footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); margin-top:40px; padding-top:18px;}
+
+@media (max-width:680px){
+  header.hero h1{font-size:36px;} .tracks{grid-template-columns:1fr;}
+  .topbar{flex-wrap:wrap; gap:8px;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="Loop"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span>Loop</div>
+  <a class="nav" href="tutorial.html">Tutorial</a>
+  <a class="nav here" href="workshop.html">Workshop</a>
+  <a class="nav lab" href="game.html">🎮 Loop Lab</a>
+</div>
+
+<main>
+<header class="hero">
+  <h1>Loop, the workshop</h1>
+  <div class="lede">Learn Loop by <em>doing</em>. Pick your tool, then work the tasks top to bottom — each one is a real thing to run.</div>
+  <p class="sub">There are <b>two ways</b> to drive Loop: straight from a <b>Claude Code chat</b>, or from <b>VS Code</b> with the extension. Same <code>.loop</code> files, same engine — pick the one you live in. Switch tracks any time; your progress is saved per track in this browser.</p>
+</header>
+
+<div class="tracks">
+  <button class="track" data-track="claude">
+    <span class="tt">🤖 Claude Code chat</span>
+    <span class="td">Type <code>/loop</code> in a chat. The assistant runs the cycle and you answer gates inline. Nothing to install but the skill.</span>
+  </button>
+  <button class="track" data-track="vscode">
+    <span class="tt">🧩 VS Code</span>
+    <span class="td">Write loops by hand with syntax highlighting and hit the <b>▶ Run</b> lens. Choose where each run happens.</span>
+  </button>
+</div>
+<p class="trackhint" id="trackhint"></p>
+
+<div class="prog">
+  <div class="bar"><div class="fill" id="fill"></div></div>
+  <span class="lbl" id="proglbl"></span>
+  <button class="reset" id="reset">Reset track</button>
+</div>
+
+<div class="note" id="repo"><b>Before you start:</b> clone the Loop repo and open it — every task uses the real <code>examples/</code> files that ship with it, so you can run them as-is.</div>
+
+<div id="tasklist"></div>
+
+<div class="fin" id="fin">
+  <h2>🎉 Workshop complete</h2>
+  <p>You ran loops, answered a gate, authored one from English, and watched it stop on a real check — both by hand and from the agent. That's loop engineering.</p>
+  <a class="btn" href="tutorial.html">Deep dive — the full language →</a>
+  <a class="btn alt" href="game.html">Play Loop Lab 🎮</a>
+</div>
+
+<footer>Loop · learn by doing. The same engine the <a href="tutorial.html">tutorial</a> and <a href="game.html">Loop Lab</a> teach: plan → act → observe, a reflect back-edge, a thrash guard, and "you can't fake done."</footer>
+</main>
+
+<script>
+var TRACKS = {claude:"Claude Code track", vscode:"VS Code track"};
+
+/* Each task has a concept tag, a one-line lead, and per-track {do, code, codeClass, see}.
+   {both:{...}} means the step is identical in both tools. */
+var TASKS = [
+  { tag:"Setup", title:"Set up your tool",
+    lead:"One-time setup so Loop is available where you work.",
+    claude:{ do:"Copy the bundled skill into your Claude Code skills folder, then open this repo in a chat.",
+      code:"cp -r .claude/skills/loop ~/.claude/skills/", codeClass:"sh",
+      see:"Type <b>/loop</b> in the chat — autocomplete lists the Loop skill." },
+    vscode:{ do:"Install the <b>Loop</b> VS Code extension, then open this repo folder.",
+      code:"Extensions  ▸  search “Loop”  ▸  Install", codeClass:"ui",
+      see:"Open any <b>.loop</b> file — keywords are colored and a <b>▶ Run this loop</b> lens sits above every <code>loop</code>." } },
+
+  { tag:"Setup", title:"Give the agent its memory",
+    lead:"AGENTS.md is the Loop language reference. With it in the repo, any agent that opens the project already knows how to read and write a .loop.",
+    both:{ do:"Confirm <code>AGENTS.md</code> is at the repo root.",
+      code:"ls AGENTS.md", codeClass:"sh",
+      see:"The file exists. That's the project's persistent memory — it travels with the repo." } },
+
+  { tag:"Run", title:"Run your first loop",
+    lead:"The canonical example: keep working until a checkout test goes green.",
+    claude:{ do:"Run it right in the chat.",
+      code:"/loop run examples/fix_test.loop", codeClass:"sh",
+      see:"The assistant narrates <b>plan → act → observe</b>. On a red test it <b>reflects</b> and re-plans, and it stops only when <code>checkout.spec.ts::tax</code> passes." },
+    vscode:{ do:"Open <code>examples/fix_test.loop</code> and click the <b>▶ Run this loop</b> lens above the <code>loop</code> line.",
+      code:"examples/fix_test.loop  →  ▶ Run this loop", codeClass:"ui",
+      see:"Pick a run mode when asked (try <b>session</b>). Watch the cycle run; it ends when the test is green." } },
+
+  { tag:"Run", title:"Choose where it runs",
+    lead:"Same loop, two homes. Decide whether a run is an interactive chat or a headless trace.",
+    claude:{ do:"In a chat, the conversation IS the session — re-run and answer any prompt inline.",
+      code:"/loop run examples/fix_test.loop", codeClass:"sh",
+      see:"You watch every step and answer gates without leaving the chat. (Prefer a terminal? <code>loop run &lt;file&gt;</code> runs the same file headless.)" },
+    vscode:{ do:"Set how ▶ runs: open Settings and search <code>loop.runMode</code>.",
+      code:"loop.runMode:  ask  |  session  |  output", codeClass:"ui",
+      see:"<b>session</b> opens interactive Claude in the terminal; <b>output</b> is a headless trace with native gate dialogs; <b>ask</b> lets you choose each time." } },
+
+  { tag:"Gates", title:"Answer a human gate",
+    lead:"Some loops pause for a person. Here the agent must get your OK on the plan before it touches code.",
+    claude:{ do:"Run the plan-gate example.",
+      code:"/loop run examples/human-gates/approve-the-plan.loop", codeClass:"sh",
+      see:"The agent shows its plan and <b>pauses</b>. Nothing is acted on until you approve in the chat." },
+    vscode:{ do:"Open <code>examples/human-gates/approve-the-plan.loop</code> and ▶ Run it in <b>session</b> mode.",
+      code:"approve-the-plan.loop  →  ▶ Run this loop", codeClass:"ui",
+      see:"The run stops at the plan gate; approve to let it continue. The gate line is <code>a human approves the plan first</code>." } },
+
+  { tag:"Author", title:"Make a loop from plain English",
+    lead:"You don't have to write the file yourself — describe the work and get a real .loop back.",
+    claude:{ do:"Ask the skill to write one from a sentence.",
+      code:"/loop \"fix the failing auth test in src/auth, and gate any database migration\"", codeClass:"sh",
+      see:"The skill writes a <code>.loop</code> with a goal, a <code>done when</code> test, and an <code>ask me before migrations</code> gate. Read it, then run it." },
+    vscode:{ do:"Command Palette → <b>Loop: New from template</b>.",
+      code:"Cmd/Ctrl-Shift-P  →  Loop: New from template", codeClass:"ui",
+      see:"A ready-to-edit <code>.loop</code> is scaffolded. Fill in the goal, save, and ▶ Run." } },
+
+  { tag:"Edit", title:"Edit a loop, change its behavior",
+    lead:"A .loop is just text you control. Add a thrash guard so it can never spin forever.",
+    both:{ do:"Open <code>examples/basics/minimal.loop</code> and add this line inside the loop, then re-run it.",
+      code:"  after 5 tries: stop and warn \"stuck\"", codeClass:"loop",
+      see:"Now if it can't reach the goal it <b>warns and stops</b> at 5 tries instead of grinding to the hard cap." } },
+
+  { tag:"Compose", title:"Run a multi-step job",
+    lead:"Real work is more than one loop. A flow chains whole files in order, carrying a summary forward.",
+    claude:{ do:"Run a chained flow.",
+      code:"/loop run examples/ship_flow.loop", codeClass:"sh",
+      see:"It runs <b>build → test → deploy</b> in order; each step's summary feeds the next, and <b>deploy waits for your approval</b>." },
+    vscode:{ do:"Open <code>examples/ship_flow.loop</code> and ▶ Run it.",
+      code:"ship_flow.loop  →  ▶ Run this loop", codeClass:"ui",
+      see:"The same chain runs with a live trace; the deploy step pauses for the approval gate." } },
+
+  { tag:"Git", title:"See the git safety net",
+    lead:"You never have to remember 'don't push to main' — it's built in.",
+    both:{ do:"After running any loop, check where the work landed.",
+      code:"git branch --show-current\ngit log --oneline -3", codeClass:"sh",
+      see:"Work happened on a <b>feature branch</b> and committed on success — and a push to <code>main</code>/<code>master</code> is <b>always refused</b>, no config needed." } },
+
+  { tag:"Ship", title:"Graduate — write your own loop",
+    lead:"Now do it for real: pick an actual bug or small task in your code with a test that can decide 'done'.",
+    claude:{ do:"Describe your task as a loop — name a real command for <code>done when</code>.",
+      code:"/loop \"<your task> — done when <your test/command> passes\"", codeClass:"sh",
+      see:"You wrote the loop once; the runtime ran it, verified against a real check, and stopped. 🎉" },
+    vscode:{ do:"<b>Loop: New from template</b>, set your goal + a real <code>done when</code>, save, then ▶ Run.",
+      code:"New from template  →  edit goal & done-when  →  ▶ Run", codeClass:"ui",
+      see:"It self-corrects until your real check passes — then stops. You're the author, not the for-loop. 🎉" } },
+];
+
+var state = localStorage.getItem("loopws_track") || "claude";
+
+function key(i){ return "loopws_" + state + "_" + i; }
+function isDone(i){ return localStorage.getItem(key(i)) === "1"; }
+function setDone(i,v){ if(v) localStorage.setItem(key(i),"1"); else localStorage.removeItem(key(i)); }
+
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function codeHTML(t){
+  // light, safe highlighting on already-escaped text
+  return esc(t)
+    .replace(/(#.*)$/gm,'<span class="cmt">$1</span>')
+    .replace(/(&quot;[^&]*?&quot;|&quot;.*?&quot;)/g,'<span class="str">$1</span>')
+    .replace(/&quot;/g,'"');
+}
+
+function render(){
+  document.querySelectorAll(".track").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-track")===state); });
+  document.getElementById("trackhint").textContent = "Showing the " + TRACKS[state] + ". The other track teaches the same ideas with the other tool.";
+
+  var list = document.getElementById("tasklist");
+  list.innerHTML = "";
+  TASKS.forEach(function(t, i){
+    var d = t.both || t[state];
+    var done = isDone(i);
+    var card = document.createElement("div");
+    card.className = "task" + (done ? " done" : "");
+    card.innerHTML =
+      '<div class="top"><span class="nC">' + (done ? "✓" : (i+1)) + '</span>' +
+        '<h3>' + t.title + '</h3><span class="tag">' + t.tag + '</span></div>' +
+      '<p class="lead">' + t.lead + '</p>' +
+      '<div class="do"><span class="k">Do</span><span class="v">' + d.do + '</span></div>' +
+      '<pre class="' + (d.codeClass==="sh"?"sh":d.codeClass==="ui"?"ui":"") + '"><code>' + codeHTML(d.code) + '</code></pre>' +
+      '<div class="see"><span class="k">You see</span><span class="v">' + d.see + '</span></div>' +
+      '<button class="markbtn">' + (done ? "✓ Done — click to undo" : "Mark done") + '</button>';
+    card.querySelector(".markbtn").onclick = function(){ setDone(i, !isDone(i)); render(); };
+    list.appendChild(card);
+  });
+
+  var total = TASKS.length, n = 0;
+  for(var i=0;i<total;i++) if(isDone(i)) n++;
+  document.getElementById("fill").style.width = Math.round(n/total*100) + "%";
+  document.getElementById("proglbl").textContent = TRACKS[state] + " — " + n + " / " + total;
+  document.getElementById("fin").classList.toggle("show", n===total);
+}
+
+document.querySelectorAll(".track").forEach(function(b){
+  b.onclick = function(){ state = b.getAttribute("data-track"); localStorage.setItem("loopws_track", state); render(); };
+});
+document.getElementById("reset").onclick = function(){
+  if(!confirm("Reset progress for the " + TRACKS[state] + "?")) return;
+  for(var i=0;i<TASKS.length;i++) setDone(i,false); render();
+};
+render();
+</script>
+</body>
+</html>

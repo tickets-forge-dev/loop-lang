@@ -6,14 +6,14 @@
 <title>Loop Lab — learn loops by building them</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
 <style>
 :root{
   --bg:#0b0d12; --bg2:#14171f;
   --panel:rgba(255,255,255,.035); --panel2:rgba(255,255,255,.06); --line:rgba(255,255,255,.10);
   --ink:#eef2f7; --muted:#94a1b2;
   --fwd:#34e0c4; --reflect:#ffb45a; --stop:#5fd99a; --gate:#ff86c2; --str:#9be58f; --blue:#84b6ff;
-  --display:"Fraunces",Georgia,serif; --ui:"Hanken Grotesk",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  --display:"Ubuntu",system-ui,sans-serif; --ui:"Ubuntu",system-ui,sans-serif; --mono:"Ubuntu Mono",ui-monospace,monospace;
 }
 *{box-sizing:border-box;}
 html{scroll-behavior:smooth;}
@@ -37,53 +37,61 @@ a{color:var(--fwd); text-decoration:none;} a:hover{text-decoration:underline;}
 
 /* top bar */
 .topbar{display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:4px 0 16px; border-bottom:1px solid var(--line);}
-.brand{font-family:var(--display); font-weight:600; font-size:25px; letter-spacing:.3px; color:var(--ink); white-space:nowrap; display:flex; align-items:center; gap:.55em;}
-.brand::before{content:""; display:inline-block; width:.8em; height:.8em; border-radius:50%;
-  border:2px solid var(--fwd); border-right-color:var(--reflect); border-top-color:transparent;
-  box-shadow:0 0 12px rgba(52,224,196,.5); animation:spin 4.5s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
+.wordmark{display:flex; align-items:center; gap:10px;}
+.brand{font-family:var(--display); font-weight:600; font-size:25px; letter-spacing:.3px; color:var(--ink); white-space:nowrap;}
+.logo{display:inline-flex;}
+.lpmark{width:30px; height:30px; display:block; filter:drop-shadow(0 0 10px rgba(52,224,196,.35));}
 .spacer{flex:1 1 auto;}
 .toggle{display:inline-flex; border:1px solid var(--line); border-radius:22px; overflow:hidden; background:var(--panel); backdrop-filter:blur(8px);}
 .toggle button{font-family:var(--ui); font-size:12px; font-weight:600; border:0; background:transparent; color:var(--muted); padding:7px 15px; cursor:pointer;}
-.toggle button.on{background:linear-gradient(120deg,var(--fwd),var(--reflect)); color:#06231f; font-weight:700;}
-.toggle.kids button.on{background:linear-gradient(120deg,var(--gate),var(--reflect)); color:#3a0b25;}
+.toggle button.on{background:var(--fwd); color:#052b25; font-weight:700;}
+.toggle.kids button.on{background:var(--gate); color:#3a0b25;}
 .tlink{font-size:12px; color:var(--muted);}
 .reset{font-family:var(--ui); font-size:11px; border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:8px; padding:6px 11px; cursor:pointer;}
 .reset:hover{color:var(--ink); border-color:var(--gate);}
 
 /* cards — glassy panels with a faint top sheen */
-.card{position:relative; background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02)); border:1px solid var(--line);
-  border-radius:16px; padding:16px 18px; margin:16px 0; backdrop-filter:blur(10px);
-  box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 18px 40px -28px rgba(0,0,0,.8);}
-.card.lvl{border-top:2px solid color-mix(in srgb,var(--fwd) 55%,transparent);}
-.kids .card.lvl{border-top-color:color-mix(in srgb,var(--gate) 55%,transparent);}
-.eyebrow{font-family:var(--ui); font-weight:700; letter-spacing:2px; text-transform:uppercase; font-size:10.5px; color:var(--fwd);}
-.kids .eyebrow{color:var(--gate);}
-.card.lvl h2{font-family:var(--display); font-weight:600; font-size:27px; letter-spacing:.2px; margin:5px 0 2px; line-height:1.1;}
-.card.lvl .obj{font-size:14px; color:var(--muted);}
+.card{position:relative; background:rgba(255,255,255,.025); border:1px solid var(--line);
+  border-radius:12px; padding:12px 14px; margin:10px 0; backdrop-filter:blur(8px);
+  box-shadow:0 1px 0 rgba(255,255,255,.04) inset;}
+.card.lvl{border-top:1px solid color-mix(in srgb,var(--fwd) 35%,var(--line));}
+.kids .card.lvl{border-top-color:color-mix(in srgb,var(--gate) 35%,var(--line));}
+.eyebrow{font-family:var(--ui); font-weight:700; letter-spacing:1.8px; text-transform:uppercase; font-size:10px; color:var(--muted);}
+.eyebrow .ic{color:var(--fwd);}
+.card.lvl h2{font-family:var(--display); font-weight:600; font-size:22px; letter-spacing:.2px; margin:3px 0 2px; line-height:1.12;}
+.card.lvl .obj{font-size:13px; color:var(--muted);}
+.hintbtn{margin-top:11px; font-family:var(--ui); font-weight:700; font-size:12px; letter-spacing:.2px; cursor:pointer;
+  background:transparent; color:var(--reflect); border:1px solid color-mix(in srgb,var(--reflect) 45%,transparent); border-radius:9px; padding:6px 13px;}
+.hintbtn:hover{background:color-mix(in srgb,var(--reflect) 12%,transparent);}
+.hint{margin-top:9px; font-size:12.5px; line-height:1.55; color:#e8d9c2; background:color-mix(in srgb,var(--reflect) 9%,transparent);
+  border:1px solid color-mix(in srgb,var(--reflect) 30%,transparent); border-left:2px solid var(--reflect); border-radius:10px; padding:10px 13px;}
+.hint b{color:var(--ink);}
+.kids .hintbtn{color:var(--gate); border-color:color-mix(in srgb,var(--gate) 45%,transparent);}
+.kids .hint{color:#f6d9ea; background:color-mix(in srgb,var(--gate) 9%,transparent); border-color:color-mix(in srgb,var(--gate) 30%,transparent); border-left-color:var(--gate); font-size:14px;}
 .card.lvl .obj b{color:var(--ink); font-weight:600;}
 
 /* section labels */
-.build h3, .palette h3, .stage h3{font-family:var(--ui); font-weight:700; letter-spacing:2px; text-transform:uppercase; font-size:11px; color:var(--muted); margin:0 0 10px;}
-.runrow{display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap;}
-.runbtn{font-family:var(--ui); font-weight:800; letter-spacing:.5px; font-size:15px;
-  background:linear-gradient(120deg,var(--fwd),var(--reflect)); color:#06231f; border:0; border-radius:11px; padding:11px 24px; cursor:pointer;
-  box-shadow:0 10px 30px -12px rgba(52,224,196,.7);}
-.runbtn:hover{filter:brightness(1.07);}
-.kids .runbtn{background:linear-gradient(120deg,var(--gate),var(--reflect)); color:#3a0b25; box-shadow:0 10px 30px -12px rgba(255,134,194,.6);}
+.build h3, .palette h3, .stage h3{font-family:var(--ui); font-weight:700; letter-spacing:1.8px; text-transform:uppercase; font-size:10px; color:var(--muted); margin:0 0 8px;}
+.runrow{display:flex; align-items:center; gap:13px; margin-bottom:14px; flex-wrap:wrap;}
+.runbtn{font-family:var(--ui); font-weight:800; letter-spacing:.5px; font-size:16px;
+  background:linear-gradient(180deg,#4ff0d6,#13b39b); color:#04241f; border:0; border-radius:12px; padding:13px 30px; cursor:pointer;
+  box-shadow:0 10px 30px -10px rgba(52,224,196,.65), inset 0 1px 0 rgba(255,255,255,.35);}
+.runbtn:hover{filter:brightness(1.07); box-shadow:0 12px 34px -8px rgba(52,224,196,.8), inset 0 1px 0 rgba(255,255,255,.35);}
+.runbtn:active{transform:translateY(1px);}
+.kids .runbtn{background:linear-gradient(180deg,#ff9ecd,#e85aa3); color:#3a0b25; box-shadow:0 8px 24px -14px rgba(255,134,194,.7);}
 .runbtn:disabled{opacity:.4; cursor:not-allowed; box-shadow:none;}
 
 /* dev .loop preview */
-pre.loop{background:rgba(3,6,12,.55); border:1px solid var(--line); border-left:2px solid var(--fwd); border-radius:12px;
-  padding:14px 16px; margin:0; font-size:13px; line-height:1.65; white-space:pre; overflow-x:auto; min-height:54px;}
+pre.loop{background:rgba(3,6,12,.5); border:1px solid var(--line); border-radius:10px;
+  padding:11px 13px; margin:0; font-size:12.5px; line-height:1.6; white-space:pre; overflow-x:auto; min-height:48px;}
 pre.loop code{font-family:var(--mono); color:var(--ink);}
 .tok-kw{color:var(--fwd);} .tok-human{color:var(--gate);} .tok-str{color:var(--str);}
 .tok-com{color:var(--muted); font-style:italic;} .tok-num{color:var(--reflect);} .tok-name{color:var(--blue);}
 .emptybuild{color:var(--muted); font-style:italic; font-size:13px;}
 .ic{width:1.05em; height:1.05em; display:inline-block; vertical-align:-0.16em; flex:0 0 auto; stroke-width:1.9;}
-.scenario{font-size:13px; color:var(--muted); margin:2px 0 10px; display:flex; align-items:center; gap:7px;}
-.scenario b{color:var(--reflect); font-weight:600;}
-.scenario .ic{width:16px; height:16px; color:var(--reflect);}
+.scenario{font-size:12.5px; color:var(--muted); margin:2px 0 8px; display:flex; align-items:center; gap:6px;}
+.scenario b{color:var(--ink); font-weight:600;}
+.scenario .ic{width:15px; height:15px; color:var(--muted);}
 .runbtn .ic{width:16px; height:16px; vertical-align:-0.2em; margin-right:4px;}
 .retrybtn{font-family:var(--ui); font-weight:700; letter-spacing:.3px; background:transparent; color:var(--reflect); border:1px solid color-mix(in srgb,var(--reflect) 55%,transparent); border-radius:9px; padding:8px 16px; cursor:pointer; font-size:13px;}
 .retrybtn:hover{background:color-mix(in srgb,var(--reflect) 14%,transparent);}
@@ -94,7 +102,6 @@ pre.loop code{font-family:var(--mono); color:var(--ink);}
 .pcico .ic{width:16px; height:16px; vertical-align:-0.2em;}
 .krow .ico .ic{width:23px; height:23px; color:var(--fwd);}
 .banner .ic{width:16px; height:16px; vertical-align:-0.18em;}
-.ordernote{color:var(--muted); font-size:11px; font-style:italic; margin-top:10px; opacity:.85;}
 .effortline{font-size:12.5px; color:var(--muted);}
 .effortline b{font-family:var(--mono); color:var(--ink);}
 .effortline .over{color:var(--gate); font-weight:700;}
@@ -102,28 +109,42 @@ pre.loop code{font-family:var(--mono); color:var(--ink);}
 /* effort meter */
 .meterwrap{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
 .meter{flex:1 1 auto; height:10px; background:rgba(3,6,12,.6); border:1px solid var(--line); border-radius:6px; overflow:hidden;}
-.meter .fill{height:100%; width:100%; background:linear-gradient(90deg,var(--fwd),var(--stop)); box-shadow:0 0 14px rgba(52,224,196,.5); transition:width .35s linear;}
-.meter .fill.warn{background:linear-gradient(90deg,var(--reflect),var(--gate)); box-shadow:0 0 14px rgba(255,180,90,.5);}
+.meter .fill{height:100%; width:100%; background:linear-gradient(90deg,#4ff0d6,#16b9a0); box-shadow:0 0 14px rgba(52,224,196,.45); transition:width .35s linear;}
+.meter .fill.warn{background:linear-gradient(90deg,#ffc777,#f0982b); box-shadow:0 0 14px rgba(255,180,90,.45);}
 .meter .fill.over{background:var(--gate); box-shadow:0 0 14px rgba(255,134,194,.6);}
 .meterlbl{font-family:var(--mono); font-size:11px; color:var(--muted); white-space:nowrap; min-width:140px; text-align:right;}
 
-/* system map */
-.sysmap{padding:15px 18px;}
-.sysmap .smhead{display:flex; align-items:baseline; gap:10px; margin-bottom:11px;}
-.sysmap .smtitle{font-family:var(--display); font-weight:600; font-size:19px; letter-spacing:.2px; display:inline-flex; align-items:center; gap:8px;}
-.sysmap .smcount{color:var(--muted); font-size:12px; font-family:var(--mono);}
-.sysmap .smbar{height:6px; background:rgba(3,6,12,.6); border:1px solid var(--line); border-radius:5px; overflow:hidden; margin-bottom:13px;}
-.sysmap .smbar i{display:block; height:100%; background:linear-gradient(90deg,var(--fwd),var(--reflect)); box-shadow:0 0 12px rgba(52,224,196,.5); transition:width .5s;}
-.kids .sysmap .smbar i{background:linear-gradient(90deg,var(--gate),var(--reflect));}
-.pieces{display:flex; flex-wrap:wrap; gap:7px;}
-.pc{display:flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:10px; padding:6px 10px; font-size:12px; background:var(--panel); color:var(--muted); cursor:pointer; transition:all .18s;}
-.pc .pcico{display:inline-flex; opacity:.5;}
-.pc.built{background:color-mix(in srgb,var(--stop) 12%,transparent); color:var(--ink); border-color:color-mix(in srgb,var(--stop) 50%,transparent);}
-.pc.built .pcico{opacity:1; color:var(--stop);}
-.pc.cur{border-color:var(--fwd); color:var(--ink); box-shadow:0 0 0 1px var(--fwd), 0 0 16px -4px var(--fwd);}
-.kids .pc.cur{border-color:var(--gate); box-shadow:0 0 0 1px var(--gate), 0 0 16px -4px var(--gate);}
-.pc.locked{opacity:.4; cursor:not-allowed;}
-.pc .pcck{color:var(--stop); display:inline-flex;}
+/* two-pane layout: chapters (left) · build+run (right) */
+.layout{display:flex; gap:18px; align-items:flex-start; margin-top:14px;}
+.mainpane{flex:1 1 auto; min-width:0;}
+.mainpane .card:first-child{margin-top:0;}
+.chapters{flex:0 0 252px; position:sticky; top:14px; max-height:calc(100vh - 28px); overflow:auto;
+  padding:15px 15px; border:1px solid var(--line); border-radius:16px;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02)); backdrop-filter:blur(10px);}
+.chhead{display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:9px;}
+.chtitle{font-family:var(--display); font-weight:600; font-size:16px; display:inline-flex; align-items:center; gap:7px;}
+.chtitle .ic{width:16px; height:16px; color:var(--fwd);}
+.kids .chtitle .ic{color:var(--gate);}
+.chcount{color:var(--muted); font-size:11px; font-family:var(--mono);}
+.chbar{height:5px; background:rgba(3,6,12,.6); border:1px solid var(--line); border-radius:5px; overflow:hidden; margin-bottom:11px;}
+.chbar i{display:block; height:100%; background:linear-gradient(90deg,#4ff0d6,#16b9a0); box-shadow:0 0 10px rgba(52,224,196,.45); transition:width .5s;}
+.kids .chbar i{background:linear-gradient(90deg,#ff9ecd,#e85aa3);}
+.chlist{display:flex; flex-direction:column; gap:2px;}
+.ch{display:flex; align-items:center; gap:9px; width:100%; text-align:left; cursor:pointer;
+  border:0; background:transparent; color:var(--muted); font-family:var(--ui); font-size:12.5px; padding:6px 8px; border-radius:8px; border-left:2px solid transparent; transition:all .14s;}
+.ch:hover{color:var(--ink); background:var(--panel);}
+.ch .chnum{font-family:var(--mono); font-size:10px; opacity:.5; width:16px; flex:0 0 auto;}
+.ch .chtxt{flex:1 1 auto;}
+.ch .chck{color:var(--stop); display:inline-flex;}
+.ch .chck .ic{width:14px; height:14px;}
+.ch.built{color:#c2cdd9;} .ch.built .chnum{color:var(--stop); opacity:1;}
+.ch.cur{color:var(--ink); background:var(--panel); border-left-color:var(--fwd); font-weight:600;}
+.kids .ch.cur{border-left-color:var(--gate);}
+.ch.locked{opacity:.32; cursor:not-allowed;}
+@media(max-width:820px){
+  .layout{flex-direction:column;}
+  .chapters{position:static; flex:1 1 auto; width:100%; max-height:190px;}
+}
 
 /* kids build rows */
 .krows{display:flex; flex-direction:column; gap:8px;}
@@ -141,35 +162,38 @@ pre.loop code{font-family:var(--mono); color:var(--ink);}
 /* palette */
 .palette{margin-top:6px;}
 .tray{display:flex; gap:9px; flex-wrap:wrap;}
-.pblock{font-family:var(--ui); text-align:left; cursor:pointer; border:1px solid var(--line); background:var(--panel);
-  border-radius:12px; padding:9px 12px; font-size:13px; font-weight:600; min-width:128px; border-left:2px solid var(--c,var(--fwd)); transition:all .16s;}
-.pblock:hover{background:var(--panel2); transform:translateY(-1px); border-left-color:var(--c,var(--fwd));}
+.pblock{font-family:var(--ui); color:var(--ink); text-align:left; cursor:pointer; border:1px solid var(--line); background:var(--panel);
+  border-radius:10px; padding:7px 10px; font-size:12.5px; font-weight:600; min-width:116px; transition:all .14s; text-transform:capitalize;}
+.pblock:hover{background:var(--panel2); border-color:color-mix(in srgb,var(--fwd) 40%,var(--line));}
 .pblock.added{opacity:.38; cursor:default; transform:none;}
 .pblock .pi{margin-right:7px; color:var(--ink);}
 .pblock .pi .ic{width:17px; height:17px; vertical-align:-0.22em;}
 .pblock.added .pi{color:var(--muted);}
-.pblock small{display:block; color:var(--muted); font-size:10.5px; font-weight:400; margin-top:3px; font-family:var(--mono);}
+.pblock small{display:block; color:var(--muted); font-size:10.5px; font-weight:400; margin-top:3px; font-family:var(--mono); text-transform:none;}
 
 /* run stage */
 .stage{margin-top:6px;}
-.board{width:100%; height:auto; background:rgba(3,6,12,.6); border:1px solid var(--line); border-radius:14px; display:block;}
+.board{width:100%; height:auto; background:rgba(3,6,12,.5); border:1px solid var(--line); border-radius:12px; display:block;}
 .nd rect{transition:all .25s;}
-.nd.active rect{filter:drop-shadow(0 0 8px currentColor);}
-.edge{opacity:.32; transition:opacity .2s;}
+.nd.active rect{stroke:var(--fwd); filter:drop-shadow(0 0 7px var(--fwd));}
+.nd.active text{fill:#eef2f7;}
+.kids .nd.active rect{stroke:var(--gate); filter:drop-shadow(0 0 7px var(--gate));}
+.edge{opacity:.5; transition:opacity .2s;}
 .edge.fire{opacity:1;}
-.edge.fire path{stroke-dasharray:5 4; animation:march .5s linear infinite;}
+.edge.fire path{stroke:var(--reflect); stroke-dasharray:5 4; animation:march .5s linear infinite;}
 @keyframes march{to{stroke-dashoffset:-18;}}
-.termbody{height:188px; overflow:hidden; padding:12px 15px; margin-top:11px; background:rgba(3,6,12,.6); border:1px solid var(--line); border-radius:14px;
-  font-family:var(--mono); font-size:12.5px; line-height:1.65; color:#cdd8e4;}
+.termbody{height:320px; overflow:auto; padding:11px 13px; margin-top:9px; background:rgba(3,6,12,.5); border:1px solid var(--line); border-radius:10px;
+  font-family:var(--mono); font-size:12px; line-height:1.6; color:#cdd8e4;}
 .termbody .ln{white-space:pre-wrap; margin:1px 0;}
 .tl-dim{color:#677787;} .tl-plan{color:var(--fwd);} .tl-act{color:var(--blue);} .tl-ok{color:var(--stop);} .tl-bad{color:var(--gate);} .tl-warn{color:var(--reflect);}
-.banner{margin-top:12px; border-radius:14px; padding:14px 17px; font-size:14px; display:none;}
-.banner.show{display:block;}
-.banner.win{background:color-mix(in srgb,var(--stop) 10%,transparent); border:1px solid color-mix(in srgb,var(--stop) 45%,transparent); color:#bdf0d4; box-shadow:0 0 40px -18px var(--stop);}
-.banner.lose{background:color-mix(in srgb,var(--gate) 9%,transparent); border:1px solid color-mix(in srgb,var(--gate) 42%,transparent); color:#ffd4ea;}
+.banner{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(5,7,12,.74); backdrop-filter:blur(7px);}
+.banner.show{display:flex;}
+.banner .bcard{max-width:460px; width:100%; text-align:center; border-radius:20px; padding:30px; font-size:14px; border:1px solid var(--line); background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)); box-shadow:0 50px 120px -40px #000;}
+.banner.win .bcard{border-color:color-mix(in srgb,var(--stop) 45%,transparent); color:#bdf0d4; box-shadow:0 0 70px -22px var(--stop), 0 50px 120px -40px #000;}
+.banner.lose .bcard{border-color:color-mix(in srgb,var(--gate) 42%,transparent); color:#ffd4ea;}
 .banner b{font-family:var(--display); font-weight:600; font-size:18px;}
-.banner .nxt{margin-top:10px;}
-.banner .nxt button{font-family:var(--ui); font-weight:700; letter-spacing:.3px; background:linear-gradient(120deg,var(--stop),var(--fwd)); color:#06231f; border:0; border-radius:9px; padding:8px 17px; cursor:pointer; font-size:13px;}
+.banner .nxt{margin-top:16px;}
+.banner .nxt button{font-family:var(--ui); font-weight:700; letter-spacing:.3px; background:linear-gradient(180deg,#4ff0d6,#16b9a0); color:#06231f; border:0; border-radius:9px; padding:8px 17px; cursor:pointer; font-size:13px;}
 
 /* robo */
 .robo{display:none; align-items:center; gap:12px; margin-top:12px;}
@@ -179,15 +203,31 @@ pre.loop code{font-family:var(--mono); color:var(--ink);}
 
 .foot{color:var(--muted); font-size:11.5px; margin-top:30px; border-top:1px solid var(--line); padding-top:16px;}
 .foot b{color:var(--ink); font-weight:600;}
+
+/* onboarding */
+.modal{position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(5,7,12,.74); backdrop-filter:blur(7px);}
+.modal.show{display:flex;}
+.dialog{max-width:450px; text-align:center; border:1px solid var(--line); border-radius:22px; padding:36px 32px;
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02)); box-shadow:0 50px 120px -40px #000;}
+.dialog .dlogo{margin:0 auto 16px; display:flex; justify-content:center;}
+.dialog .dlogo .lpmark{width:58px; height:58px; filter:drop-shadow(0 0 18px rgba(52,224,196,.45));}
+.dialog h2{font-family:var(--display); font-weight:600; font-size:29px; margin:0 0 10px;}
+.dialog p{color:#cdd6e0; font-size:14.5px; line-height:1.6; margin:0 0 24px;}
+.dialog p b{color:var(--ink);}
+.startbtn{font-family:var(--ui); font-weight:800; font-size:15px; letter-spacing:.3px;
+  background:linear-gradient(180deg,#4ff0d6,#16b9a0); color:#06231f; border:0; border-radius:12px; padding:12px 30px; cursor:pointer;
+  box-shadow:0 10px 30px -16px rgba(52,224,196,.8);}
+.startbtn:hover{filter:brightness(1.07);}
 @media(max-width:640px){ .pblock{min-width:0; flex:1 1 44%;} .brand{font-size:21px;} .card.lvl h2{font-size:23px;} }
 </style>
 </head>
 <body>
 <div class="wrap" id="app">
   <div class="topbar">
-    <div class="brand" id="brand">Loop Lab</div>
+    <div class="wordmark"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="Loop"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span><span class="brand" id="brand">Loop Studio</span></div>
     <div class="spacer"></div>
-    <span class="tlink"><a href="index.html">← tutorial</a></span>
+    <span class="tlink"><a href="tutorial.html">← tutorial</a></span>
+    <span class="tlink"><a href="workshop.html">🛠️ workshop</a></span>
     <div class="toggle" id="toggle">
       <button data-mode="dev" class="on">Dev</button>
       <button data-mode="kids">Kids</button>
@@ -195,36 +235,48 @@ pre.loop code{font-family:var(--mono); color:var(--ink);}
     <button class="reset" id="reset">reset</button>
   </div>
 
-  <div class="card sysmap" id="sysmap"></div>
+  <div class="layout">
+    <aside class="chapters" id="sysmap"></aside>
 
-  <div class="card lvl" id="levelcard"></div>
+    <main class="mainpane">
+      <div class="card lvl" id="levelcard"></div>
 
-  <div class="card build">
-    <h3 id="buildhdr">Your loop</h3>
-    <div id="buildview"></div>
-    <div class="chips" id="chips"></div>
-    <div class="ordernote" id="ordernote"></div>
-    <div class="runrow">
-      <button class="runbtn" id="run">▶ Run</button>
-      <span class="effortline" id="effort"></span>
+      <div class="card build">
+        <h3 id="buildhdr">Your loop</h3>
+        <div id="buildview"></div>
+        <div class="chips" id="chips"></div>
+      </div>
+
+      <div class="card palette">
+        <h3>Blocks — tap to add</h3>
+        <div class="tray" id="tray"></div>
+      </div>
+
+      <div class="card stage">
+        <h3>Run</h3>
+        <div class="runrow">
+          <button class="runbtn" id="run">▶ Run</button>
+          <span class="effortline" id="effort"></span>
+        </div>
+        <div class="meterwrap"><div class="meter"><div class="fill" id="meterfill"></div></div><div class="meterlbl" id="meterlbl"></div></div>
+        <div id="boardwrap"></div>
+        <div class="termbody" id="term"></div>
+        <div class="robo" id="robo"></div>
+        <div class="banner" id="banner"></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal" id="welcome">
+    <div class="dialog">
+      <div class="dlogo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="Loop"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></div>
+      <h2>Welcome to Loop Studio</h2>
+      <p>Learn the <b>Loop</b> language by <b>building</b> it. Each chapter teaches one idea — snap blocks into a loop, hit <b>Run</b>, and watch it plan&nbsp;→&nbsp;act&nbsp;→&nbsp;observe. You'll build a real system, one loop at a time.</p>
+      <button class="startbtn" id="welcomeStart">Start building</button>
     </div>
   </div>
 
-  <div class="card palette">
-    <h3>Blocks — tap to add</h3>
-    <div class="tray" id="tray"></div>
-  </div>
-
-  <div class="card stage">
-    <h3>Run</h3>
-    <div class="meterwrap"><div class="meter"><div class="fill" id="meterfill"></div></div><div class="meterlbl" id="meterlbl"></div></div>
-    <div id="boardwrap"></div>
-    <div class="termbody" id="term"></div>
-    <div class="robo" id="robo"></div>
-    <div class="banner" id="banner"></div>
-  </div>
-
-  <div class="foot">Loop Lab teaches the same engine the real <a href="index.html">Loop</a> runs: plan → act → observe, a reflect back-edge, a thrash guard, and "you can't fake done." One concept per level — knowledge builds up as you go. <b>Every block and every cycle costs loop-time</b>, so each level has an effort budget: pick the <i>right</i> blocks, not all of them. Progress is saved in your browser.</div>
+  <div class="foot">Loop Lab teaches the same engine the real <a href="index.html">Loop</a> runs: plan → act → observe, a reflect back-edge, a thrash guard, and "you can't fake done." One concept per chapter — knowledge builds up as you go. <b>Every block and every cycle costs loop-time</b>, so each chapter has an effort budget: pick the <i>right</i> blocks, not all of them. Progress is saved in your browser.</div>
 </div>
 
 <script>
@@ -325,15 +377,16 @@ function budgetOf(lvl){
 
 /* dev .loop line text, parameterised by the level subject/check */
 function devLine(id,lvl){
-  var s=lvl.subject||"the change", chk=lvl.check||"pnpm test";
+  var s=lvl.subject||"the change", noun=s.replace(/^the\s+/i,'');
   switch(id){
     case "goal":  return '  goal: '+ (lvl.goalText || s+' is correct');
     case "method":return '  use the '+(lvl.method||'team')+' method';
-    case "done":  return '  done when "'+chk+'" passes';
-    case "donecmd":  return '  done when "'+chk+'" passes';
-    case "donescan": return '  done when "'+(lvl.scan||'semgrep --severity=high')+'" finds nothing';
-    case "donehuman":return '  done when a human confirms "'+(lvl.confirm||'it looks right')+'"';
-    case "look":  return '  look at: '+ (lvl.lookText || 'the relevant module, and the last failure');
+    /* free language, not brittle ids — the agent finds the real test/file at run time */
+    case "done":  return '  done when the '+noun+' tests pass';
+    case "donecmd":  return '  done when the build passes';
+    case "donescan": return '  done when the security scan finds nothing';
+    case "donehuman":return '  done when a human confirms it looks right';
+    case "look":  return '  look at: '+ (lvl.lookText || 'the '+noun+', and the last failure');
     case "allow": return '  allow edits automatically';
     case "cycle": return '  each cycle: plan, then act, then observe';
     case "fail":  return '  when it fails: reflect, then plan again';
@@ -584,8 +637,8 @@ function line(k,s){
 /* ============================ state + persistence ============================ */
 var KEY="loop-lab";
 var state={mode:"dev", dev:{cur:0,done:{},stars:{}}, kids:{cur:0,done:{},stars:{}}, build:[]};
-function load(){ try{var s=JSON.parse(localStorage.getItem(KEY)); if(s){ state.mode=s.mode||"dev"; if(s.dev)state.dev=s.dev; if(s.kids)state.kids=s.kids; }}catch(e){} }
-function save(){ try{localStorage.setItem(KEY, JSON.stringify({mode:state.mode,dev:state.dev,kids:state.kids}));}catch(e){} }
+function load(){ try{var s=JSON.parse(localStorage.getItem(KEY)); if(s){ state.mode=s.mode||"dev"; if(s.dev)state.dev=s.dev; if(s.kids)state.kids=s.kids; state.seen=!!s.seen; }}catch(e){} }
+function save(){ try{localStorage.setItem(KEY, JSON.stringify({mode:state.mode,dev:state.dev,kids:state.kids,seen:state.seen}));}catch(e){} }
 function track(){ return state[state.mode]; }
 function track_levels(){ return LEVELS[state.mode]; }
 
@@ -611,31 +664,65 @@ function renderSysmap(){
   var L=track_levels(), t=track(), open=maxOpen(), s=STORY[state.mode], built=0;
   L.forEach(function(l){ if(t.done[l.id]) built++; });
   var pct=Math.round(built/L.length*100);
-  var pcs=L.map(function(l,i){
-    var cls="pc"; if(t.done[l.id])cls+=" built"; if(i===t.cur)cls+=" cur"; if(i>open)cls+=" locked";
-    var pc=l.piece||{ico:"circle",name:l.id};
-    return '<button class="'+cls+'" data-i="'+i+'" title="'+l.id+' · '+l.concept+'"><span class="pcico">'+(i>open?ic("lock"):ic(pc.ico))+'</span>'+pc.name+(t.done[l.id]?' <span class="pcck">'+ic("check")+'</span>':'')+'</button>';
+  var rows=L.map(function(l,i){
+    var cls="ch"; if(t.done[l.id])cls+=" built"; if(i===t.cur)cls+=" cur"; if(i>open)cls+=" locked";
+    return '<button class="'+cls+'" data-i="'+i+'" title="'+(l.piece?"adds "+l.piece.name:l.id)+'">'+
+      '<span class="chnum">'+(i+1)+'</span><span class="chtxt">'+(l.concept||l.id)+'</span>'+
+      (t.done[l.id]?'<span class="chck">'+ic("check")+'</span>':'')+'</button>';
   }).join("");
-  $("sysmap").innerHTML='<div class="smhead"><span class="smtitle">'+ic(s.ico)+' '+s.verb+' '+s.name+'</span><span class="smcount">built '+built+' / '+L.length+'</span></div>'+
-    '<div class="smbar"><i style="width:'+pct+'%"></i></div><div class="pieces">'+pcs+'</div>';
-  Array.prototype.forEach.call($("sysmap").querySelectorAll(".pc"),function(b){
+  $("sysmap").innerHTML=
+    '<div class="chhead"><span class="chtitle">'+ic(s.ico)+' '+s.name+'</span><span class="chcount">'+built+'/'+L.length+'</span></div>'+
+    '<div class="chbar"><i style="width:'+pct+'%"></i></div>'+
+    '<div class="chlist">'+rows+'</div>';
+  Array.prototype.forEach.call($("sysmap").querySelectorAll(".ch"),function(b){
     b.onclick=function(){ var i=+b.getAttribute("data-i"); if(i>maxOpen())return; track().cur=i; state.build=[]; save(); renderAll(); window.scrollTo({top:0,behavior:"smooth"}); };
   });
 }
+// One concrete hint per level — which blocks to reach for, without fully solving it.
+var HINTS={
+  L1:"Two blocks, nothing else: a <b>goal</b> and a <b>done when</b> (the check). The goal alone never stops — the check is what ends the loop.",
+  L2:"Pick the <b>scan</b> check (🛡️ “finds nothing”), not a test — a security scan proves itself by finding zero issues. Just <b>goal</b> + that scan.",
+  L3:"Add the <b>cycle</b> block (plan → act → observe) on top of goal + done. That's the repeating heartbeat.",
+  L4:"It fails the first few tries, so add <b>when it fails: reflect, then plan again</b> — goal, done, cycle, reflect.",
+  L5:"It can never pass, so don't try to win it — add the <b>thrash guard</b> (after N tries: stop & warn). The guard outranks reflect.",
+  L6:"A migration is risky: add a <b>human gate</b> (ask me before) so a person approves — goal, done, cycle, reflect, gate. No thrash guard needed.",
+  L7:"This wants the <b>plan</b> gate specifically — “a human approves the plan first” (📝), not review-before-stop and not a risk gate.",
+  L8:"Two new blocks: <b>look at</b> (scope the context) and <b>allow … automatically</b> (the policy), plus a <b>gate</b> for the deploy.",
+  L9:"Add <b>also</b> — a finishing pass that runs after the goal is met (the security check). Goal, done, cycle, reflect, also.",
+  L10:"Keep work off main: add <b>work on a branch</b> + <b>commit</b> when the goal is met. Branch, not worktree, here.",
+  L11:"Don't add “push to main” — it's always refused. Add <b>open a pull request</b> instead, and remove any push-to-main block.",
+  L12:"One block does it: <b>use the team method</b> — it pulls in the gates/git/checks preset. Goal, done, method.",
+  L13:"Use the <b>pipeline</b> block — it runs the stories in order, fail-fast.",
+  L14:"Use the <b>flow</b> block — it chains whole files end to end, passing a handoff forward.",
+  L15:"Use the <b>for each</b> block — it runs one template per item in the list.",
+  L16:"It's a <b>flow</b>: discover → design → for each story. Use the flow block (not pipeline or for-each on their own).",
+  L17:"Wrap the loop with config: add <b>schedule</b> (nightly) and <b>notify</b> (the team). Target is optional here.",
+  K1:"Add the <b>goal</b> block — tell Robo what to draw. 🎯",
+  K2:"Add the <b>check</b> block (✅) so we KNOW it's right — goal + check.",
+  K3:"Add <b>try → check → fix</b> and <b>fix it and try again</b> so Robo keeps going until it's right.",
+  K4:"It's too hard — add <b>if stuck, stop & ask a grown-up</b> (🛑) so Robo doesn't try forever.",
+  K5:"Add <b>ask first</b> (✋) before the big action with the scissors."
+};
+
 function renderLevelCard(){
   var lv=track_levels()[track().cur];
+  var hint=HINTS[lv.id];
   $("levelcard").innerHTML=
     '<div class="eyebrow">'+lv.id+' · learn the loop'+(lv.piece?' · adds '+ic(lv.piece.ico)+' '+lv.piece.name:'')+'</div>'+
     '<h2>'+(lv.concept||lv.title)+'</h2>'+
     '<div class="scenario">'+(lv.piece?ic(lv.piece.ico)+' ':'')+'<b>'+lv.title+'</b>'+(lv.story?' — '+lv.story:'')+'</div>'+
-    '<div class="obj">'+lv.obj+'</div>';
+    '<div class="obj">'+lv.obj+'</div>'+
+    (hint?'<button class="hintbtn" id="hintbtn">💡 '+(state.mode==="kids"?"Need help?":"Hint")+'</button><div class="hint" id="hintbox" hidden>'+hint+'</div>':'');
+  var hb=$("hintbtn");
+  if(hb) hb.onclick=function(){
+    var box=$("hintbox"), hidden=box.hasAttribute("hidden");
+    if(hidden){ box.removeAttribute("hidden"); hb.textContent="🙈 "+(state.mode==="kids"?"Hide help":"Hide hint"); }
+    else { box.setAttribute("hidden",""); hb.textContent="💡 "+(state.mode==="kids"?"Need help?":"Hint"); }
+  };
 }
 
 function renderBuild(){
   var lv=track_levels()[track().cur], bv=$("buildview"), chips=$("chips");
-  $("ordernote").textContent = state.mode==="kids"
-    ? "It doesn't matter which block you add first! 🙂"
-    : "Tip: block order doesn't matter — Loop reads these as decisions, not steps. The one exception: plan → act → observe runs in order.";
   var ordered=state.build.slice().sort(function(a,b){return BLOCKS[a].order-BLOCKS[b].order;});
   if(state.mode==="kids"){
     if(!ordered.length){ bv.innerHTML=''; }
@@ -682,26 +769,25 @@ function removeBlock(id){ var i=state.build.indexOf(id); if(i>=0){state.build.sp
 /* ---- board ---- */
 function boardSVG(){
   // 3 nodes + goal node + reflect back-edge
-  function nd(x,id,label,col){
-    return '<g class="nd" data-ph="'+id+'" style="color:'+col+'">'+
-      '<rect x="'+x+'" y="60" width="118" height="48" rx="9" fill="#0f1b2b" stroke="'+col+'" stroke-width="1.5"/>'+
-      '<rect x="'+x+'" y="60" width="5" height="48" rx="2" fill="'+col+'"/>'+
-      '<text x="'+(x+61)+'" y="89" text-anchor="middle" fill="#dbe7f2" font-family="Saira Condensed,sans-serif" font-weight="700" font-size="15">'+label+'</text></g>';
+  function nd(x,id,label){
+    return '<g class="nd" data-ph="'+id+'">'+
+      '<rect x="'+x+'" y="12" width="118" height="48" rx="9" fill="rgba(255,255,255,.03)" stroke="#3a465a" stroke-width="1.3"/>'+
+      '<text x="'+(x+61)+'" y="41" text-anchor="middle" fill="#c2cdd9" font-family="Hanken Grotesk,sans-serif" font-weight="700" font-size="14">'+label+'</text></g>';
   }
-  function arrow(x){ return '<line x1="'+x+'" y1="84" x2="'+(x+24)+'" y2="84" stroke="#3a557a" stroke-width="2" marker-end="url(#ah)"/>'; }
-  var s='<svg class="board" viewBox="0 0 600 170" preserveAspectRatio="xMidYMid meet">';
-  s+='<defs><marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#3a557a"/></marker>'+
-     '<marker id="ahr" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="var(--reflect)"/></marker></defs>';
-  s+=nd(20,"plan","plan","#37d4c4");
+  function arrow(x){ return '<line x1="'+x+'" y1="36" x2="'+(x+24)+'" y2="36" stroke="#33405380" stroke-width="2" marker-end="url(#ah)"/>'; }
+  var s='<svg class="board" viewBox="0 0 600 110" preserveAspectRatio="xMidYMid meet">';
+  s+='<defs><marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#334053"/></marker>'+
+     '<marker id="ahr" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#6b7688"/></marker></defs>';
+  s+=nd(20,"plan","plan");
   s+=arrow(138);
-  s+=nd(170,"act","act","#7fb3ff");
+  s+=nd(170,"act","act");
   s+=arrow(288);
-  s+=nd(320,"observe","observe","#ffb454");
+  s+=nd(320,"observe","observe");
   s+=arrow(438);
-  s+=nd(470,"stop","stop","#5fd38a");
+  s+=nd(470,"stop","stop");
   // reflect back-edge observe(379,108) -> plan(79,108)
-  s+='<g class="edge" data-edge="reflect"><path d="M 379 116 C 320 150, 140 150, 81 116" fill="none" stroke="var(--reflect)" stroke-width="2" marker-end="url(#ahr)"/>'+
-     '<text x="230" y="146" text-anchor="middle" fill="var(--reflect)" font-family="Space Mono,monospace" font-size="11">reflect</text></g>';
+  s+='<g class="edge" data-edge="reflect"><path d="M 379 68 C 320 102, 140 102, 81 68" fill="none" stroke="#5b6678" stroke-width="1.6" marker-end="url(#ahr)"/>'+
+     '<text x="230" y="98" text-anchor="middle" fill="#7a8698" font-family="JetBrains Mono,monospace" font-size="11">reflect</text></g>';
   s+='</svg>';
   return s;
 }
@@ -709,9 +795,9 @@ function chainSVG(items){
   var n=items.length, w=600, bw=Math.min(120,(w-40-(n-1)*26)/n), gap=26, x=20, s='<svg class="board" viewBox="0 0 600 120" preserveAspectRatio="xMidYMid meet">';
   s+='<defs><marker id="ah2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#3a557a"/></marker></defs>';
   for(var i=0;i<n;i++){
-    s+='<g class="nd" data-ph="c'+i+'" style="color:#ffb454"><rect x="'+x+'" y="38" width="'+bw+'" height="44" rx="9" fill="#0f1b2b" stroke="#ffb454" stroke-width="1.5"/>'+
-       '<text x="'+(x+bw/2)+'" y="65" text-anchor="middle" fill="#dbe7f2" font-family="Space Mono,monospace" font-size="11">'+items[i]+'</text></g>';
-    if(i<n-1) s+='<line x1="'+(x+bw)+'" y1="60" x2="'+(x+bw+gap-4)+'" y2="60" stroke="#3a557a" stroke-width="2" marker-end="url(#ah2)"/>';
+    s+='<g class="nd" data-ph="c'+i+'"><rect x="'+x+'" y="38" width="'+bw+'" height="44" rx="9" fill="rgba(255,255,255,.03)" stroke="#3a465a" stroke-width="1.3"/>'+
+       '<text x="'+(x+bw/2)+'" y="65" text-anchor="middle" fill="#c2cdd9" font-family="JetBrains Mono,monospace" font-size="11">'+items[i]+'</text></g>';
+    if(i<n-1) s+='<line x1="'+(x+bw)+'" y1="60" x2="'+(x+bw+gap-4)+'" y2="60" stroke="#33405380" stroke-width="2" marker-end="url(#ah2)"/>';
     x+=bw+gap;
   }
   s+='</svg>';
@@ -779,9 +865,9 @@ function finish(res,lv,eff,bud){
     b.className="banner show win";
     var more = track().cur < track_levels().length-1, s=STORY[state.mode];
     var pieceLine = lv.piece ? '<div style="margin-top:6px">'+ic("circle-check")+' Added <b>'+ic(lv.piece.ico)+' '+lv.piece.name+'</b> to '+s.name+'.</div>' : '';
-    b.innerHTML='<b>'+ic("check")+' '+(state.mode==="kids"?"Nice work!":"Level complete")+' '+"★".repeat(n)+'</b> <span style="color:var(--muted);font-size:12px">effort '+eff.total+'/'+bud+'</span><br>'+
+    b.innerHTML='<div class="bcard"><b>'+ic("check")+' '+(state.mode==="kids"?"Nice work!":"Level complete")+' '+"★".repeat(n)+'</b> <span style="color:var(--muted);font-size:12px">effort '+eff.total+'/'+bud+'</span><br>'+
       '<span>You learned: '+lv.learned+'</span>'+ pieceLine +
-      (more?'<div class="nxt"><button id="next">Next piece '+ic("arrow-right")+'</button></div>':'<div class="nxt">'+s.done+'</div>');
+      (more?'<div class="nxt"><button id="next">Next piece '+ic("arrow-right")+'</button></div>':'<div class="nxt">'+s.done+'</div>')+'</div>';
     renderSysmap();
     var nb=$("next"); if(nb) nb.onclick=function(){ track().cur=Math.min(track().cur+1, track_levels().length-1); state.build=[]; save(); renderAll(); window.scrollTo({top:0,behavior:"smooth"}); };
     if(state.mode==="kids") roboSay("Nice work! "+lv.learned);
@@ -795,8 +881,8 @@ function finish(res,lv,eff,bud){
         ? ("That used "+eff.total+" — the budget is "+bud+". Keep only the blocks you really need. 🙂")
         : ("It works, but it cost "+eff.total+" effort vs a budget of "+bud+". Every block + every cycle costs loop-time — remove what you don't need."); }
     b.className="banner show lose";
-    b.innerHTML='<b>'+head+'</b><br><span>'+tip+'</span>'+
-      '<div class="nxt"><button id="retry" class="retrybtn">'+ic("refresh-cw")+' Try again</button></div>';
+    b.innerHTML='<div class="bcard"><b>'+head+'</b><br><span>'+tip+'</span>'+
+      '<div class="nxt"><button id="retry" class="retrybtn">'+ic("refresh-cw")+' Try again</button></div></div>';
     var rb=$("retry"); if(rb) rb.onclick=function(){ clearStage(); window.scrollTo({top:0,behavior:"smooth"}); };
     if(state.mode==="kids") roboSay(tip);
   }
@@ -818,7 +904,7 @@ var ROBO='<svg width="56" height="56" viewBox="0 0 56 56" aria-label="Robo"><rec
 
 /* ============================ wire-up ============================ */
 function renderAll(){ renderSysmap(); renderLevelCard(); renderBuild(); renderTray(); clearStage();
-  $("brand").textContent = state.mode==="kids" ? "Robo's Loop Lab" : "Loop Lab";
+  $("brand").textContent = state.mode==="kids" ? "Robo's Studio" : "Loop Studio";
   app.className = state.mode==="kids" ? "wrap kids" : "wrap";
   document.body.className = state.mode==="kids" ? "kids" : "";
   var tg=$("toggle"); tg.className= state.mode==="kids"?"toggle kids":"toggle";
@@ -828,9 +914,11 @@ $("run").onclick=run; $("run").innerHTML=ic("play")+' Run';
 Array.prototype.forEach.call($("toggle").querySelectorAll("button"),function(btn){
   btn.onclick=function(){ state.mode=btn.getAttribute("data-mode"); state.build=[]; save(); renderAll(); };
 });
-$("reset").onclick=function(){ if(confirm("Reset all progress?")){ localStorage.removeItem(KEY); state={mode:state.mode,dev:{cur:0,done:{},stars:{}},kids:{cur:0,done:{},stars:{}},build:[]}; save(); renderAll(); } };
+$("reset").onclick=function(){ if(confirm("Reset all progress?")){ localStorage.removeItem(KEY); state={mode:state.mode,dev:{cur:0,done:{},stars:{}},kids:{cur:0,done:{},stars:{}},build:[],seen:true}; save(); renderAll(); } };
+$("welcomeStart").onclick=function(){ state.seen=true; save(); $("welcome").classList.remove("show"); };
 
 load(); renderAll();
+if(!state.seen) $("welcome").classList.add("show");
 
 /* ============================ self-test (console) ============================ */
 (function(){
