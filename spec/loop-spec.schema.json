@@ -43,7 +43,8 @@
           "type": "string",
           "description": "Notification destination (e.g. \"slack\"). Deferred past v1."
         },
-        "git": { "$ref": "#/$defs/gitPolicy" }
+        "git": { "$ref": "#/$defs/gitPolicy" },
+        "models": { "$ref": "#/$defs/modelPolicy" }
       }
     },
     "definitions": {
@@ -204,7 +205,8 @@
           "description": "The `when ...:` rules evaluated after each observe.",
           "items": { "$ref": "#/$defs/transition" }
         },
-        "git": { "$ref": "#/$defs/gitPolicy" }
+        "git": { "$ref": "#/$defs/gitPolicy" },
+        "models": { "$ref": "#/$defs/modelPolicy" }
       }
     },
     "predicate": {
@@ -318,6 +320,31 @@
             "source": { "type": "string", "description": "Data file to enumerate (.yaml/.yml/.md), relative to the flow file." }
           },
           "description": "Present when this step iterates: run `ref` once per item enumerated from `source`."
+        }
+      }
+    },
+    "modelPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Per-phase model tiering. Two tiers (fast/strong) auto-assigned by phase; cascades file→loop→stage.",
+      "properties": {
+        "tiers": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "fast": { "type": "string", "description": "model alias/id for the fast tier" },
+            "strong": { "type": "string", "description": "model alias/id for the strong tier" }
+          }
+        },
+        "phases": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "plan": { "type": "string", "enum": ["fast", "strong"] },
+            "act": { "type": "string", "enum": ["fast", "strong"] },
+            "reflect": { "type": "string", "enum": ["fast", "strong"] },
+            "also": { "type": "string", "enum": ["fast", "strong"] }
+          }
         }
       }
     },

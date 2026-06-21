@@ -10,6 +10,7 @@ import {
   LoopContext,
   LoopFile,
   LOOP_VERSION,
+  ModelPolicy,
   ParseError,
   Pipeline,
   Policy,
@@ -217,6 +218,39 @@ function parseGitBlock(lines: Line[], start: number): { git: GitPolicy; next: nu
   return { git, next };
 }
 
+const MODEL_PHASES = ["plan", "act", "reflect", "also"] as const;
+
+export function parseModelsLine(text: string, lineNo: number): ModelPolicy {
+  const policy: ModelPolicy = {};
+  for (const raw of text.split(",")) {
+    const clause = raw.trim();
+    if (!clause) continue;
+    const parts = clause.split(/\s+/);
+    const head = parts[0].toLowerCase();
+    const tierAt = (i: number) => {
+      const t = parts[i]?.toLowerCase();
+      return t === "fast" || t === "strong" ? t : undefined;
+    };
+    if (head === "all") {
+      const tier = tierAt(1);
+      if (parts.length !== 2 || !tier) throw new ParseError(`models: "all" needs a tier (fast|strong): "${clause}"`, lineNo);
+      policy.phases = { plan: tier, act: tier, reflect: tier, also: tier };
+    } else if (head === "fast" || head === "strong") {
+      if (parts.length !== 2) throw new ParseError(`models: tier "${head}" needs one model: "${clause}"`, lineNo);
+      (policy.tiers ??= {})[head] = parts[1];
+    } else if ((MODEL_PHASES as readonly string[]).includes(head)) {
+      const tier = tierAt(1);
+      if (parts.length !== 2 || !tier) throw new ParseError(`models: phase "${head}" needs a tier (fast|strong): "${clause}"`, lineNo);
+      (policy.phases ??= {})[head as (typeof MODEL_PHASES)[number]] = tier;
+    } else if (head === "observe") {
+      continue; // observe runs a shell command — no model. ignored.
+    } else {
+      throw new ParseError(`models: unrecognized clause "${clause}"`, lineNo);
+    }
+  }
+  return policy;
+}
+
 // ---------- loop body ----------
 
 interface LoopBodyResult {
@@ -242,6 +276,10 @@ function interpretLoopBody(name: string | null, body: Line[]): LoopBodyResult {
       loop.git = git;
       i = next;
       continue;
+    }
+    if ((m = t.match(/^models:\s*(.+)$/i))) {
+      loop.models = parseModelsLine(m[1], ln.lineNo);
+      i++; continue;
     }
     if ((m = t.match(/^goal:\s*(.+)$/i))) {
       loop.goal = m[1].trim();
@@ -504,6 +542,9 @@ export function parse(src: string): LoopFile {
       const { git, next } = parseGitBlock(lines, i);
       config.git = git;
       i = next;
+    } else if (/^models:\s*.+$/i.test(ln.text)) {
+      config.models = parseModelsLine(ln.text.replace(/^models:\s*/i, ""), ln.lineNo);
+      i++;
     } else if (parseConfigLine(config, ln)) {
       i++;
     } else {

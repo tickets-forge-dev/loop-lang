@@ -160,3 +160,25 @@ test("git isolation + dial-down forms", () => {
   const b = parse('git:\n  work in place').config.git;
   assert.deepEqual(b, { isolation: "in-place" });
 });
+
+test("models: parses tiers + auto-assign on config", () => {
+  const f = parse(`models: fast haiku, strong opus\n\nloop "x":\n  goal: g\n  done when "true" passes\n`);
+  assert.deepEqual(f.config.models, { tiers: { fast: "haiku", strong: "opus" } });
+});
+
+test("models: per-phase override + all shorthand on a loop", () => {
+  const f = parse(`loop "x":\n  goal: g\n  done when "true" passes\n  models: act fast, plan strong\n`);
+  assert.deepEqual(f.definitions[0].models, { phases: { act: "fast", plan: "strong" } });
+  const g = parse(`loop "y":\n  goal: g\n  done when "true" passes\n  models: all strong\n`);
+  assert.deepEqual(g.definitions[0].models, { phases: { plan: "strong", act: "strong", reflect: "strong", also: "strong" } });
+});
+
+test("models: unknown phase or tier is a parse error", () => {
+  assert.throws(() => parse(`loop "x":\n  goal: g\n  done when "true" passes\n  models: paln strong\n`), /unrecognized clause/i);
+  assert.throws(() => parse(`models: fast haiku, mid opus\n\nloop "x":\n  goal: g\n  done when "true" passes\n`), /unrecognized clause/i);
+});
+
+test("models: observe tier is ignored (no observe model)", () => {
+  const f = parse(`loop "x":\n  goal: g\n  done when "true" passes\n  models: observe fast, act strong\n`);
+  assert.deepEqual(f.definitions[0].models, { phases: { act: "strong" } });
+});

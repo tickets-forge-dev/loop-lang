@@ -21,6 +21,13 @@ export interface GitPolicy {
   openPr?: boolean;
 }
 
+export type ModelTier = "fast" | "strong";
+export type ModelPhase = "plan" | "act" | "reflect" | "also";
+export interface ModelPolicy {
+  tiers?: { fast?: string; strong?: string };
+  phases?: Partial<Record<ModelPhase, ModelTier>>;
+}
+
 export interface Config {
   use?: string;
   useOverrides?: OverrideEntry[];
@@ -29,6 +36,7 @@ export interface Config {
   target?: string;
   notify?: string;
   git?: GitPolicy;
+  models?: ModelPolicy;
 }
 
 export interface OverrideEntry {
@@ -64,6 +72,7 @@ export interface Loop {
   humanReviewBeforeStop?: boolean;
   transitions?: Transition[];
   git?: GitPolicy;
+  models?: ModelPolicy;
 }
 
 export type CycleStep = "plan" | "act" | "observe";
