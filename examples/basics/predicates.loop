@@ -1,0 +1,36 @@
+# predicates.loop
+# A "done when" is the predicate that tells the loop it has succeeded.
+# There are four forms. This one file holds four small loops, one per form,
+# so you can see them side by side. (A .loop file may hold many definitions.)
+
+# FORM 1 - a named test passes.
+# Best when you have a specific spec/test that encodes the requirement.
+loop "predicate: a test passes":
+  goal: the signup form rejects duplicate emails
+  done when the test "signup.spec.ts::duplicate-email" passes  # green test == done
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+
+# FORM 2 - a shell command passes (exits 0).
+# Best for "run this and it must succeed", e.g. the whole suite or a build.
+loop "predicate: a command passes":
+  goal: the project builds and the test suite is green
+  done when "pnpm test" passes  # any exit code 0 counts as done
+  each cycle: act, then observe
+  when it fails: reflect, then plan again
+
+# FORM 3 - a shell command finds nothing (exits 0 AND prints no output).
+# Best for "there should be zero of these", e.g. no lint errors, no leftover TODOs.
+loop "predicate: a command finds nothing":
+  goal: no high-severity security findings remain
+  done when "semgrep --severity=high --quiet" finds nothing  # empty output AND exit 0 == done
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+
+# FORM 4 - a human confirms.
+# Best for subjective goals a test cannot judge, like "the copy reads well".
+loop "predicate: a human confirms":
+  goal: the landing page headline is clear and on-brand
+  done when a human confirms "the headline reads well and matches the brand voice"  # a person says yes
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again

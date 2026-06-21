@@ -1,0 +1,30 @@
+# regression.loop
+# TEACHES: fix a bug WITHOUT breaking anything else.
+# Instead of done-when on one test, the finish line is the WHOLE suite passing
+# ("pnpm test" exits 0). This catches regressions: a change that fixes your bug
+# but quietly breaks a neighbor will keep the loop red until everything is green.
+# Use this when a fix touches shared code and you want a full safety net.
+
+loop "fix the date-parsing bug without regressions":
+  goal: the reported date-off-by-one bug is fixed and the full test suite stays green
+
+  # The bar is the ENTIRE suite, not a single test — so no regression slips through.
+  done when "pnpm test" passes
+
+  # Look at the buggy module, its tests, and whatever last broke.
+  look at: src/date.ts, the date tests, and the last failure
+
+  # Let the agent edit source/tests freely, but keep risky actions human-gated.
+  allow edits automatically, but ask me before migrations or pushes
+
+  each cycle: plan, then act, then observe
+
+  # If any test fails, reflect specifically on what the fix broke elsewhere —
+  # that's how regressions get noticed instead of repeated.
+  when it fails: reflect on which tests broke and whether the fix caused a regression, then plan again
+
+  # Stop only once the goal is met and the whole suite is green.
+  when it passes and the goal is met: stop
+
+  # Safety ceiling so a stubborn regression doesn't loop forever.
+  after 8 tries: stop and warn "still have failing tests after 8 tries — possible hidden regression"

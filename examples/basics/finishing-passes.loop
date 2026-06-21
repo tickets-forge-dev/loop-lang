@@ -1,0 +1,17 @@
+# finishing-passes.loop
+# "also:" lists finishing passes - extra work that runs ONLY AFTER the goal is met.
+# The loop first drives toward done-when; once that's green, it does each finishing
+# pass in order. This keeps the core loop tight (just reach the goal) while still
+# guaranteeing the polish steps happen before you'd call the work truly finished.
+# Think of "each cycle" as how it gets there, and "also" as the cleanup on the way out.
+
+loop "add an export-to-CSV button":
+  goal: users can export the current table view to a CSV file
+  done when the test "export.spec.ts::csv" passes  # the loop runs until THIS is green
+
+  look at: src/table/export.ts, src/table/Toolbar.tsx, and the last failure
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+
+  # These run once, in order, only after the goal above is reached:
+  also: refactor the export helper for readability, run the linter, update the docs

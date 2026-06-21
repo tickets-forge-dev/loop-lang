@@ -1,0 +1,28 @@
+# failing-test.loop
+# TEACHES: the smallest useful bugfix loop — drive one named, failing test to green.
+# Point Loop at a single test by "file::name", let it iterate, and protect against
+# "thrashing" (going in circles) with a reflect-on-fail step plus a hard try limit.
+# Great first loop to copy when you have a red test and a clear repro.
+
+loop "fix failing checkout test":
+  goal: the checkout discount test passes without breaking its file
+
+  # The finish line: this exact test must exit green. Format is "file::test name".
+  done when the test "checkout.spec.ts::applies the 10% discount" passes
+
+  # Give the agent the right context so it doesn't guess blindly.
+  look at: src/checkout.ts, checkout.spec.ts, and the last failure
+
+  # Each iteration: think first, change code, then run the test and read the result.
+  each cycle: plan, then act, then observe
+
+  # THRASH GUARD part 1 — when the test stays red, don't just retry the same idea.
+  # Reflect on *why* it failed (the assertion + error) before forming a new plan.
+  when it fails: reflect on the failing assertion and stack trace, then plan again
+
+  # When the test finally passes and the goal is met, stop — don't keep editing.
+  when it passes and the goal is met: stop
+
+  # THRASH GUARD part 2 — a hard ceiling. If 6 attempts don't fix it, the bug is
+  # likely deeper than expected; stop and surface it to a human instead of looping.
+  after 6 tries: stop and warn "checkout discount test still red after 6 tries — needs a human"

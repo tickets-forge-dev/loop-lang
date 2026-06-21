@@ -1,0 +1,31 @@
+# flaky-test.loop
+# TEACHES: making a FLAKY test reliable — one that sometimes passes, sometimes fails.
+# A single green run is NOT proof of a fix here: flakiness hides between runs.
+# So the finish line runs the test MANY times in a loop and is done only when zero
+# of those runs fail. The reflect step focuses on the usual flakiness causes
+# (timing, ordering, shared state, randomness) instead of "just rerun and hope".
+
+loop "stabilize the flaky upload test":
+  goal: the upload test is reliable — it passes consistently, not just occasionally
+
+  # Run it 20 times in a row; the command exits 0 only if NONE of those runs fail.
+  # That turns "passed once" into "passes every time", the real goal for flakiness.
+  done when "for i in $(seq 20); do pnpm test upload || exit 1; done" passes
+
+  # Context: the test, the code under test, and anything async/time/IO related.
+  look at: upload.spec.ts, src/upload.ts, and the last failure
+
+  each cycle: plan, then act, then observe
+
+  # KEY for flaky tests: don't just retry — reflect on WHY it's flaky.
+  # Common culprits: race conditions, fixed sleeps, test ordering / shared state,
+  # unmocked clocks, network, or randomness. Name the cause before changing code.
+  when it fails: reflect on the source of flakiness such as timing or shared state or randomness, then plan again
+
+  # Have a human eyeball the fix before we call it stable; flakiness is sneaky.
+  a human reviews before stopping
+
+  when it passes and the goal is met: stop
+
+  # If it's still intermittently failing after several rounds, escalate to a human.
+  after 6 tries: stop and warn "upload test still flaky after 6 rounds — needs a human to dig in"

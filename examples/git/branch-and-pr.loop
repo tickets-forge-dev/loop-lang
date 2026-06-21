@@ -1,0 +1,22 @@
+# Branch + commit + push + open a pull request.
+#
+# This file-level git: block (at column 0) sets the git policy for every loop in
+# the file. It is the full "ship it" flow:
+#   - work on a branch  -> isolate the work, keep your main branch clean
+#   - commit when the goal is met  -> one commit once the test passes
+#   - push when done  -> upload the branch to the remote
+#   - open a pull request  -> create a PR for review (Loop never pushes to main)
+git:
+  work on a branch "feature/healthcheck"   # named branch; Loop checks it out for you
+  commit when the goal is met              # commit cadence: a single commit at the end
+  push when done                           # push the branch after the goal is met
+  open a pull request                      # open a PR instead of merging to main
+
+loop "add a healthcheck endpoint":
+  goal: GET /healthz returns 200 with a JSON status
+  done when "pnpm test health" passes
+  look at: the http server and the routes module, and the last failure
+  allow edits automatically, but ask me before pushes   # human gate on the push class
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the failing assertion, then plan again
+  after 6 tries: stop and warn "healthcheck endpoint stuck"

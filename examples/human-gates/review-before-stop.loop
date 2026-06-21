@@ -1,0 +1,14 @@
+# Human gate: review BEFORE the loop is allowed to stop.
+#
+# Some goals are subjective — "does this look right?" can't be checked by a
+# shell command. So this loop has NO "done when" line. Instead, the human is
+# the finish line: the agent keeps iterating and only stops once a human
+# reviews the result and is satisfied. Perfect for UI/UX polish.
+
+loop "polish the checkout page":
+  goal: the checkout page looks clean and is comfortable to use on mobile
+  # note: no "done when" here — there is no objective test for "looks clean"
+  look at: the checkout page component and the design mockups
+  each cycle: plan, then act, then observe
+  a human reviews before stopping        # <- the human is the finish line, not a test
+  when it fails: reflect on layout and spacing, then plan again

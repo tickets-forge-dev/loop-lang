@@ -1,0 +1,9 @@
+# Teaches: the smallest useful loop — keep working until a shell command exits 0.
+# "done when ... passes" means the command must return exit code 0 to finish.
+loop "lint":
+  goal: code passes the linter with no errors          # every loop needs a goal
+  done when "pnpm lint" passes                          # finished once `pnpm lint` exits 0
+  look at: the last failure                             # focus the fixing on what just broke
+  each cycle: plan, then act, then observe              # think, fix, then re-check
+  when it fails: reflect, then plan again               # learn from the failure before retrying
+  after 6 tries: stop and warn "lint thrashing"         # safety valve so it can't loop forever

@@ -1,0 +1,48 @@
+# Feature: "Export to CSV" shipped as a 4-stage pipeline.
+#
+# A pipeline runs its stages top-to-bottom and is fail-fast: a stage must be
+# satisfied before the next one starts. Each stage body is a normal loop body,
+# so it has its own goal and its own "done when" gate.
+#
+# The story here: build the feature, prove the whole suite still passes, scan
+# for vulnerabilities, then let a human eyeball the UI before we call it done.
+
+pipeline "feature: export table to CSV":
+
+  # 1. BUILD — the self-correcting loop that writes the feature.
+  #    Edits run automatically so it can iterate without asking, but it must
+  #    ask a person before anything risky (a migration or a push). The
+  #    acceptance test is the objective gate: it can't claim "done" until the
+  #    test actually passes.
+  stage build:
+    goal: users can download the current table as a .csv file
+    look at: src/export, src/components/Table.tsx, and the last failure  # where to focus
+    allow edits automatically, but ask me before migrations or pushes    # auto-edit, human-gate the scary stuff
+    each cycle: plan, then act, then observe                             # the inner reasoning loop
+    done when the test "export/csv.spec.ts::downloads a csv" passes      # the one acceptance test
+    when it fails: reflect on which layer broke, then plan again         # learn from each red run
+    after 6 tries: stop and warn "csv export is thrashing"              # give up before burning cycles
+
+  # 2. REGRESSION — run the FULL suite, not just the new test, so we know the
+  #    feature didn't break anything else.
+  stage regression:
+    goal: the entire test suite is green
+    each cycle: act, then observe                # no planning needed; just run and read results
+    done when "pnpm test" passes                 # exit 0 across every test
+    when it fails: reflect on the failing files, then plan again
+
+  # 3. SECURITY — a real scanner is the bar. "finds nothing" means the command
+  #    exits 0 AND prints no output, so a clean Semgrep run is required.
+  stage security:
+    goal: no high-severity findings in the new code
+    each cycle: plan, then act, then observe
+    done when "semgrep --config auto --severity=high" finds nothing   # clean = exit 0 + empty output
+    when it fails: reflect on the flagged lines, then plan again
+    after 4 tries: stop and warn "security findings need a human"
+
+  # 4. UI — the objective gates are green, but pixels need human eyes. A person
+  #    reviews the rendered download before the pipeline is allowed to stop.
+  stage ui:
+    goal: the export button looks right and the file opens cleanly in a spreadsheet
+    each cycle: observe                  # nothing to change automatically; just present it
+    a human reviews before stopping      # blocking gate: a person signs off at the end

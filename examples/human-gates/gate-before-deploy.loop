@@ -1,0 +1,23 @@
+# Human gate inside a PIPELINE: approve before provisioning real infra.
+#
+# A pipeline runs its stages in order and stops on the first failure
+# (fail-fast). Here, build and test run automatically — but the deploy stage
+# carries a BLOCKING gate: "a human approves before provisioning". The agent
+# reaches the deploy stage, pauses, and waits for a human to OK it before any
+# cloud resources are touched. This is how you let a loop run free up to the
+# moment something costs money or goes live.
+
+pipeline "release to production":
+
+  stage build:
+    goal: the app builds and unit tests pass
+    done when "pnpm build && pnpm test" passes
+    each cycle: act, then observe
+    when it fails: reflect on the build error, then plan again
+
+  stage deploy:
+    a human approves before provisioning  # <- blocking gate: nothing is provisioned until you OK it
+    goal: infra is live and healthchecks are green
+    done when "./scripts/health.sh" passes
+    each cycle: act, then observe
+    after 4 tries: stop and warn "deploy unhealthy — roll back and investigate"

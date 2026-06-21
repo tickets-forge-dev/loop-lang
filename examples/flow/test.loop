@@ -1,0 +1,9 @@
+# Teaches: a test loop — the same shape as lint, but the gate is the test suite.
+# Loop keeps fixing and re-running until the whole suite is green.
+loop "test":
+  goal: the test suite is green                         # every loop needs a goal
+  done when "pnpm test" passes                          # finished once `pnpm test` exits 0
+  look at: the last failure                             # concentrate on the failing test
+  each cycle: plan, then act, then observe              # think, fix, then re-run the tests
+  when it fails: reflect, then plan again               # reflect before the next attempt
+  after 6 tries: stop and warn "tests thrashing"        # bail out if it stops making progress

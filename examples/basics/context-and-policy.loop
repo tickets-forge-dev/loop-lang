@@ -1,0 +1,21 @@
+# context-and-policy.loop
+# Two settings that make a loop both focused and safe:
+#   look at:  - the files (and signals) the agent should read before acting.
+#             "and the last failure" feeds the previous pass's error back in,
+#             so the agent reflects on what actually went wrong instead of guessing.
+#   allow / ask-me-before - an autonomy policy. Routine edits happen on their own;
+#             risky actions (migrations, pushes, deploys, deletes) pause for you.
+# Together: the agent has the right context AND can't do anything scary unattended.
+
+loop "fix the date-formatting bug":
+  goal: invoices show dates in the user's locale, not UTC
+  done when the test "invoices.spec.ts::locale-dates" passes
+
+  # Point the agent at the exact files involved, and replay the prior error each pass.
+  look at: src/invoices/format.ts, src/i18n/locale.ts, and the last failure
+  # Let small code edits flow, but stop and ask before anything irreversible.
+  allow edits automatically, but ask me before migrations or pushes
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the locale conversion, then plan again
+  after 6 tries: stop and warn "date-formatting fix is thrashing"

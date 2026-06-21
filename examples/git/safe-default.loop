@@ -1,0 +1,18 @@
+# Safe-by-default git (no git block needed).
+#
+# This loop has NO git: block at all -- and that is the point. Loop ships with a
+# safe default so you never accidentally commit on the wrong branch or push to
+# main. With no git block, Loop will:
+#   - work on a branch (not your current/main branch)
+#   - commit when the goal is met
+#   - NOT push anywhere
+#   - NEVER push to main or master
+# Add a git: block (see branch-and-pr.loop) only when you want to push or open a PR.
+
+loop "fix the failing date parser":
+  goal: dates in ISO and US format both parse correctly
+  done when "pnpm test parser" passes   # exit 0 means the goal is satisfied
+  look at: the parser module and the last failure   # context the agent reads each cycle
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the failing case, then plan again
+  after 6 tries: stop and warn "parser still failing -- needs a human"

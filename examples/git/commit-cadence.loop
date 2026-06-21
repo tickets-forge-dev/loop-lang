@@ -1,0 +1,29 @@
+# Commit after each satisfied stage ("commit each story").
+#
+# The commit cadence options are: each cycle | each story | when the goal is met | never.
+# Here we choose "commit each story", which in a pipeline means Loop makes a commit
+# after EACH stage's goal is satisfied -- so you get one clean commit per stage and
+# a readable history you can review or revert stage by stage.
+git:
+  work on a branch         # isolate the pipeline's work from your main branch
+  commit each story        # commit once after every stage that reaches its goal
+
+pipeline "build the checkout flow":
+
+  stage cart:
+    goal: items can be added to and removed from the cart
+    done when "pnpm test cart" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect on the failing test, then plan again
+
+  stage payment:
+    goal: a valid card completes payment and an invalid card is rejected
+    a human approves before charging real payments   # blocking gate before this stage
+    done when "pnpm test payment" passes
+    each cycle: plan, then act, then observe
+
+  stage confirmation:
+    goal: a confirmation page and receipt email are shown after checkout
+    done when "pnpm test confirmation" passes
+    each cycle: plan, then act, then observe
+    a human reviews before stopping

@@ -1,0 +1,9 @@
+# Teaches: a deploy loop whose success is a healthcheck, not a test or build.
+# Note the short cycle "act, then observe": deploy something, then check health —
+# no separate planning step is needed for a simple deploy-and-verify.
+loop "deploy":
+  goal: the service is deployed and healthy             # every loop needs a goal
+  done when "./scripts/health.sh" passes                # finished once the healthcheck exits 0
+  each cycle: act, then observe                          # deploy, then check the healthcheck
+  when it fails: reflect, then plan again                # if health is red, diagnose and retry
+  after 6 tries: stop and warn "deploy not healthy"     # stop rather than redeploy endlessly

@@ -1,0 +1,15 @@
+# Human gate: only interrupt a human WHEN the agent gets stuck.
+#
+# This is the "hands-off until needed" gate. The loop runs on its own toward
+# an objective finish line, but if it hits something it can't resolve — a
+# missing secret, an ambiguous requirement, a failure it can't reflect its way
+# out of — it asks a human instead of guessing or spinning forever.
+
+loop "migrate the user table to the new schema":
+  goal: all users are migrated and the app reads from the new schema
+  done when "pnpm test migration" passes  # objective finish line
+  look at: the migration scripts and the database models, and the last failure
+  each cycle: plan, then act, then observe
+  when blocked: ask a human                # <- escalate instead of guessing when stuck
+  when it fails: reflect on the failing migration, then plan again
+  after 6 tries: stop and warn "migration stuck — needs a human decision"

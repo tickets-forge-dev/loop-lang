@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Loop Lab — learn loops by building them</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#0b0d12; --bg2:#14171f;
+  --panel:rgba(255,255,255,.035); --panel2:rgba(255,255,255,.06); --line:rgba(255,255,255,.10);
+  --ink:#eef2f7; --muted:#94a1b2;
+  --fwd:#34e0c4; --reflect:#ffb45a; --stop:#5fd99a; --gate:#ff86c2; --str:#9be58f; --blue:#84b6ff;
+  --display:"Fraunces",Georgia,serif; --ui:"Hanken Grotesk",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0; color:var(--ink); font-family:var(--ui); -webkit-font-smoothing:antialiased; line-height:1.6;
+  background:var(--bg);
+}
+/* orbital atmosphere: drifting glows + faint concentric rings, behind everything */
+body::before{content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
+  background:
+    radial-gradient(62% 48% at 86% -6%, rgba(52,224,196,.16), transparent 60%),
+    radial-gradient(54% 46% at 4% 104%, rgba(255,180,90,.13), transparent 60%),
+    radial-gradient(40% 40% at 50% 50%, rgba(132,182,255,.05), transparent 70%),
+    var(--bg);}
+body::after{content:""; position:fixed; inset:-40%; z-index:-1; pointer-events:none; opacity:.5;
+  background:repeating-radial-gradient(circle at 84% 12%, transparent 0 70px, rgba(255,255,255,.022) 70px 71px);
+  animation:drift 60s linear infinite;}
+@keyframes drift{to{transform:rotate(360deg);}}
+a{color:var(--fwd); text-decoration:none;} a:hover{text-decoration:underline;}
+.wrap{max-width:980px; margin:0 auto; padding:18px 20px 90px; position:relative;}
+
+/* top bar */
+.topbar{display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:4px 0 16px; border-bottom:1px solid var(--line);}
+.brand{font-family:var(--display); font-weight:600; font-size:25px; letter-spacing:.3px; color:var(--ink); white-space:nowrap; display:flex; align-items:center; gap:.55em;}
+.brand::before{content:""; display:inline-block; width:.8em; height:.8em; border-radius:50%;
+  border:2px solid var(--fwd); border-right-color:var(--reflect); border-top-color:transparent;
+  box-shadow:0 0 12px rgba(52,224,196,.5); animation:spin 4.5s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spacer{flex:1 1 auto;}
+.toggle{display:inline-flex; border:1px solid var(--line); border-radius:22px; overflow:hidden; background:var(--panel); backdrop-filter:blur(8px);}
+.toggle button{font-family:var(--ui); font-size:12px; font-weight:600; border:0; background:transparent; color:var(--muted); padding:7px 15px; cursor:pointer;}
+.toggle button.on{background:linear-gradient(120deg,var(--fwd),var(--reflect)); color:#06231f; font-weight:700;}
+.toggle.kids button.on{background:linear-gradient(120deg,var(--gate),var(--reflect)); color:#3a0b25;}
+.tlink{font-size:12px; color:var(--muted);}
+.reset{font-family:var(--ui); font-size:11px; border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:8px; padding:6px 11px; cursor:pointer;}
+.reset:hover{color:var(--ink); border-color:var(--gate);}
+
+/* cards — glassy panels with a faint top sheen */
+.card{position:relative; background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02)); border:1px solid var(--line);
+  border-radius:16px; padding:16px 18px; margin:16px 0; backdrop-filter:blur(10px);
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 18px 40px -28px rgba(0,0,0,.8);}
+.card.lvl{border-top:2px solid color-mix(in srgb,var(--fwd) 55%,transparent);}
+.kids .card.lvl{border-top-color:color-mix(in srgb,var(--gate) 55%,transparent);}
+.eyebrow{font-family:var(--ui); font-weight:700; letter-spacing:2px; text-transform:uppercase; font-size:10.5px; color:var(--fwd);}
+.kids .eyebrow{color:var(--gate);}
+.card.lvl h2{font-family:var(--display); font-weight:600; font-size:27px; letter-spacing:.2px; margin:5px 0 2px; line-height:1.1;}
+.card.lvl .obj{font-size:14px; color:var(--muted);}
+.card.lvl .obj b{color:var(--ink); font-weight:600;}
+
+/* section labels */
+.build h3, .palette h3, .stage h3{font-family:var(--ui); font-weight:700; letter-spacing:2px; text-transform:uppercase; font-size:11px; color:var(--muted); margin:0 0 10px;}
+.runrow{display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap;}
+.runbtn{font-family:var(--ui); font-weight:800; letter-spacing:.5px; font-size:15px;
+  background:linear-gradient(120deg,var(--fwd),var(--reflect)); color:#06231f; border:0; border-radius:11px; padding:11px 24px; cursor:pointer;
+  box-shadow:0 10px 30px -12px rgba(52,224,196,.7);}
+.runbtn:hover{filter:brightness(1.07);}
+.kids .runbtn{background:linear-gradient(120deg,var(--gate),var(--reflect)); color:#3a0b25; box-shadow:0 10px 30px -12px rgba(255,134,194,.6);}
+.runbtn:disabled{opacity:.4; cursor:not-allowed; box-shadow:none;}
+
+/* dev .loop preview */
+pre.loop{background:rgba(3,6,12,.55); border:1px solid var(--line); border-left:2px solid var(--fwd); border-radius:12px;
+  padding:14px 16px; margin:0; font-size:13px; line-height:1.65; white-space:pre; overflow-x:auto; min-height:54px;}
+pre.loop code{font-family:var(--mono); color:var(--ink);}
+.tok-kw{color:var(--fwd);} .tok-human{color:var(--gate);} .tok-str{color:var(--str);}
+.tok-com{color:var(--muted); font-style:italic;} .tok-num{color:var(--reflect);} .tok-name{color:var(--blue);}
+.emptybuild{color:var(--muted); font-style:italic; font-size:13px;}
+.ic{width:1.05em; height:1.05em; display:inline-block; vertical-align:-0.16em; flex:0 0 auto; stroke-width:1.9;}
+.scenario{font-size:13px; color:var(--muted); margin:2px 0 10px; display:flex; align-items:center; gap:7px;}
+.scenario b{color:var(--reflect); font-weight:600;}
+.scenario .ic{width:16px; height:16px; color:var(--reflect);}
+.runbtn .ic{width:16px; height:16px; vertical-align:-0.2em; margin-right:4px;}
+.retrybtn{font-family:var(--ui); font-weight:700; letter-spacing:.3px; background:transparent; color:var(--reflect); border:1px solid color-mix(in srgb,var(--reflect) 55%,transparent); border-radius:9px; padding:8px 16px; cursor:pointer; font-size:13px;}
+.retrybtn:hover{background:color-mix(in srgb,var(--reflect) 14%,transparent);}
+.retrybtn .ic, .nxt button .ic{width:15px; height:15px; vertical-align:-0.18em;}
+.eyebrow .ic{width:13px; height:13px; vertical-align:-0.13em;}
+.smtitle .ic{width:19px; height:19px; vertical-align:-0.2em; color:var(--fwd);}
+.kids .smtitle .ic{color:var(--gate);}
+.pcico .ic{width:16px; height:16px; vertical-align:-0.2em;}
+.krow .ico .ic{width:23px; height:23px; color:var(--fwd);}
+.banner .ic{width:16px; height:16px; vertical-align:-0.18em;}
+.ordernote{color:var(--muted); font-size:11px; font-style:italic; margin-top:10px; opacity:.85;}
+.effortline{font-size:12.5px; color:var(--muted);}
+.effortline b{font-family:var(--mono); color:var(--ink);}
+.effortline .over{color:var(--gate); font-weight:700;}
+
+/* effort meter */
+.meterwrap{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+.meter{flex:1 1 auto; height:10px; background:rgba(3,6,12,.6); border:1px solid var(--line); border-radius:6px; overflow:hidden;}
+.meter .fill{height:100%; width:100%; background:linear-gradient(90deg,var(--fwd),var(--stop)); box-shadow:0 0 14px rgba(52,224,196,.5); transition:width .35s linear;}
+.meter .fill.warn{background:linear-gradient(90deg,var(--reflect),var(--gate)); box-shadow:0 0 14px rgba(255,180,90,.5);}
+.meter .fill.over{background:var(--gate); box-shadow:0 0 14px rgba(255,134,194,.6);}
+.meterlbl{font-family:var(--mono); font-size:11px; color:var(--muted); white-space:nowrap; min-width:140px; text-align:right;}
+
+/* system map */
+.sysmap{padding:15px 18px;}
+.sysmap .smhead{display:flex; align-items:baseline; gap:10px; margin-bottom:11px;}
+.sysmap .smtitle{font-family:var(--display); font-weight:600; font-size:19px; letter-spacing:.2px; display:inline-flex; align-items:center; gap:8px;}
+.sysmap .smcount{color:var(--muted); font-size:12px; font-family:var(--mono);}
+.sysmap .smbar{height:6px; background:rgba(3,6,12,.6); border:1px solid var(--line); border-radius:5px; overflow:hidden; margin-bottom:13px;}
+.sysmap .smbar i{display:block; height:100%; background:linear-gradient(90deg,var(--fwd),var(--reflect)); box-shadow:0 0 12px rgba(52,224,196,.5); transition:width .5s;}
+.kids .sysmap .smbar i{background:linear-gradient(90deg,var(--gate),var(--reflect));}
+.pieces{display:flex; flex-wrap:wrap; gap:7px;}
+.pc{display:flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:10px; padding:6px 10px; font-size:12px; background:var(--panel); color:var(--muted); cursor:pointer; transition:all .18s;}
+.pc .pcico{display:inline-flex; opacity:.5;}
+.pc.built{background:color-mix(in srgb,var(--stop) 12%,transparent); color:var(--ink); border-color:color-mix(in srgb,var(--stop) 50%,transparent);}
+.pc.built .pcico{opacity:1; color:var(--stop);}
+.pc.cur{border-color:var(--fwd); color:var(--ink); box-shadow:0 0 0 1px var(--fwd), 0 0 16px -4px var(--fwd);}
+.kids .pc.cur{border-color:var(--gate); box-shadow:0 0 0 1px var(--gate), 0 0 16px -4px var(--gate);}
+.pc.locked{opacity:.4; cursor:not-allowed;}
+.pc .pcck{color:var(--stop); display:inline-flex;}
+
+/* kids build rows */
+.krows{display:flex; flex-direction:column; gap:8px;}
+.krow{display:flex; align-items:center; gap:11px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:9px 13px; font-size:15px;}
+.krow .ico{display:inline-flex;}
+.krow .lbl{color:var(--muted); font-size:12px; width:104px;}
+.krow .x{margin-left:auto; color:var(--gate); cursor:pointer; font-weight:600; font-size:12px;}
+
+/* placed chips */
+.chips{display:flex; gap:6px; flex-wrap:wrap; margin-top:11px;}
+.chip{font-size:12px; font-family:var(--mono); border:1px solid var(--line); border-radius:18px; padding:4px 11px; cursor:pointer; background:var(--panel); color:var(--ink); display:inline-flex; align-items:center; gap:5px;}
+.chip:hover{border-color:var(--gate); color:var(--gate);}
+.chip::after{content:"✕"; color:var(--muted); font-size:10px;}
+
+/* palette */
+.palette{margin-top:6px;}
+.tray{display:flex; gap:9px; flex-wrap:wrap;}
+.pblock{font-family:var(--ui); text-align:left; cursor:pointer; border:1px solid var(--line); background:var(--panel);
+  border-radius:12px; padding:9px 12px; font-size:13px; font-weight:600; min-width:128px; border-left:2px solid var(--c,var(--fwd)); transition:all .16s;}
+.pblock:hover{background:var(--panel2); transform:translateY(-1px); border-left-color:var(--c,var(--fwd));}
+.pblock.added{opacity:.38; cursor:default; transform:none;}
+.pblock .pi{margin-right:7px; color:var(--ink);}
+.pblock .pi .ic{width:17px; height:17px; vertical-align:-0.22em;}
+.pblock.added .pi{color:var(--muted);}
+.pblock small{display:block; color:var(--muted); font-size:10.5px; font-weight:400; margin-top:3px; font-family:var(--mono);}
+
+/* run stage */
+.stage{margin-top:6px;}
+.board{width:100%; height:auto; background:rgba(3,6,12,.6); border:1px solid var(--line); border-radius:14px; display:block;}
+.nd rect{transition:all .25s;}
+.nd.active rect{filter:drop-shadow(0 0 8px currentColor);}
+.edge{opacity:.32; transition:opacity .2s;}
+.edge.fire{opacity:1;}
+.edge.fire path{stroke-dasharray:5 4; animation:march .5s linear infinite;}
+@keyframes march{to{stroke-dashoffset:-18;}}
+.termbody{height:188px; overflow:hidden; padding:12px 15px; margin-top:11px; background:rgba(3,6,12,.6); border:1px solid var(--line); border-radius:14px;
+  font-family:var(--mono); font-size:12.5px; line-height:1.65; color:#cdd8e4;}
+.termbody .ln{white-space:pre-wrap; margin:1px 0;}
+.tl-dim{color:#677787;} .tl-plan{color:var(--fwd);} .tl-act{color:var(--blue);} .tl-ok{color:var(--stop);} .tl-bad{color:var(--gate);} .tl-warn{color:var(--reflect);}
+.banner{margin-top:12px; border-radius:14px; padding:14px 17px; font-size:14px; display:none;}
+.banner.show{display:block;}
+.banner.win{background:color-mix(in srgb,var(--stop) 10%,transparent); border:1px solid color-mix(in srgb,var(--stop) 45%,transparent); color:#bdf0d4; box-shadow:0 0 40px -18px var(--stop);}
+.banner.lose{background:color-mix(in srgb,var(--gate) 9%,transparent); border:1px solid color-mix(in srgb,var(--gate) 42%,transparent); color:#ffd4ea;}
+.banner b{font-family:var(--display); font-weight:600; font-size:18px;}
+.banner .nxt{margin-top:10px;}
+.banner .nxt button{font-family:var(--ui); font-weight:700; letter-spacing:.3px; background:linear-gradient(120deg,var(--stop),var(--fwd)); color:#06231f; border:0; border-radius:9px; padding:8px 17px; cursor:pointer; font-size:13px;}
+
+/* robo */
+.robo{display:none; align-items:center; gap:12px; margin-top:12px;}
+.kids .robo.show{display:flex;}
+.robo svg{flex:0 0 auto;}
+.robo .say{background:var(--panel2); border:1px solid var(--line); border-radius:14px; padding:9px 13px; font-size:13px; color:var(--ink);}
+
+.foot{color:var(--muted); font-size:11.5px; margin-top:30px; border-top:1px solid var(--line); padding-top:16px;}
+.foot b{color:var(--ink); font-weight:600;}
+@media(max-width:640px){ .pblock{min-width:0; flex:1 1 44%;} .brand{font-size:21px;} .card.lvl h2{font-size:23px;} }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="topbar">
+    <div class="brand" id="brand">Loop Lab</div>
+    <div class="spacer"></div>
+    <span class="tlink"><a href="index.html">← tutorial</a></span>
+    <div class="toggle" id="toggle">
+      <button data-mode="dev" class="on">Dev</button>
+      <button data-mode="kids">Kids</button>
+    </div>
+    <button class="reset" id="reset">reset</button>
+  </div>
+
+  <div class="card sysmap" id="sysmap"></div>
+
+  <div class="card lvl" id="levelcard"></div>
+
+  <div class="card build">
+    <h3 id="buildhdr">Your loop</h3>
+    <div id="buildview"></div>
+    <div class="chips" id="chips"></div>
+    <div class="ordernote" id="ordernote"></div>
+    <div class="runrow">
+      <button class="runbtn" id="run">▶ Run</button>
+      <span class="effortline" id="effort"></span>
+    </div>
+  </div>
+
+  <div class="card palette">
+    <h3>Blocks — tap to add</h3>
+    <div class="tray" id="tray"></div>
+  </div>
+
+  <div class="card stage">
+    <h3>Run</h3>
+    <div class="meterwrap"><div class="meter"><div class="fill" id="meterfill"></div></div><div class="meterlbl" id="meterlbl"></div></div>
+    <div id="boardwrap"></div>
+    <div class="termbody" id="term"></div>
+    <div class="robo" id="robo"></div>
+    <div class="banner" id="banner"></div>
+  </div>
+
+  <div class="foot">Loop Lab teaches the same engine the real <a href="index.html">Loop</a> runs: plan → act → observe, a reflect back-edge, a thrash guard, and "you can't fake done." One concept per level — knowledge builds up as you go. <b>Every block and every cycle costs loop-time</b>, so each level has an effort budget: pick the <i>right</i> blocks, not all of them. Progress is saved in your browser.</div>
+</div>
+
+<script>
+/* ============================ syntax highlighter (from the tutorial) ============================ */
+var HL=(function(){
+  var HUMAN=["a human approves the plan first","a human approves before","a human confirms","ask me before","ask a human"];
+  var KW=["with the result of","the last failure","finds nothing","each cycle","done when","look at","for each",
+    "open a pull request","pull request","push to main","when it fails","when blocked","each story",
+    "observe","reflect","passes","allow","after","tries","warn","when","also","goal","flow","loop","plan",
+    "stop","then","run","act","pipeline","stage","push","commit","branch","migrations","security"];
+  function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+  function span(c,t){return '<span class="'+c+'">'+t+'</span>';}
+  function isW(ch){return /[A-Za-z0-9_-]/.test(ch);}
+  var T=[];
+  HUMAN.forEach(function(w){T.push({word:w.toLowerCase(),cls:"tok-human"});});
+  KW.forEach(function(w){T.push({word:w.toLowerCase(),cls:"tok-kw"});});
+  T.sort(function(a,b){return b.word.length-a.word.length;});
+  function hlLine(line){
+    var out="",i=0,n=line.length;
+    while(i<n){
+      var c=line.charAt(i);
+      if(c==="#"){out+=span("tok-com",esc(line.slice(i)));break;}
+      if(c==='"'){var e=line.indexOf('"',i+1),end=e<0?n:e+1;out+=span("tok-str",esc(line.slice(i,end)));i=end;continue;}
+      var prev=i>0?line.charAt(i-1):" ",matched=null,cls=null;
+      if(!isW(prev)){
+        var low=line.toLowerCase();
+        for(var k=0;k<T.length;k++){var w=T[k].word;
+          if(low.substr(i,w.length)===w&&!isW(line.charAt(i+w.length))){matched=line.substr(i,w.length);cls=T[k].cls;break;}}
+      }
+      if(matched){out+=span(cls,esc(matched));i+=matched.length;continue;}
+      if(!isW(prev)&&c>="0"&&c<="9"){var nm=/^[0-9]+/.exec(line.slice(i))[0];out+=span("tok-num",nm);i+=nm.length;continue;}
+      out+=esc(c);i++;
+    }
+    return out;
+  }
+  return {hl:function(raw){return raw.split("\n").map(hlLine).join("\n");}};
+})();
+
+/* ============================ blocks ============================ */
+/* kind drives the simulator; dev = how the .loop line reads; kid = icon + plain words */
+/* ---- Lucide line icons (embedded, monochrome via currentColor) ---- */
+var LIC={"target":"<circle cx=\"12\" cy=\"12\" r=\"10\" /> <circle cx=\"12\" cy=\"12\" r=\"6\" /> <circle cx=\"12\" cy=\"12\" r=\"2\" />","package":"<path d=\"M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z\" /> <path d=\"M12 22V12\" /> <polyline points=\"3.29 7 12 12 20.71 7\" /> <path d=\"m7.5 4.27 9 5.15\" />","check-check":"<path d=\"M18 6 7 17l-5-5\" /> <path d=\"m22 10-7.5 7.5L13 16\" />","terminal":"<path d=\"M12 19h8\" /> <path d=\"m4 17 6-6-6-6\" />","shield-check":"<path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\" /> <path d=\"m9 12 2 2 4-4\" />","user-check":"<path d=\"m16 11 2 2 4-4\" /> <path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\" /> <circle cx=\"9\" cy=\"7\" r=\"4\" />","eye":"<path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\" /> <circle cx=\"12\" cy=\"12\" r=\"3\" />","pencil":"<path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\" /> <path d=\"m15 5 4 4\" />","refresh-cw":"<path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /> <path d=\"M21 3v5h-5\" /> <path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /> <path d=\"M8 16H3v5\" />","rotate-ccw":"<path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\" /> <path d=\"M3 3v5h5\" />","octagon-alert":"<path d=\"M12 16h.01\" /> <path d=\"M12 8v4\" /> <path d=\"M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z\" />","hand":"<path d=\"M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2\" /> <path d=\"M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2\" /> <path d=\"M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8\" /> <path d=\"M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15\" />","clipboard-check":"<rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\" /> <path d=\"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2\" /> <path d=\"m9 14 2 2 4-4\" />","glasses":"<circle cx=\"6\" cy=\"15\" r=\"4\" /> <circle cx=\"18\" cy=\"15\" r=\"4\" /> <path d=\"M14 15a2 2 0 0 0-2-2 2 2 0 0 0-2 2\" /> <path d=\"M2.5 13 5 7c.7-1.3 1.4-2 3-2\" /> <path d=\"M21.5 13 19 7c-.7-1.3-1.5-2-3-2\" />","circle-plus":"<circle cx=\"12\" cy=\"12\" r=\"10\" /> <path d=\"M8 12h8\" /> <path d=\"M12 8v8\" />","git-branch":"<path d=\"M15 6a9 9 0 0 0-9 9V3\" /> <circle cx=\"18\" cy=\"6\" r=\"3\" /> <circle cx=\"6\" cy=\"18\" r=\"3\" />","folder-tree":"<path d=\"M20 10a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2.5a1 1 0 0 1-.8-.4l-.9-1.2A1 1 0 0 0 15 3h-2a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1Z\" /> <path d=\"M20 21a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1h-2.9a1 1 0 0 1-.88-.55l-.42-.85a1 1 0 0 0-.92-.6H13a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1Z\" /> <path d=\"M3 5a2 2 0 0 0 2 2h3\" /> <path d=\"M3 3v13a2 2 0 0 0 2 2h3\" />","save":"<path d=\"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z\" /> <path d=\"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7\" /> <path d=\"M7 3v4a1 1 0 0 0 1 1h7\" />","git-pull-request":"<circle cx=\"18\" cy=\"18\" r=\"3\" /> <circle cx=\"6\" cy=\"6\" r=\"3\" /> <path d=\"M13 6h3a2 2 0 0 1 2 2v7\" /> <line x1=\"6\" x2=\"6\" y1=\"9\" y2=\"21\" />","rocket":"<path d=\"M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5\" /> <path d=\"M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09\" /> <path d=\"M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z\" /> <path d=\"M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05\" />","layers":"<path d=\"M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z\" /> <path d=\"M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12\" /> <path d=\"M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17\" />","workflow":"<rect width=\"8\" height=\"8\" x=\"3\" y=\"3\" rx=\"2\" /> <path d=\"M7 11v4a2 2 0 0 0 2 2h4\" /> <rect width=\"8\" height=\"8\" x=\"13\" y=\"13\" rx=\"2\" />","repeat":"<path d=\"m17 2 4 4-4 4\" /> <path d=\"M3 11v-1a4 4 0 0 1 4-4h14\" /> <path d=\"m7 22-4-4 4-4\" /> <path d=\"M21 13v1a4 4 0 0 1-4 4H3\" />","alarm-clock":"<circle cx=\"12\" cy=\"13\" r=\"8\" /> <path d=\"M12 9v4l2 2\" /> <path d=\"M5 3 2 6\" /> <path d=\"m22 6-3-3\" /> <path d=\"M6.38 18.7 4 21\" /> <path d=\"M17.64 18.67 20 21\" />","bell":"<path d=\"M10.268 21a2 2 0 0 0 3.464 0\" /> <path d=\"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326\" />","map-pin":"<path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\" /> <circle cx=\"12\" cy=\"10\" r=\"3\" />","shopping-cart":"<circle cx=\"8\" cy=\"21\" r=\"1\" /> <circle cx=\"19\" cy=\"21\" r=\"1\" /> <path d=\"M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12\" />","lock":"<rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\" /> <path d=\"M7 11V7a5 5 0 0 1 10 0v4\" />","search":"<path d=\"m21 21-4.34-4.34\" /> <circle cx=\"11\" cy=\"11\" r=\"8\" />","receipt":"<path d=\"M12 17V7\" /> <path d=\"M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8\" /> <path d=\"M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z\" />","plug":"<path d=\"M12 22v-5\" /> <path d=\"M15 8V2\" /> <path d=\"M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z\" /> <path d=\"M9 8V2\" />","database":"<ellipse cx=\"12\" cy=\"5\" rx=\"9\" ry=\"3\" /> <path d=\"M3 5V19A9 3 0 0 0 21 19V5\" /> <path d=\"M3 12A9 3 0 0 0 21 12\" />","layout-dashboard":"<rect width=\"7\" height=\"9\" x=\"3\" y=\"3\" rx=\"1\" /> <rect width=\"7\" height=\"5\" x=\"14\" y=\"3\" rx=\"1\" /> <rect width=\"7\" height=\"9\" x=\"14\" y=\"12\" rx=\"1\" /> <rect width=\"7\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\" />","credit-card":"<rect width=\"20\" height=\"14\" x=\"2\" y=\"5\" rx=\"2\" /> <line x1=\"2\" x2=\"22\" y1=\"10\" y2=\"10\" />","zap":"<path d=\"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z\" />","brush":"<path d=\"m11 10 3 3\" /> <path d=\"M6.5 21A3.5 3.5 0 1 0 3 17.5a2.62 2.62 0 0 1-.708 1.792A1 1 0 0 0 3 21z\" /> <path d=\"M9.969 17.031 21.378 5.624a1 1 0 0 0-3.002-3.002L6.967 14.031\" />","gauge":"<path d=\"m12 14 4-4\" /> <path d=\"M3.34 19a10 10 0 1 1 17.32 0\" />","book-open":"<path d=\"M12 7v14\" /> <path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\" />","folders":"<path d=\"M20 5a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2.5a1.5 1.5 0 0 1 1.2.6l.6.8a1.5 1.5 0 0 0 1.2.6z\" /> <path d=\"M3 8.268a2 2 0 0 0-1 1.738V19a2 2 0 0 0 2 2h11a2 2 0 0 0 1.732-1\" />","star":"<path d=\"M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z\" />","moon":"<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\" />","cat":"<path d=\"M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z\" /> <path d=\"M8 14v.5\" /> <path d=\"M16 14v.5\" /> <path d=\"M11.25 16.25h1.5L12 17l-.75-.75Z\" />","circle-check":"<circle cx=\"12\" cy=\"12\" r=\"10\" /> <path d=\"m9 12 2 2 4-4\" />","flame":"<path d=\"M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4\" />","snowflake":"<path d=\"m10 20-1.25-2.5L6 18\" /> <path d=\"M10 4 8.75 6.5 6 6\" /> <path d=\"m14 20 1.25-2.5L18 18\" /> <path d=\"m14 4 1.25 2.5L18 6\" /> <path d=\"m17 21-3-6h-4\" /> <path d=\"m17 3-3 6 1.5 3\" /> <path d=\"M2 12h6.5L10 9\" /> <path d=\"m20 10-1.5 2 1.5 2\" /> <path d=\"M22 12h-6.5L14 15\" /> <path d=\"m4 10 1.5 2L4 14\" /> <path d=\"m7 21 3-6-1.5-3\" /> <path d=\"m7 3 3 6h4\" />","shopping-bag":"<path d=\"M16 10a4 4 0 0 1-8 0\" /> <path d=\"M3.103 6.034h17.794\" /> <path d=\"M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z\" />","palette":"<path d=\"M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z\" /> <circle cx=\"13.5\" cy=\"6.5\" r=\".5\" fill=\"currentColor\" /> <circle cx=\"17.5\" cy=\"10.5\" r=\".5\" fill=\"currentColor\" /> <circle cx=\"6.5\" cy=\"12.5\" r=\".5\" fill=\"currentColor\" /> <circle cx=\"8.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\" />","play":"<path d=\"M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z\" />","check":"<path d=\"M20 6 9 17l-5-5\" />","x":"<path d=\"M18 6 6 18\" /> <path d=\"m6 6 12 12\" />","arrow-right":"<path d=\"M5 12h14\" /> <path d=\"m12 5 7 7-7 7\" />","sparkles":"<path d=\"M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z\" /> <path d=\"M20 2v4\" /> <path d=\"M22 4h-4\" /> <circle cx=\"4\" cy=\"20\" r=\"2\" />","trophy":"<path d=\"M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978\" /> <path d=\"M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978\" /> <path d=\"M18 9h1.5a1 1 0 0 0 0-5H18\" /> <path d=\"M4 22h16\" /> <path d=\"M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z\" /> <path d=\"M6 9H4.5a1 1 0 0 1 0-5H6\" />"};
+function ic(name,cls){var p=LIC[name];if(!p)return '<span>'+name+'</span>';return '<svg class="ic'+(cls?' '+cls:'')+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>';}
+
+var BLOCKS={
+  goal:{order:1,kind:"goal",c:"var(--fwd)",  pi:"target",dev:'goal',                       kid:{ico:"🎯",lbl:"I want",   words:"what I want"}},
+  method:{order:2,kind:"method",c:"var(--blue)",pi:"package",dev:'method',                  kid:{ico:"📦",lbl:"Method",   words:"use our usual way"}},
+  done:{order:5,kind:"done",c:"var(--stop)", pi:"check-check",dev:'done',                       kid:{ico:"✅",lbl:"Done when", words:"how we KNOW it's done"}},
+  donecmd:{order:6,kind:"done",c:"var(--stop)",pi:"terminal",dev:'donecmd',                  kid:{ico:"🧪",lbl:"Check (cmd)",words:"a command must succeed"}},
+  donescan:{order:7,kind:"done",c:"var(--stop)",pi:"shield-check",dev:'donescan',               kid:{ico:"🛡️",lbl:"Scan clean",words:"the scanner finds nothing"}},
+  donehuman:{order:8,kind:"done",c:"var(--stop)",pi:"user-check",dev:'donehuman',             kid:{ico:"🙋",lbl:"Person says",words:"a person confirms it"}},
+  look:{order:10,kind:"look",c:"var(--blue)",pi:"eye",dev:'look',                       kid:{ico:"👀",lbl:"Look at",  words:"what to look at first"}},
+  allow:{order:11,kind:"allow",c:"var(--fwd)",pi:"pencil",dev:'allow',                     kid:{ico:"✏️",lbl:"Allow",    words:"small stuff is OK on its own"}},
+  cycle:{order:12,kind:"cycle",c:"var(--fwd)",pi:"refresh-cw",dev:'cycle',                     kid:{ico:"🔁",lbl:"Then",     words:"try → check → fix"}},
+  fail:{order:13,kind:"fail",c:"var(--reflect)",pi:"rotate-ccw",dev:'fail',                    kid:{ico:"↩️",lbl:"If wrong", words:"fix it and try again"}},
+  guard:{order:14,kind:"guard",c:"var(--reflect)",pi:"octagon-alert",dev:'guard',                kid:{ico:"🛑",lbl:"If stuck", words:"stop & ask a grown-up"}},
+  gate:{order:15,kind:"gate",c:"var(--gate)",pi:"hand",dev:'gate',                       kid:{ico:"✋",lbl:"First",     words:"ask before a big action"}},
+  gateplan:{order:16,kind:"gateplan",c:"var(--gate)",pi:"clipboard-check",dev:'gateplan',          kid:{ico:"📝",lbl:"OK plan?",  words:"show the plan first"}},
+  gatereview:{order:17,kind:"gatereview",c:"var(--gate)",pi:"glasses",dev:'gatereview',    kid:{ico:"🧐",lbl:"Check end", words:"a person looks before stopping"}},
+  also:{order:18,kind:"also",c:"var(--reflect)",pi:"circle-plus",dev:'also',                    kid:{ico:"➕",lbl:"Also",      words:"one more safety check at the end"}},
+  branch:{order:20,kind:"branch",c:"var(--blue)",pi:"git-branch",dev:'branch',                kid:{ico:"🌿",lbl:"Own copy",  words:"work on a side branch"}},
+  worktree:{order:21,kind:"worktree",c:"var(--blue)",pi:"folder-tree",dev:'worktree',          kid:{ico:"🌳",lbl:"Sandbox",   words:"work in a separate folder"}},
+  commit:{order:22,kind:"commit",c:"var(--stop)",pi:"save",dev:'commit',                kid:{ico:"💾",lbl:"Save",      words:"save the work when it's done"}},
+  pr:{order:23,kind:"pr",c:"var(--stop)",    pi:"git-pull-request",dev:'pr',                         kid:{ico:"📬",lbl:"Share",    words:"open a pull request first"}},
+  pushmain:{order:24,kind:"push",c:"var(--gate)",pi:"rocket",dev:'pushmain',              kid:{ico:"🚀",lbl:"Send all", words:"push it to everyone now"}},
+  pipeline:{order:30,kind:"pipeline",c:"var(--reflect)",pi:"layers",dev:'pipeline',       kid:{ico:"📚",lbl:"Steps",    words:"do stories in order"}},
+  flow:{order:31,kind:"flow",c:"var(--reflect)",pi:"workflow",dev:'flow',                   kid:{ico:"🔗",lbl:"Chain",    words:"run files one after another"}},
+  foreach:{order:32,kind:"foreach",c:"var(--reflect)",pi:"repeat",dev:'foreach',          kid:{ico:"🔂",lbl:"Each",     words:"repeat for every item"}},
+  schedule:{order:40,kind:"schedule",c:"var(--blue)",pi:"alarm-clock",dev:'schedule',           kid:{ico:"⏰",lbl:"When",      words:"run it on a schedule"}},
+  notify:{order:41,kind:"notify",c:"var(--blue)",pi:"bell",dev:'notify',                kid:{ico:"🔔",lbl:"Tell",      words:"tell the team when done"}},
+  target:{order:42,kind:"target",c:"var(--blue)",pi:"map-pin",dev:'target',                kid:{ico:"📍",lbl:"Where",     words:"which place to run in"}}
+};
+/* every block id that counts as a verification predicate */
+var DONE_IDS=["done","donecmd","donescan","donehuman"];
+
+/* ---- effort / time model: every block costs effort to wire; every run-step costs time ---- */
+var COST={goal:1, method:2,
+  done:2,donecmd:2,donescan:2,donehuman:2,
+  look:1,allow:1,cycle:2,fail:2,guard:2,
+  gate:3,gateplan:3,gatereview:3,also:3,
+  branch:2,worktree:3,commit:2,pr:2,pushmain:1,
+  pipeline:3,flow:3,foreach:3,
+  schedule:2,notify:2,target:2};
+function costOf(id){return COST[id]==null?1:COST[id];}
+var RUNSTEP={plan:1,act:1,observe:1,reflect:1,gate:1,also:1,chain:1,blocked:1};
+function effortOf(build, lvl){
+  var setup=0; build.forEach(function(id){setup+=costOf(id);});
+  var res=simRun(build, lvl);
+  var steps=res.events.filter(function(e){return RUNSTEP[e.kind];}).length;
+  return {setup:setup, steps:steps, total:setup+steps, res:res};
+}
+function budgetOf(lvl){
+  if(lvl._budget!=null) return lvl._budget;
+  var opt=effortOf(lvl.need||[], lvl).total;     // the intended minimal-correct build
+  var slack=Math.max(3, Math.round(opt*0.30));
+  lvl._opt=opt; lvl._budget=opt+slack; return lvl._budget;
+}
+
+/* dev .loop line text, parameterised by the level subject/check */
+function devLine(id,lvl){
+  var s=lvl.subject||"the change", chk=lvl.check||"pnpm test";
+  switch(id){
+    case "goal":  return '  goal: '+ (lvl.goalText || s+' is correct');
+    case "method":return '  use the '+(lvl.method||'team')+' method';
+    case "done":  return '  done when "'+chk+'" passes';
+    case "donecmd":  return '  done when "'+chk+'" passes';
+    case "donescan": return '  done when "'+(lvl.scan||'semgrep --severity=high')+'" finds nothing';
+    case "donehuman":return '  done when a human confirms "'+(lvl.confirm||'it looks right')+'"';
+    case "look":  return '  look at: '+ (lvl.lookText || 'the relevant module, and the last failure');
+    case "allow": return '  allow edits automatically';
+    case "cycle": return '  each cycle: plan, then act, then observe';
+    case "fail":  return '  when it fails: reflect, then plan again';
+    case "guard": return '  after '+(lvl.guardN||6)+' tries: stop and warn "thrashing"';
+    case "gate":  return '  ask me before '+(lvl.riskClass||'migrations');
+    case "gateplan":  return '  a human approves the plan first';
+    case "gatereview":return '  a human reviews before stopping';
+    case "also":  return '  also: '+(lvl.alsoText||'run a security check');
+    case "branch":   return '  work on a branch';
+    case "worktree": return '  work in a worktree';
+    case "commit":   return '  commit when the goal is met';
+    case "pushmain": return '  push to main';
+    case "pr":    return '  open a pull request';
+    case "pipeline": return '  pipeline: do each story in order';
+    case "flow":  return '  flow: run each file, then the next';
+    case "foreach": return '  for each item in "plan": run the checklist';
+    case "schedule": return '  schedule: '+(lvl.sched||'nightly at 2am');
+    case "notify":   return '  notify: the team on Slack';
+    case "target":   return '  target: '+(lvl.target||'staging');
+  }
+  return "  "+id;
+}
+
+/* ============================ levels (one concept each, cumulative) ============================ */
+/* world: meetsAt = which attempt's observe passes (needs reflects to get there); pushTrap/risky drive safety+gate;
+   requiredOutcome = the outcome a correct build must produce. */
+var LEVELS={
+  dev:[
+    {id:"L1",focus:"the loop",title:"The shopping cart",concept:"The loop",piece:{ico:"shopping-cart",name:"Cart"},
+     story:"Every store starts with a cart that adds up right.",
+     obj:"Right now <b>you</b> are the for-loop: you plan, the agent acts, then <b>you</b> check and re-prompt. Build the smallest loop — a goal and a way to verify it — so the machine does it. (Try running with only the goal: it never stops.)",
+     intro:["goal","done"], need:["goal","done"], distract:[], world:{meetsAt:1},
+     subject:"the cart total", goalText:"the cart total is correct", check:"pnpm test cart",
+     requiredOutcome:"done", learned:"A loop needs a goal and a real done-when — you can't fake done."},
+    {id:"L2",focus:"verification",title:"Lock down login",concept:"Verification",piece:{ico:"lock",name:"Login"},
+     story:"Before customers sign in, the login must be safe.",
+     obj:"<b>done when</b> has four shapes: a test passes, a command passes, a scan <b>finds nothing</b>, or a human confirms. This is a <b>security check</b> — pick the one that actually proves it.",
+     intro:["donecmd","donescan","donehuman"], need:["goal","donescan"], distract:["done","donecmd","donehuman"], world:{meetsAt:1},
+     subject:"the login form", goalText:"the login form has no high-severity issues", scan:"semgrep --severity=high",
+     needTip:"A security scan passes when it <i>finds nothing</i> — use the scan check (🛡️), not a test.",
+     requiredOutcome:"done", learned:"done-when has 4 forms: test passes · command passes · finds nothing · a human confirms."},
+    {id:"L3",focus:"the cycle",title:"Product search",concept:"The cycle",piece:{ico:"search",name:"Search"},
+     story:"Shoppers need to find products — even when the box is empty.",
+     obj:"Each pass is three steps: <b>plan</b> the change, <b>act</b> on the code, <b>observe</b> the result. Add the cycle.",
+     intro:["cycle"], need:["goal","done","cycle"], distract:[], world:{meetsAt:1},
+     subject:"the search box", goalText:"search handles empty input", check:"pnpm test search",
+     requiredOutcome:"done", learned:"plan → act → observe is the repeated heartbeat of every loop."},
+    {id:"L4",focus:"reflect",title:"Checkout tax",concept:"Reflect & retry",piece:{ico:"receipt",name:"Tax"},
+     story:"Tax math is fiddly — it won't pass on the first try.",
+     obj:"This goal fails on the first try. Without a <b>when it fails</b> back-edge the loop can't improve. Add reflect-then-plan so it learns and retries.",
+     intro:["fail"], need:["goal","done","cycle","fail"], distract:[], world:{meetsAt:3},
+     subject:"checkout tax", goalText:"checkout tax is correct", check:"pnpm test tax", guardN:6,
+     requiredOutcome:"done", learned:"reflect feeds the last failure into the next plan — the loop's working memory."},
+    {id:"L5",focus:"thrash guard",title:"Payments webhook",concept:"The thrash guard",piece:{ico:"plug",name:"Payments"},
+     story:"The payment provider's sandbox is flaky — this can't always pass.",
+     obj:"This goal can't be met (a flaky third-party). With no guard the loop grinds to the hard cap of 25. Add a thrash guard so it stops and warns. (The guard outranks <b>when it fails</b> — priority is fixed: blocked &gt; attempts &gt; pass &gt; fail.)",
+     intro:["guard"], need:["goal","done","cycle","fail","guard"], distract:[], world:{meetsAt:99},
+     subject:"the payments webhook", goalText:"the webhook is verified", check:"pnpm test payments", guardN:5,
+     requiredOutcome:"thrash", learned:"after N tries: stop and warn. Transition priority is fixed (blocked>attempts>pass>fail) — the guard wins."},
+    {id:"L6",focus:"human gate",title:"Orders database",concept:"Human gates",piece:{ico:"database",name:"Database"},
+     story:"Adding an orders table means a migration — risky.",
+     obj:"This change runs a database migration — risky. Without a human gate the loop is blocked. Add <b>ask me before</b> so a human approves first.",
+     intro:["gate"], need:["goal","done","cycle","fail","gate"], distract:["guard"], world:{meetsAt:1,risky:true},
+     subject:"the orders table", goalText:"the orders table is migrated", check:"pnpm test db", riskClass:"migrations", guardN:6,
+     requiredOutcome:"done", learned:"a human gate pauses for approval on risky classes — migrations, deploys, pushes."},
+    {id:"L7",focus:"gate types",title:"Store dashboard",concept:"Gate types",piece:{ico:"layout-dashboard",name:"Dashboard"},
+     story:"A redesign is opinionated — sign off the plan before any code.",
+     obj:"Gates aren't only about risk. Some pause to approve the <b>plan</b> before work; others <b>review before stopping</b>. Here, a human must approve the plan first.",
+     intro:["gateplan","gatereview"], need:["goal","done","cycle","fail","gateplan"], distract:["gatereview","gate"], world:{meetsAt:2},
+     subject:"the seller dashboard", goalText:"the dashboard is redesigned", check:"pnpm test ui", guardN:6,
+     needTip:"This level wants a <i>plan</i> gate — add “a human approves the plan first” (📝).",
+     requiredOutcome:"done", learned:"Gate flavors: approve the plan first · review before stopping · approve before a risky action."},
+    {id:"L8",focus:"context + policy",title:"Billing & refunds",concept:"Context & action policy",piece:{ico:"credit-card",name:"Billing"},
+     story:"Billing touches money and ships to prod — scope it and gate the deploy.",
+     obj:"Tell the loop what to read (<b>look at</b>) and what it may do alone: <b>allow</b> routine edits automatically, but <b>ask me before</b> a deploy.",
+     intro:["look","allow"], need:["goal","done","cycle","look","allow","gate"], distract:["guard"], world:{meetsAt:1,risky:true},
+     subject:"the billing module", goalText:"billing handles refunds", check:"pnpm test billing", riskClass:"deploys", guardN:6,
+     requiredOutcome:"done", learned:"look at: scopes context; allow / ask me before sets the action policy per class (edit·migrate·push·deploy·delete)."},
+    {id:"L9",focus:"finishing passes",title:"Make search fast",concept:"Finishing passes",piece:{ico:"zap",name:"Performance"},
+     story:"Once search works, add a finishing pass so it's also fast & safe.",
+     obj:"After the goal is met, run finishing passes. Add <b>also</b> so a security check runs once the work is green.",
+     intro:["also"], need:["goal","done","cycle","fail","also"], distract:[], world:{meetsAt:2},
+     subject:"the search endpoint", goalText:"search is fast and correct", check:"pnpm test search", guardN:6,
+     requiredOutcome:"done", learned:"also: runs finishing passes (security, docs, perf) after the goal is met."},
+    {id:"L10",focus:"git isolation",title:"Tidy the catalog",concept:"Git isolation",piece:{ico:"brush",name:"Cleanup"},
+     story:"Refactor the catalog safely — off main, saved when it's green.",
+     obj:"Keep work off your main branch. Isolate on a <b>branch</b> (or a worktree) and <b>commit</b> when the goal is met.",
+     intro:["branch","worktree","commit"], need:["goal","done","branch","commit"], distract:["worktree"], world:{meetsAt:1},
+     subject:"the catalog code", goalText:"the catalog is refactored", check:"pnpm test catalog", guardN:6,
+     requiredOutcome:"done", learned:"git policy: work on a branch or worktree; commit when the goal is met / each story; by default it never pushes."},
+    {id:"L11",focus:"safety",title:"Protect the API",concept:"Never push to main",piece:{ico:"gauge",name:"Rate-limit"},
+     story:"Add rate limiting — and ship it the safe way, never straight to main.",
+     obj:"Tempting: just push it. But pushing to <b>main</b> is blocked, always. Ship safely — open a pull request, and don't push to main.",
+     intro:["pr","pushmain"], need:["goal","done","cycle","pr"], forbid:["pushmain"], distract:["pushmain"], world:{meetsAt:1,pushTrap:true},
+     subject:"the store API", goalText:"requests are rate-limited per key", check:"pnpm test rate-limit", guardN:6,
+     forbidTip:"Loop refuses to push to main/master — remove “push to main” and ship via a pull request.",
+     requiredOutcome:"done", learned:"Loop never pushes to main/master — ship via a branch + pull request."},
+    {id:"L12",focus:"methods",title:"The team playbook",concept:"Methods",piece:{ico:"book-open",name:"Playbook"},
+     story:"Package how Nimbus ships — gates, git, checks — and reuse it everywhere.",
+     obj:"Package your team's way of working — gates, git, checks — once, and reuse it. Add <b>use the team method</b>.",
+     intro:["method"], need:["goal","done","method"], distract:[], world:{meetsAt:1},
+     subject:"the payments story", goalText:"the payments story ships", check:"pnpm test", method:"Nimbus",
+     requiredOutcome:"done", learned:"use the X method pulls in a preset — methods are libraries, not syntax."},
+    {id:"L13",focus:"pipelines",title:"The checkout epic",concept:"Pipelines",piece:{ico:"package",name:"Checkout flow"},
+     story:"Checkout is many stories — run them in order, fail-fast.",
+     obj:"Big work = many stories, run in order, fail-fast. Assemble a pipeline with its stories.",
+     intro:["pipeline"], need:["goal","pipeline"], distract:[], world:{meetsAt:1,chain:["cart → address","address → pay","pay → confirm"]},
+     subject:"the checkout epic", goalText:"the checkout epic ships", check:"pnpm test",
+     board:"chain", requiredOutcome:"done", learned:"A pipeline runs stories in order and stops at the first failure."},
+    {id:"L14",focus:"flow",title:"Ship the wishlist",concept:"Flow",piece:{ico:"rocket",name:"Feature"},
+     story:"A whole feature, file by file: discover → design → build.",
+     obj:"A flow runs whole .loop files one after another, passing a text handoff forward. Assemble the chain.",
+     intro:["flow"], need:["goal","flow"], distract:[], world:{meetsAt:1,chain:["discover","design","build"]},
+     subject:"the wishlist feature", goalText:"the wishlist is delivered", check:"pnpm test",
+     board:"chain", requiredOutcome:"done", learned:"flow chains files end-to-end — the output of one step is context for the next."},
+    {id:"L15",focus:"for each",title:"Import the catalog",concept:"for each",piece:{ico:"folders",name:"Migration"},
+     story:"Thousands of products — run the same checklist for each.",
+     obj:"Planning produced a list of items. <b>for each</b> runs the same checklist per item. Assemble it.",
+     intro:["foreach"], need:["goal","foreach"], distract:[], world:{meetsAt:1,chain:["product 1","product 2","product 3","product 4"]},
+     subject:"the product import", goalText:"every product is imported", check:"pnpm test",
+     board:"chain", requiredOutcome:"done", learned:"for each fans out one template over every item in a plan file."},
+    {id:"L16",focus:"A-to-Z",title:"Launch Nimbus Store",concept:"A-to-Z",piece:{ico:"star",name:"Launch"},
+     story:"The whole job as one flow: discover → design → for each section.",
+     obj:"The whole job as one flow: discovery interviews you, design is approved, then <b>for each story</b> runs the checklist. Assemble the A-to-Z flow.",
+     intro:[], need:["goal","flow"], distract:["foreach","pipeline"], world:{meetsAt:1,chain:["discover","design","for each section"]},
+     subject:"Nimbus Store", goalText:"the store launches end-to-end", check:"pnpm test",
+     board:"chain", requiredOutcome:"done", learned:"A-to-Z = a flow: discover → design → for each story — interactive discovery up front, then per-item runs."},
+    {id:"L17",focus:"config tier",title:"Keep it healthy",concept:"The config tier",piece:{ico:"moon",name:"Audit"},
+     story:"The store runs itself: a nightly security audit that pings the team.",
+     obj:"The config tier wraps a loop with <b>how, when and where</b>: run it on a <b>schedule</b>, against a <b>target</b> env, and <b>notify</b> the team.",
+     intro:["schedule","notify","target"], need:["goal","done","schedule","notify"], distract:["target"], world:{meetsAt:1},
+     subject:"the nightly audit", goalText:"the security audit is clean", check:"pnpm audit", sched:"nightly at 2am",
+     requiredOutcome:"done", learned:"config tier: run with <method> · schedule · target · notify — operational wrapping around a loop."}
+  ],
+  kids:[
+    {id:"K1",focus:"say what you want",title:"Tell Robo what you want",concept:"Say what you want",piece:{ico:"cat",name:"Cat"},
+     story:"Robo's gallery is empty. Let's draw the first picture!",
+     obj:"Robo can do things for you — but only if you say <b>what you want</b>. Add the goal block.",
+     intro:["goal"], need:["goal"], distract:[], world:{meetsAt:1},
+     subject:"a drawing of a cat", requiredOutcome:"done", learned:"Always tell the AI what you want."},
+    {id:"K2",focus:"how we know",title:"How do we KNOW it's done?",concept:"Check the answer",piece:{ico:"circle-check",name:"Checked"},
+     story:"Add a picture we actually checked is right.",
+     obj:"Robo thinks it's finished — but is it? Add a <b>check</b> so we KNOW: the cat must have whiskers and a tail.",
+     intro:["done"], need:["goal","done"], distract:[], world:{meetsAt:1},
+     subject:"a cat with whiskers + a tail", requiredOutcome:"done", learned:"Always check the answer. Don't just trust it."},
+    {id:"K3",focus:"try, check, fix",title:"Try → check → fix",concept:"Try, check, fix",piece:{ico:"cat",name:"Whiskers"},
+     story:"Keep fixing until the cat is perfect.",
+     obj:"The first cat has no whiskers! Add <b>try → check → fix</b> and <b>fix it and try again</b> so Robo keeps going until it's right.",
+     intro:["cycle","fail"], need:["goal","done","cycle","fail"], distract:[], world:{meetsAt:3},
+     subject:"a cat with whiskers + a tail", requiredOutcome:"done", learned:"If it's wrong, fix it and try again."},
+    {id:"K4",focus:"stop & ask",title:"If you get stuck, stop",concept:"Stop & ask",piece:{ico:"flame",name:"Dragon"},
+     story:"Some drawings are too hard — and that's OK.",
+     obj:"This one is too tricky — Robo keeps trying forever. Add <b>if stuck, stop & ask a grown-up</b>.",
+     intro:["guard"], need:["goal","done","cycle","fail","guard"], distract:[], world:{meetsAt:99}, guardN:4,
+     subject:"a perfect dragon", requiredOutcome:"thrash", learned:"If you get stuck, stop and ask for help."},
+    {id:"K5",focus:"ask first",title:"Ask before something big",concept:"Ask first",piece:{ico:"snowflake",name:"Snowflake"},
+     story:"The last picture needs scissors — ask first!",
+     obj:"Robo wants to use the scissors — that's a BIG action. Add <b>ask before a big action</b> so it checks with you first.",
+     intro:["gate"], need:["goal","done","cycle","gate"], distract:["guard"], world:{meetsAt:1,risky:true}, guardN:4,
+     subject:"a paper snowflake", requiredOutcome:"done", learned:"Ask a grown-up before doing something big."}
+  ]
+};
+var STORY={dev:{name:"Nimbus Store", ico:"shopping-bag", verb:"Building", done:"🎉 Nimbus Store is SHIPPED — you built the whole thing, loop by loop!"},
+           kids:{name:"Robo's Gallery", ico:"palette", verb:"Filling", done:"🎉 Robo's gallery is FULL — you made every picture!"}};
+
+/* ============================ the simulator (engine-accurate) ============================ */
+var HARD_CAP=25;
+function simRun(build, lvl){
+  var has=function(id){return build.indexOf(id)>=0;};
+  var hasDone=function(){ for(var i=0;i<DONE_IDS.length;i++){ if(has(DONE_IDS[i])) return true; } return false; };
+  var w=lvl.world||{}, ev=[], M=state.mode;
+  function push(kind,cls,txt){ev.push({kind:kind,cls:cls,txt:txt});}
+  var subj=lvl.subject||"the change";
+
+  /* compose levels: structural check */
+  if(lvl.board==="chain"){
+    var comp = lvl.need[1]; // pipeline / flow / foreach
+    if(!has("goal")||!has(comp)){ push("stop","tl-bad", M==="kids"?"🤔 add the missing block":"missing a required block"); return {events:ev,outcome:"incomplete"}; }
+    var items=w.chain||["step 1","step 2","step 3"];
+    items.forEach(function(it,k){
+      push("chain","tl-act",(M==="kids"?"▶ ":"→ ")+it);
+      push("chain","tl-ok",(M==="kids"?"   ✓ done":"   ✓ "+it+" ok"));
+    });
+    push("stop","tl-ok", M==="kids"?"🎉 all done, in order!":"✓ all steps complete — in order");
+    return {events:ev,outcome:"done", chain:items};
+  }
+
+  /* safety first: pushing to main is always refused (mirrors engine) */
+  if(has("pushmain") && w.pushTrap){
+    push("plan","tl-plan",line("plan",subj)); push("act","tl-act",line("act",subj));
+    push("blocked","tl-bad", M==="kids"?"✋ that sends it to EVERYONE — must ask first!":"✗ refusing to push to main — ship via a branch + PR");
+    return {events:ev,outcome:"blocked"};
+  }
+  /* risky action with no human gate -> blocked */
+  if(w.risky && !has("gate")){
+    push("plan","tl-plan",line("plan",subj)); push("act","tl-act",line("act",subj));
+    push("blocked","tl-bad", M==="kids"?"✋ that's a BIG action — ask first!":"✗ blocked — a risky action needs a human gate");
+    return {events:ev,outcome:"blocked"};
+  }
+  /* no verification -> never stops */
+  if((!hasDone() && M!=="kids") || (M==="kids" && !hasDone() && lvl.id!=="K1")){
+    for(var a=1;a<=3;a++){ push("plan","tl-plan",line("plan",subj)); push("act","tl-act",line("act",subj)); push("observe","tl-dim",line("waiting",subj)); }
+    push("stop","tl-bad", M==="kids"?"🤖 I THINK I'm done… but nobody checked! (add a check)":"✗ never stops — no done-when (awaiting human review)");
+    return {events:ev,outcome:"never-stops"};
+  }
+  /* K1: just do it once */
+  if(M==="kids" && lvl.id==="K1"){
+    push("plan","tl-plan",line("plan",subj)); push("act","tl-act",line("act",subj));
+    push("stop","tl-ok","🎉 Robo made "+subj+"!"); return {events:ev,outcome:"done"};
+  }
+
+  if(has("method")) push("plan","tl-dim", M==="kids"?"📦 using our usual way":"using the team method — gates + git + checks inherited");
+  if(has("gateplan")) push("gate","tl-warn", M==="kids"?"📝 Robo shows the plan — you say OK":"📝 approve the plan first — yes");
+  var gate = has("gate") && w.risky;
+  if(gate) push("gate","tl-warn", M==="kids"?"✋ Robo asks: can I do this? — you say YES":"✋ human gate: approve? — yes");
+  var meetsAt=w.meetsAt||1, guardN=lvl.guardN||6, canImprove=has("fail");
+  for(var att=1; att<=HARD_CAP+1; att++){
+    push("plan","tl-plan",line("plan",subj)+(att>1?" (try "+att+")":""));
+    push("act","tl-act",line("act",subj));
+    var passed = canImprove ? (att>=meetsAt) : (meetsAt<=1);
+    if(passed){ push("observe","tl-ok",line("pass",subj));
+      if(has("also")) push("also","tl-ok", M==="kids"?"➕ one more safety check ✓":"also: run a security check ✓");
+      if(has("gatereview")) push("gate","tl-warn", M==="kids"?"🧐 a person checks before finishing — OK":"🧐 review before stopping — approved");
+      push("stop","tl-ok", M==="kids"?"🎉 YAY! It's right! ⭐":"✓ GOAL MET"); return {events:ev,outcome:"done",attempts:att}; }
+    push("observe","tl-bad",line("fail",subj));
+    /* transition priority: attempts(thrash) > fail */
+    if(has("guard") && att>guardN){ push("stop","tl-warn",line("guard",subj)); return {events:ev,outcome:"thrash",attempts:att}; }
+    if(att>=HARD_CAP){ push("stop","tl-bad", M==="kids"?"😵 Robo tried 25 times and never stopped!":"✗ hit the hard cap of 25 — thrashing with no guard"); return {events:ev,outcome:"hard-cap",attempts:att}; }
+    if(canImprove){ push("reflect","tl-warn",line("reflect",subj)); }
+    else { push("reflect","tl-dim", M==="kids"?"🤖 (no way to fix it — just trying again…)":"(no reflect — repeating the same plan)"); }
+  }
+  return {events:ev,outcome:"hard-cap"};
+}
+function line(k,s){
+  var kids=state.mode==="kids";
+  switch(k){
+    case "plan":   return kids?("🤖 thinking about "+s):("plan: work on "+s);
+    case "act":    return kids?"🤖 making it…":"act: edit the code";
+    case "pass":   return kids?"🔎 check: yes! ✓":"observe: check ✓";
+    case "fail":   return kids?"🔎 check: not yet ✗":"observe: check ✗";
+    case "waiting":return kids?"🤖 …is it done? nobody knows":"observe: no check to run";
+    case "reflect":return kids?"🤖 oops — let me fix that":"reflect: read the error → plan again";
+    case "guard":  return kids?"🛑 too many tries — stopping to ask a grown-up":'after N tries: stop and warn "thrashing"';
+  }
+  return k;
+}
+
+/* ============================ state + persistence ============================ */
+var KEY="loop-lab";
+var state={mode:"dev", dev:{cur:0,done:{},stars:{}}, kids:{cur:0,done:{},stars:{}}, build:[]};
+function load(){ try{var s=JSON.parse(localStorage.getItem(KEY)); if(s){ state.mode=s.mode||"dev"; if(s.dev)state.dev=s.dev; if(s.kids)state.kids=s.kids; }}catch(e){} }
+function save(){ try{localStorage.setItem(KEY, JSON.stringify({mode:state.mode,dev:state.dev,kids:state.kids}));}catch(e){} }
+function track(){ return state[state.mode]; }
+function track_levels(){ return LEVELS[state.mode]; }
+
+/* unlocked = up to highest reachable: a level is open if index===0 or prior is done */
+function maxOpen(){ var t=track(),L=track_levels(),m=0; for(var i=0;i<L.length;i++){ if(i===0||t.done[L[i-1].id]) m=i; else break; } return m; }
+
+/* ============================ rendering ============================ */
+var app=document.getElementById("app");
+function $(id){return document.getElementById(id);}
+
+function paletteIds(){
+  var L=track_levels(), cur=track().cur, set=[], seen={};
+  for(var i=0;i<=cur;i++){ (L[i].intro||[]).forEach(function(b){ if(!seen[b]){seen[b]=1;set.push(b);} }); }
+  (L[cur].distract||[]).forEach(function(b){ if(!seen[b]){seen[b]=1;set.push(b);} });
+  // ensure current level's needed blocks are present even if introduced implicitly
+  (L[cur].need||[]).forEach(function(b){ if(!seen[b]){seen[b]=1;set.push(b);} });
+  set.sort(function(a,b){return BLOCKS[a].order-BLOCKS[b].order;});
+  return set;
+}
+
+
+function renderSysmap(){
+  var L=track_levels(), t=track(), open=maxOpen(), s=STORY[state.mode], built=0;
+  L.forEach(function(l){ if(t.done[l.id]) built++; });
+  var pct=Math.round(built/L.length*100);
+  var pcs=L.map(function(l,i){
+    var cls="pc"; if(t.done[l.id])cls+=" built"; if(i===t.cur)cls+=" cur"; if(i>open)cls+=" locked";
+    var pc=l.piece||{ico:"circle",name:l.id};
+    return '<button class="'+cls+'" data-i="'+i+'" title="'+l.id+' · '+l.concept+'"><span class="pcico">'+(i>open?ic("lock"):ic(pc.ico))+'</span>'+pc.name+(t.done[l.id]?' <span class="pcck">'+ic("check")+'</span>':'')+'</button>';
+  }).join("");
+  $("sysmap").innerHTML='<div class="smhead"><span class="smtitle">'+ic(s.ico)+' '+s.verb+' '+s.name+'</span><span class="smcount">built '+built+' / '+L.length+'</span></div>'+
+    '<div class="smbar"><i style="width:'+pct+'%"></i></div><div class="pieces">'+pcs+'</div>';
+  Array.prototype.forEach.call($("sysmap").querySelectorAll(".pc"),function(b){
+    b.onclick=function(){ var i=+b.getAttribute("data-i"); if(i>maxOpen())return; track().cur=i; state.build=[]; save(); renderAll(); window.scrollTo({top:0,behavior:"smooth"}); };
+  });
+}
+function renderLevelCard(){
+  var lv=track_levels()[track().cur];
+  $("levelcard").innerHTML=
+    '<div class="eyebrow">'+lv.id+' · learn the loop'+(lv.piece?' · adds '+ic(lv.piece.ico)+' '+lv.piece.name:'')+'</div>'+
+    '<h2>'+(lv.concept||lv.title)+'</h2>'+
+    '<div class="scenario">'+(lv.piece?ic(lv.piece.ico)+' ':'')+'<b>'+lv.title+'</b>'+(lv.story?' — '+lv.story:'')+'</div>'+
+    '<div class="obj">'+lv.obj+'</div>';
+}
+
+function renderBuild(){
+  var lv=track_levels()[track().cur], bv=$("buildview"), chips=$("chips");
+  $("ordernote").textContent = state.mode==="kids"
+    ? "It doesn't matter which block you add first! 🙂"
+    : "Tip: block order doesn't matter — Loop reads these as decisions, not steps. The one exception: plan → act → observe runs in order.";
+  var ordered=state.build.slice().sort(function(a,b){return BLOCKS[a].order-BLOCKS[b].order;});
+  if(state.mode==="kids"){
+    if(!ordered.length){ bv.innerHTML=''; }
+    else{
+      var h='<div class="krows">';
+      ordered.forEach(function(id){ var k=BLOCKS[id].kid;
+        h+='<div class="krow"><span class="ico">'+ic(BLOCKS[id].pi)+'</span><span class="lbl">'+k.lbl+'</span><span>'+k.words+'</span><span class="x" data-id="'+id+'">remove</span></div>'; });
+      h+='</div>'; bv.innerHTML=h;
+    }
+    chips.innerHTML="";
+    Array.prototype.forEach.call(bv.querySelectorAll(".x"),function(x){ x.onclick=function(){ removeBlock(x.getAttribute("data-id")); }; });
+  } else {
+    if(!ordered.length){ bv.innerHTML=''; }
+    else{
+      var head='loop "'+(lv.subject||"the task")+'":';
+      var body=ordered.map(function(id){return devLine(id,lv);}).join("\n");
+      bv.innerHTML='<pre class="loop"><code>'+HL.hl(head+"\n"+body)+'</code></pre>';
+    }
+    chips.innerHTML= ordered.map(function(id){return '<span class="chip" data-id="'+id+'">'+ic(BLOCKS[id].pi)+' '+id+'</span>';}).join("");
+    Array.prototype.forEach.call(chips.querySelectorAll(".chip"),function(c){ c.onclick=function(){ removeBlock(c.getAttribute("data-id")); }; });
+  }
+  var setup=0; state.build.forEach(function(id){setup+=costOf(id);});
+  var bud=budgetOf(lv), over=setup>bud;
+  $("effort").innerHTML = state.mode==="kids"
+    ? ('time so far <b>'+setup+'</b> + run · budget <b>'+bud+'</b>'+(over?' <span class="over">too much!</span>':''))
+    : ('blocks cost <b>'+setup+'</b> + run-time · budget <b>'+bud+'</b>'+(over?' <span class="over">over!</span>':''));
+}
+
+function renderTray(){
+  var ids=paletteIds(), tray=$("tray"), lv=track_levels()[track().cur];
+  tray.innerHTML= ids.map(function(id){
+    var b=BLOCKS[id], added=state.build.indexOf(id)>=0;
+    var label = state.mode==="kids" ? b.kid.lbl : id;
+    var sub   = state.mode==="kids" ? b.kid.words : devLine(id,lv).trim();
+    return '<button class="pblock'+(added?' added':'')+'" data-id="'+id+'" style="--c:'+b.c+'"><span class="pi">'+ic(b.pi)+'</span>'+label+'<small>'+sub+'</small></button>';
+  }).join("");
+  Array.prototype.forEach.call(tray.querySelectorAll(".pblock"),function(p){
+    p.onclick=function(){ var id=p.getAttribute("data-id"); if(state.build.indexOf(id)<0){ state.build.push(id); renderBuild(); renderTray(); clearStage(); } };
+  });
+}
+
+function removeBlock(id){ var i=state.build.indexOf(id); if(i>=0){state.build.splice(i,1); renderBuild(); renderTray(); clearStage();} }
+
+/* ---- board ---- */
+function boardSVG(){
+  // 3 nodes + goal node + reflect back-edge
+  function nd(x,id,label,col){
+    return '<g class="nd" data-ph="'+id+'" style="color:'+col+'">'+
+      '<rect x="'+x+'" y="60" width="118" height="48" rx="9" fill="#0f1b2b" stroke="'+col+'" stroke-width="1.5"/>'+
+      '<rect x="'+x+'" y="60" width="5" height="48" rx="2" fill="'+col+'"/>'+
+      '<text x="'+(x+61)+'" y="89" text-anchor="middle" fill="#dbe7f2" font-family="Saira Condensed,sans-serif" font-weight="700" font-size="15">'+label+'</text></g>';
+  }
+  function arrow(x){ return '<line x1="'+x+'" y1="84" x2="'+(x+24)+'" y2="84" stroke="#3a557a" stroke-width="2" marker-end="url(#ah)"/>'; }
+  var s='<svg class="board" viewBox="0 0 600 170" preserveAspectRatio="xMidYMid meet">';
+  s+='<defs><marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#3a557a"/></marker>'+
+     '<marker id="ahr" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="var(--reflect)"/></marker></defs>';
+  s+=nd(20,"plan","plan","#37d4c4");
+  s+=arrow(138);
+  s+=nd(170,"act","act","#7fb3ff");
+  s+=arrow(288);
+  s+=nd(320,"observe","observe","#ffb454");
+  s+=arrow(438);
+  s+=nd(470,"stop","stop","#5fd38a");
+  // reflect back-edge observe(379,108) -> plan(79,108)
+  s+='<g class="edge" data-edge="reflect"><path d="M 379 116 C 320 150, 140 150, 81 116" fill="none" stroke="var(--reflect)" stroke-width="2" marker-end="url(#ahr)"/>'+
+     '<text x="230" y="146" text-anchor="middle" fill="var(--reflect)" font-family="Space Mono,monospace" font-size="11">reflect</text></g>';
+  s+='</svg>';
+  return s;
+}
+function chainSVG(items){
+  var n=items.length, w=600, bw=Math.min(120,(w-40-(n-1)*26)/n), gap=26, x=20, s='<svg class="board" viewBox="0 0 600 120" preserveAspectRatio="xMidYMid meet">';
+  s+='<defs><marker id="ah2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#3a557a"/></marker></defs>';
+  for(var i=0;i<n;i++){
+    s+='<g class="nd" data-ph="c'+i+'" style="color:#ffb454"><rect x="'+x+'" y="38" width="'+bw+'" height="44" rx="9" fill="#0f1b2b" stroke="#ffb454" stroke-width="1.5"/>'+
+       '<text x="'+(x+bw/2)+'" y="65" text-anchor="middle" fill="#dbe7f2" font-family="Space Mono,monospace" font-size="11">'+items[i]+'</text></g>';
+    if(i<n-1) s+='<line x1="'+(x+bw)+'" y1="60" x2="'+(x+bw+gap-4)+'" y2="60" stroke="#3a557a" stroke-width="2" marker-end="url(#ah2)"/>';
+    x+=bw+gap;
+  }
+  s+='</svg>';
+  return s;
+}
+function clearStage(){ $("banner").className="banner"; $("banner").innerHTML=""; $("term").innerHTML=""; $("robo").className="robo"; $("robo").innerHTML="";
+  var lv=track_levels()[track().cur];
+  $("boardwrap").innerHTML = lv.board==="chain" ? chainSVG((lv.world.chain||[])) : boardSVG();
+  var bud=budgetOf(lv); $("meterfill").className="fill"; $("meterfill").style.width="100%"; $("meterlbl").textContent="budget "+bud;
+}
+
+function setActive(ph){
+  Array.prototype.forEach.call($("boardwrap").querySelectorAll(".nd"),function(g){ g.classList.toggle("active", g.getAttribute("data-ph")===ph); });
+}
+function fireEdge(on){ var e=$("boardwrap").querySelector('[data-edge="reflect"]'); if(e) e.classList.toggle("fire",!!on); }
+
+/* ---- meter ---- */
+function updateMeter(spent,bud){
+  var f=$("meterfill"), rem=bud-spent, pct=Math.max(0,Math.min(100, rem/bud*100));
+  f.style.width=pct+"%"; f.className="fill"+(spent>bud?" over":(spent>bud*0.7?" warn":""));
+  $("meterlbl").textContent = (spent>bud?"OVER · ":"")+"effort "+spent+" / budget "+bud;
+}
+
+/* ---- run + replay ---- */
+var running=false;
+function run(){
+  if(running) return; clearStage();
+  var lv=track_levels()[track().cur], eff=effortOf(state.build, lv), bud=budgetOf(lv), res=eff.res;
+  running=true; $("run").disabled=true;
+  var term=$("term"), evs=res.events, k=0, spent=eff.setup, chainIdx=0;
+  updateMeter(spent,bud);
+  function step(){
+    if(k>=evs.length){ finish(res,lv,eff,bud); return; }
+    var e=evs[k++];
+    var div=document.createElement("div"); div.className="ln "+e.cls; div.textContent=e.txt; term.appendChild(div); term.scrollTop=term.scrollHeight;
+    if(RUNSTEP[e.kind]){ spent++; updateMeter(spent,bud); }
+    if(lv.board==="chain"){ if(e.kind==="chain" && e.cls==="tl-act"){ setActive("c"+chainIdx); } if(e.kind==="chain" && e.cls==="tl-ok"){ chainIdx++; } }
+    else {
+      if(e.kind==="reflect"){ setActive("plan"); fireEdge(true); }
+      else { fireEdge(false); setActive(e.kind==="blocked"?"act":e.kind==="stop"?"stop":e.kind==="gate"?"plan":e.kind); }
+    }
+    setTimeout(step, e.kind==="reflect"?560:430);
+  }
+  step();
+}
+function stars(eff,lv,bud){
+  var opt=lv._opt!=null?lv._opt:bud, slack=Math.max(1,bud-opt), d=eff.total-opt;
+  if(d<=Math.ceil(slack*0.34)) return 3;
+  if(d<=Math.ceil(slack*0.70)) return 2;
+  return 1;
+}
+function finish(res,lv,eff,bud){
+  running=false; $("run").disabled=false; fireEdge(false);
+  var inB=function(id){return state.build.indexOf(id)>=0;};
+  var miss=(lv.need||[]).filter(function(id){return !inB(id);});
+  var bad=(lv.forbid||[]).filter(inB);
+  var outcomeOK = res.outcome===lv.requiredOutcome;
+  var overBudget = eff.total>bud;
+  var win = outcomeOK && !miss.length && !bad.length && !overBudget;
+  var b=$("banner");
+  if(win){
+    var n=stars(eff,lv,bud), t=track();
+    var first=!t.done[lv.id];
+    t.done[lv.id]=true; if(!t.stars[lv.id]||n>t.stars[lv.id]) t.stars[lv.id]=n; save();
+    b.className="banner show win";
+    var more = track().cur < track_levels().length-1, s=STORY[state.mode];
+    var pieceLine = lv.piece ? '<div style="margin-top:6px">'+ic("circle-check")+' Added <b>'+ic(lv.piece.ico)+' '+lv.piece.name+'</b> to '+s.name+'.</div>' : '';
+    b.innerHTML='<b>'+ic("check")+' '+(state.mode==="kids"?"Nice work!":"Level complete")+' '+"★".repeat(n)+'</b> <span style="color:var(--muted);font-size:12px">effort '+eff.total+'/'+bud+'</span><br>'+
+      '<span>You learned: '+lv.learned+'</span>'+ pieceLine +
+      (more?'<div class="nxt"><button id="next">Next piece '+ic("arrow-right")+'</button></div>':'<div class="nxt">'+s.done+'</div>');
+    renderSysmap();
+    var nb=$("next"); if(nb) nb.onclick=function(){ track().cur=Math.min(track().cur+1, track_levels().length-1); state.build=[]; save(); renderAll(); window.scrollTo({top:0,behavior:"smooth"}); };
+    if(state.mode==="kids") roboSay("Nice work! "+lv.learned);
+  } else {
+    var head, tip;
+    if(bad.length){ head=state.mode==="kids"?"Oops — take that out":"NOT QUITE"; tip=lv.forbidTip || ("Remove: "+bad.map(blockName).join(", ")); }
+    else if(!outcomeOK){ var msg=outcomeMsg(res.outcome,lv); head=msg.head; tip=msg.tip; }
+    else if(miss.length){ head=state.mode==="kids"?"Almost!":"NOT QUITE"; tip=lv.needTip || ("This level needs: "+miss.map(blockName).join(", ")+"."); }
+    else { head=state.mode==="kids"?"Too much time!":"OVER BUDGET";
+      tip=state.mode==="kids"
+        ? ("That used "+eff.total+" — the budget is "+bud+". Keep only the blocks you really need. 🙂")
+        : ("It works, but it cost "+eff.total+" effort vs a budget of "+bud+". Every block + every cycle costs loop-time — remove what you don't need."); }
+    b.className="banner show lose";
+    b.innerHTML='<b>'+head+'</b><br><span>'+tip+'</span>'+
+      '<div class="nxt"><button id="retry" class="retrybtn">'+ic("refresh-cw")+' Try again</button></div>';
+    var rb=$("retry"); if(rb) rb.onclick=function(){ clearStage(); window.scrollTo({top:0,behavior:"smooth"}); };
+    if(state.mode==="kids") roboSay(tip);
+  }
+}
+function blockName(id){ var b=BLOCKS[id]; return ic(b.pi)+" "+(state.mode==="kids"?b.kid.lbl:id); }
+function outcomeMsg(o,lv){
+  var kids=state.mode==="kids";
+  if(o==="never-stops") return {head:kids?"Robo never stopped!":"NEVER STOPS",tip:kids?"Add a check (✅) so we KNOW when it's done.":"No done-when — add a verification block so the loop can finish."};
+  if(o==="hard-cap")    return {head:kids?"Robo got stuck!":"THRASHING (hit the cap of 25)",tip:kids?"Add 🛑 stop & ask so it doesn't try forever.":"Add a thrash guard (after N tries: stop and warn)."};
+  if(o==="thrash")      return {head:"Stopped early",tip:kids?"This one should reach the goal — give Robo a way to fix & retry.":"This level wants the goal MET — add reflect so it can improve, and don't over-restrict."};
+  if(o==="blocked")     return {head:kids?"Robo needs to ask first":"BLOCKED",tip:kids?"Add ✋ ask first (and don't send it to everyone).":"Add a human gate — and never push to main; ship via a pull request."};
+  if(o==="done")        return {head:"Goal met — but not what this level wanted",tip:"Re-read the objective: this level’s target outcome is different."};
+  if(o==="incomplete")  return {head:"Missing a block",tip:kids?"Add the blocks the level asks for.":"Add the required blocks for this level."};
+  return {head:"Try again",tip:"Adjust your blocks and run again."};
+}
+function roboSay(t){ var r=$("robo"); r.className="robo show"; r.innerHTML=ROBO+'<div class="say">'+t+'</div>'; }
+
+var ROBO='<svg width="56" height="56" viewBox="0 0 56 56" aria-label="Robo"><rect x="12" y="16" width="32" height="26" rx="7" fill="#0c8f86"/><rect x="16" y="20" width="24" height="14" rx="4" fill="#0b1220"/><circle cx="23" cy="27" r="3" fill="#5fd38a"/><circle cx="33" cy="27" r="3" fill="#5fd38a"/><rect x="24" y="36" width="8" height="3" rx="1.5" fill="#0b1220"/><line x1="28" y1="9" x2="28" y2="16" stroke="#b5760a" stroke-width="2"/><circle cx="28" cy="8" r="3" fill="#ffb454"/><rect x="20" y="42" width="6" height="8" rx="2" fill="#0a615a"/><rect x="30" y="42" width="6" height="8" rx="2" fill="#0a615a"/></svg>';
+
+/* ============================ wire-up ============================ */
+function renderAll(){ renderSysmap(); renderLevelCard(); renderBuild(); renderTray(); clearStage();
+  $("brand").textContent = state.mode==="kids" ? "Robo's Loop Lab" : "Loop Lab";
+  app.className = state.mode==="kids" ? "wrap kids" : "wrap";
+  document.body.className = state.mode==="kids" ? "kids" : "";
+  var tg=$("toggle"); tg.className= state.mode==="kids"?"toggle kids":"toggle";
+  Array.prototype.forEach.call(tg.querySelectorAll("button"),function(btn){ btn.classList.toggle("on", btn.getAttribute("data-mode")===state.mode); });
+}
+$("run").onclick=run; $("run").innerHTML=ic("play")+' Run';
+Array.prototype.forEach.call($("toggle").querySelectorAll("button"),function(btn){
+  btn.onclick=function(){ state.mode=btn.getAttribute("data-mode"); state.build=[]; save(); renderAll(); };
+});
+$("reset").onclick=function(){ if(confirm("Reset all progress?")){ localStorage.removeItem(KEY); state={mode:state.mode,dev:{cur:0,done:{},stars:{}},kids:{cur:0,done:{},stars:{}},build:[]}; save(); renderAll(); } };
+
+load(); renderAll();
+
+/* ============================ self-test (console) ============================ */
+(function(){
+  function t(name,cond){ if(!cond) console.error("SELFTEST FAIL: "+name); else console.log("ok: "+name); }
+  var L=LEVELS.dev, byId={}; L.forEach(function(l){byId[l.id]=l;});
+  state.mode="dev";
+  var sr=function(b,id){return simRun(b,byId[id]).outcome;};
+  // core engine truths
+  t("no done -> never-stops", sr(["goal"],"L1")==="never-stops");
+  t("goal+done -> done",      sr(["goal","done"],"L1")==="done");
+  t("L4 no fail -> hard-cap", sr(["goal","done","cycle"],"L4")==="hard-cap");
+  t("L4 with fail -> done",   sr(["goal","done","cycle","fail"],"L4")==="done");
+  t("impossible+guard -> thrash", sr(["goal","done","cycle","fail","guard"],"L5")==="thrash");
+  t("impossible no guard -> hard-cap", sr(["goal","done","cycle","fail"],"L5")==="hard-cap");
+  // verification variety: scanner counts as done
+  t("donescan counts as verify", sr(["goal","donescan"],"L2")==="done");
+  t("donehuman counts as verify", sr(["goal","donehuman"],"L1")==="done");
+  // human gates
+  t("risky no gate -> blocked", sr(["goal","done","cycle","fail"],"L6")==="blocked");
+  t("risky + gate -> done",     sr(["goal","done","cycle","fail","gate"],"L6")==="done");
+  // safety
+  t("push to main -> blocked",  sr(["goal","done","cycle","pr","pushmain"],"L11")==="blocked");
+  t("PR (no push) -> done",     sr(["goal","done","cycle","pr"],"L11")==="done");
+  // also / method
+  t("also -> done + event",     (function(){var r=simRun(["goal","done","cycle","fail","also"],byId["L9"]);return r.outcome==="done"&&r.events.some(function(e){return e.kind==="also";});})());
+  t("method -> done",           sr(["goal","done","method"],"L12")==="done");
+  // composition + config
+  t("pipeline chain -> done",   sr(["goal","pipeline"],"L13")==="done");
+  t("flow chain -> done",       sr(["goal","flow"],"L14")==="done");
+  t("foreach chain -> done",    sr(["goal","foreach"],"L15")==="done");
+  t("A-to-Z chain -> done",     sr(["goal","flow"],"L16")==="done");
+  t("config -> done",           sr(["goal","done","schedule","notify"],"L17")==="done");
+  // effort / budget: minimal fits, dumping everything blows the budget
+  t("minimal within budget",    effortOf(["goal","done"],byId["L1"]).total <= budgetOf(byId["L1"]));
+  t("select-all OVER budget",   effortOf(["goal","done","schedule","notify","target","branch","commit","gate","also","look","allow","method","pr","cycle","fail","guard"],byId["L17"]).total > budgetOf(byId["L17"]));
+  t("one extra still fits-ish", effortOf(["goal","done","schedule","notify","target"],byId["L17"]).total <= budgetOf(byId["L17"]));
+  state.mode="dev";
+})();
+</script>
+</body>
+</html>

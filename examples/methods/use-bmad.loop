@@ -1,0 +1,15 @@
+# The config tier: tell Loop WHICH method to use and HOW to run it,
+# without writing any stages yourself.
+#
+# A "method" is a library of loop shapes (BMAD ships its analyze ->
+# architect -> story -> qa pipeline). `use the <X> method` pulls that
+# whole shape in, so this tiny file behaves like the big pipeline you'd
+# otherwise hand-write. Methods are libraries: you import behavior
+# instead of repeating stages.
+#
+# Run it with: loop run examples/methods/use-bmad.loop
+
+use the BMAD method   # import the BMAD method's stages (the "library")
+run with claude code   # the agent that drives each cycle
+schedule: nightly      # run unattended every night, not just on demand
+target: ./src          # the codebase the method operates on

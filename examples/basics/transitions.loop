@@ -1,0 +1,25 @@
+# transitions.loop
+# After each pass, the loop picks ONE transition to follow. This shows all four
+# and explains how they are prioritized.
+#
+# Precedence (checked top to bottom; the first that applies wins):
+#   1. "after N tries"  - the thrash guard. Once the attempt count hits N this
+#                         fires regardless of pass/fail, so a stuck loop always
+#                         stops instead of burning attempts forever.
+#   2. "when blocked"   - the pass could not proceed (missing info, ambiguity,
+#                         an external dependency). Hand off to a human.
+#   3. "when it passes" - the done-when predicate is satisfied and the goal met.
+#   4. "when it fails"  - the default: the goal isn't met yet, so try again.
+# Rule of thumb: blocked and the try-limit both override a normal pass/fail,
+# which is what keeps a loop from looping forever or charging past a real wall.
+
+loop "migrate the users table safely":
+  goal: the users table has a verified_at column and all tests pass
+  done when "pnpm test users" passes
+  look at: db/schema/users.sql, src/users/model.ts, and the last failure
+
+  each cycle: plan, then act, then observe
+  when it passes and the goal is met: stop          # 3 - success path: we're done
+  when it fails: reflect on the migration, then plan again  # 4 - default: not done, retry
+  when blocked: ask a human                          # 2 - can't proceed alone, escalate
+  after 5 tries: stop and warn "migration keeps failing - needs a human"  # 1 - thrash guard, always wins

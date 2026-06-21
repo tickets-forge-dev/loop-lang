@@ -1,0 +1,34 @@
+# Feature: a new REST endpoint, shipped as a 2-stage pipeline.
+#
+# Teaches two things:
+#   1. "done when the test ... passes" — a single acceptance test is the gate,
+#      so the build stage can't finish until that exact test goes green.
+#   2. ask-me-before — edits run on their own, but migrations are gated. When
+#      this endpoint needs a schema change, the loop pauses and asks a human
+#      before touching the database.
+#
+# Stages run in order and fail-fast: security only starts once build is done.
+
+pipeline "feature: POST /api/orders endpoint":
+
+  # 1. BUILD — write the endpoint until one specific acceptance test passes.
+  #    Edits are automatic, but the DB is protected: any migration (or push)
+  #    pauses for a human. That keeps an autonomous loop from silently
+  #    reshaping your schema.
+  stage build:
+    goal: POST /api/orders creates an order and returns 201 with its id
+    look at: src/api/orders.ts, src/db/schema.ts, and the last failure
+    allow edits automatically, but ask me before migrations or pushes   # gated migrations via ask-me-before
+    each cycle: plan, then act, then observe
+    done when the test "api/orders.spec.ts::creates an order" passes     # the one test that defines "done"
+    when it fails: reflect on the request/response shape, then plan again
+    after 6 tries: stop and warn "orders endpoint is stuck"
+
+  # 2. SECURITY — scan the new endpoint for vulnerabilities before it ships.
+  #    "finds nothing" requires a clean scanner run (exit 0 and no output).
+  stage security:
+    goal: the new endpoint introduces no high-severity vulnerabilities
+    each cycle: plan, then act, then observe
+    done when "semgrep --config auto --severity=high" finds nothing
+    when it fails: reflect on the flagged code, then plan again
+    after 4 tries: stop and warn "security findings need a human"

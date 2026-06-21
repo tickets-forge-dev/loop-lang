@@ -261,9 +261,42 @@ const HUMAN_PROMPT: Record<string, (p: string) => string> = {
   ask: (p) => `The loop is blocked on: ${p}\nResolve, then continue.`,
 };
 
+// ▶ Play dispatches by the `loop.runMode` setting: open a Claude Code session,
+// or run headless in the output panel. "ask" prompts which one each time.
 async function runLoop(uri: vscode.Uri | undefined, output: vscode.OutputChannel) {
   const target = uri ?? vscode.window.activeTextEditor?.document.uri;
   if (!target) return void vscode.window.showErrorMessage("Loop: no .loop file to run.");
+
+  let mode = vscode.workspace.getConfiguration("loop").get<string>("runMode") || "ask";
+  if (mode === "ask") {
+    const pick = await vscode.window.showQuickPick(
+      [
+        { label: "$(comment-discussion) Claude Code session", description: "open an interactive session — watch every step, answer gates in chat", mode: "session" },
+        { label: "$(output) VS Code output panel", description: "run headless — stream the trace into the Output panel", mode: "output" },
+      ],
+      { placeHolder: `Run ${baseName(target.fsPath)} — where?` }
+    );
+    if (!pick) return; // cancelled
+    mode = pick.mode;
+  }
+
+  if (mode === "session") return runInSession(target);
+  return runInOutput(target, output);
+}
+
+// Open (or reuse) an integrated terminal and start a real Claude Code session that runs the loop.
+function runInSession(target: vscode.Uri) {
+  const cfg = vscode.workspace.getConfiguration("loop");
+  const claude = cfg.get<string>("claudePath") || "claude";
+  const model = cfg.get<string>("model");
+  const cmd = `${claude}${model ? ` --model ${shq(model)}` : ""} ${shq(`/loop run ${target.fsPath}`)}`;
+  const name = "Loop ▶ Claude";
+  const term = vscode.window.terminals.find((t) => t.name === name) ?? vscode.window.createTerminal({ name, cwd: dirnameOf(target.fsPath) });
+  term.show(true);
+  term.sendText(cmd, true);
+}
+
+async function runInOutput(target: vscode.Uri, output: vscode.OutputChannel) {
   const cli = resolveCli();
   if (!cli) return void vscode.window.showErrorMessage("Loop: could not find the `loop` CLI. Set loop.cliPath in settings.");
   const model = vscode.workspace.getConfiguration("loop").get<string>("model");
@@ -327,4 +360,13 @@ async function runLoop(uri: vscode.Uri | undefined, output: vscode.OutputChannel
 
 function dirnameOf(p: string): string {
   return p.slice(0, Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\")));
+}
+
+function baseName(p: string): string {
+  return p.slice(Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\")) + 1);
+}
+
+// Quote an argument for a POSIX shell (the common integrated-terminal case): double-quote and escape.
+function shq(s: string): string {
+  return `"${s.replace(/(["\\$`])/g, "\\$1")}"`;
 }

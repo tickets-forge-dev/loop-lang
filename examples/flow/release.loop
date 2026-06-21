@@ -1,0 +1,8 @@
+# Teaches: a `flow` chains whole .loop files in order, one after another.
+# Each `run`/`then run` runs a separate .loop file to completion before the next
+# starts. This is how you assemble a release pipeline out of small, reusable loops.
+flow "release":
+  run "lint.loop"                  # step 1: linting must finish before anything else
+  then run "test.loop"             # step 2: only runs once lint.loop is done
+  then run "deploy.loop":          # step 3: the risky one — guard it with a gate
+    a human approves first         # blocks here until a human approves the deploy

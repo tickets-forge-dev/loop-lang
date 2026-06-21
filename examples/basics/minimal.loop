@@ -1,0 +1,13 @@
+# minimal.loop
+# The smallest useful loop. This teaches the four things every loop needs:
+#   1. a goal      - what you want (required in every loop)
+#   2. a done-when  - the objective test that decides success
+#   3. a cycle      - the steps the agent repeats each pass
+#   4. a fail handler - what to do when a pass does not reach the goal
+# Run it with: loop run examples/basics/minimal.loop
+
+loop "make the failing test pass":
+  goal: the cart total is correct when a coupon is applied
+  done when the test "cart.spec.ts::coupon" passes  # objective stop condition: this test must go green
+  each cycle: plan, then act, then observe           # one pass = think, change code, check the result
+  when it fails: reflect, then plan again            # a pass did not reach the goal, so learn and retry

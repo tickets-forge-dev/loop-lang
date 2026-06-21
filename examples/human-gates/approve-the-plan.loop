@@ -1,0 +1,15 @@
+# Human gate: approve the plan BEFORE any work happens.
+#
+# This teaches the most common gate: "a human approves the plan first".
+# The agent plans how it will reach the goal, then PAUSES and shows you the
+# plan. Nothing is acted on until you say go. Great for risky or unfamiliar
+# changes where you want eyes on the approach before code gets written.
+
+loop "add rate limiting to the public API":
+  goal: every public endpoint rejects bursts over 100 requests/min with a 429
+  a human approves the plan first        # <- the gate: agent waits for your OK on the plan
+  look at: the api router and the middleware folder, and the last failure
+  done when "pnpm test rate-limit" passes # objective finish line: the test suite decides
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the failing test, then plan again
+  after 6 tries: stop and warn "rate limiting still failing — needs a human look"

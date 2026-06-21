@@ -1,0 +1,71 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gyro">
+  <defs>
+    <linearGradient id="teal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6fe9da"/>
+      <stop offset="1" stop-color="#0b857c"/>
+    </linearGradient>
+    <linearGradient id="teal2" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#0c8f86"/>
+      <stop offset="1" stop-color="#37d4c4"/>
+    </linearGradient>
+    <radialGradient id="rotor" cx="0.42" cy="0.36" r="0.75">
+      <stop offset="0" stop-color="#ffe1a6"/>
+      <stop offset="0.55" stop-color="#f3a92a"/>
+      <stop offset="1" stop-color="#d07e08"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#37d4c4" stop-opacity="0.30"/>
+      <stop offset="0.7" stop-color="#37d4c4" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#37d4c4" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="drop" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#063f3a" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- ambient glow -->
+  <circle cx="128" cy="128" r="124" fill="url(#glow)"/>
+
+  <!-- graduated instrument dial (tick ring) -->
+  <circle cx="128" cy="128" r="110" fill="none" stroke="#0c8f86" stroke-width="2.5"
+          stroke-dasharray="2 12.3" stroke-linecap="round" opacity="0.45"/>
+  <circle cx="128" cy="128" r="110" fill="none" stroke="#0c8f86" stroke-width="5"
+          stroke-dasharray="2 67" stroke-dashoffset="-1" stroke-linecap="round" opacity="0.6"/>
+
+  <g filter="url(#drop)">
+    <!-- outer cage -->
+    <circle cx="128" cy="128" r="96" fill="none" stroke="url(#teal)" stroke-width="9"/>
+
+    <!-- gimbal rings (woven perspective) -->
+    <ellipse cx="128" cy="128" rx="96" ry="40" fill="none" stroke="#149c92" stroke-width="6.5"/>
+    <ellipse cx="128" cy="128" rx="40" ry="96" fill="none" stroke="url(#teal2)" stroke-width="6.5"/>
+    <ellipse cx="128" cy="128" rx="86" ry="29" fill="none" stroke="#37d4c4" stroke-width="4" opacity="0.9"
+             transform="rotate(-32 128 128)"/>
+
+    <!-- spin axis -->
+    <line x1="128" y1="66" x2="128" y2="190" stroke="#0a615a" stroke-width="3.5" stroke-linecap="round" opacity="0.65"/>
+
+    <!-- rotor plane (3D hint) -->
+    <ellipse cx="128" cy="128" rx="48" ry="31" fill="none" stroke="#0c8f86" stroke-width="2.5" opacity="0.4"/>
+
+    <!-- rotor disc -->
+    <circle cx="128" cy="128" r="35" fill="url(#rotor)" stroke="#c9790a" stroke-width="2"/>
+    <!-- spin highlight -->
+    <path d="M 105 114 A 35 35 0 0 1 152 105" fill="none" stroke="#fff4dd" stroke-width="3.5"
+          stroke-linecap="round" opacity="0.85"/>
+    <!-- motion ticks -->
+    <path d="M 100 140 A 35 35 0 0 0 118 158" fill="none" stroke="#7a4a06" stroke-width="2.5"
+          stroke-linecap="round" opacity="0.5"/>
+    <!-- hub -->
+    <circle cx="128" cy="128" r="7.5" fill="#6e4205"/>
+    <circle cx="125.5" cy="125.5" r="2.6" fill="#ffe1a6" opacity="0.8"/>
+  </g>
+
+  <!-- gimbal pivot pins (N / S / E / W) -->
+  <g>
+    <circle cx="128" cy="32"  r="8" fill="#0c8f86"/><circle cx="128" cy="32"  r="3.4" fill="#04332f"/>
+    <circle cx="128" cy="224" r="8" fill="#0c8f86"/><circle cx="128" cy="224" r="3.4" fill="#04332f"/>
+    <circle cx="32"  cy="128" r="8" fill="#149c92"/><circle cx="32"  cy="128" r="3.4" fill="#04332f"/>
+    <circle cx="224" cy="128" r="8" fill="#149c92"/><circle cx="224" cy="128" r="3.4" fill="#04332f"/>
+  </g>
+</svg>

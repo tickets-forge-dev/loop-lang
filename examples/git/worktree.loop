@@ -1,0 +1,19 @@
+# Work in a git worktree (your working tree stays untouched).
+#
+# A worktree is a separate checkout in its own folder that shares the same repo.
+# When Loop "works in a worktree", it does ALL its edits, commits, and retries
+# over there -- so your current working directory and uncommitted changes are
+# left completely untouched. Great for letting a loop run in the background while
+# you keep coding.
+git:
+  work in a worktree "loop/upgrade-deps"   # Loop creates/uses this worktree; your tree is safe
+  commit when the goal is met              # commits happen inside the worktree only
+
+loop "upgrade dependencies without breaking tests":
+  goal: all dependencies updated and the full test suite still passes
+  done when "pnpm test" passes
+  look at: package.json, the lockfile, and the last failure
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the breaking change, then plan again
+  when blocked: ask a human   # a major-version bump may need a human decision
+  after 8 tries: stop and warn "dependency upgrade needs manual review"

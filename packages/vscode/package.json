@@ -39,15 +39,31 @@
     "configuration": {
       "title": "Loop",
       "properties": {
+        "loop.runMode": {
+          "type": "string",
+          "enum": ["ask", "session", "output"],
+          "enumDescriptions": [
+            "Ask each time which way to run.",
+            "Open a Claude Code session in the integrated terminal and run the loop there (interactive — you watch every step and answer gates in chat).",
+            "Run headless via the CLI and stream the trace into the VS Code 'Loop' output panel."
+          ],
+          "default": "ask",
+          "markdownDescription": "What the ▶ Play button does:\n\n- **ask** — prompt each run (output panel vs Claude Code session)\n- **session** — open a Claude Code session and run `/loop run <file>` there\n- **output** — run headless, stream the trace into the VS Code output panel"
+        },
+        "loop.claudePath": {
+          "type": "string",
+          "default": "claude",
+          "description": "Path to the Claude Code CLI, used when running a loop in a session. Default: `claude` on your PATH."
+        },
         "loop.cliPath": {
           "type": "string",
           "default": "",
-          "description": "Path to the `loop` CLI (dist/cli.js). Defaults to the bundled @loop/runtime."
+          "description": "Path to the `loop` CLI (dist/cli.js), used for output-panel runs. Defaults to the bundled @loop/runtime."
         },
         "loop.model": {
           "type": "string",
           "default": "",
-          "description": "Model alias passed to Claude Code (e.g. opus, sonnet). Empty = CLI default."
+          "description": "Model alias passed to Claude Code (e.g. opus, sonnet). Empty = CLI/session default."
         }
       }
     }
