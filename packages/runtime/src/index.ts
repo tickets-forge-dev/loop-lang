@@ -17,3 +17,5 @@ export { resolveGit, isProtected, BUILTIN_GIT } from "./git.js";
 export type { GitIO, ResolvedGit } from "./git.js";
 export { MockGitIO } from "./runners/mockGit.js";
 export { ShellGitIO } from "./runners/shellGit.js";
+export { resolveModels, modelForPhase, BUILTIN_PHASES } from "./models.js";
+export type { EffectiveModels, Tier, Phase } from "./models.js";
