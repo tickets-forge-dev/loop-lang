@@ -314,6 +314,37 @@ loop "add a healthcheck endpoint":
 
 See [`examples/git_policy.loop`](../examples/git_policy.loop) for the full working file.
 
+### Model policy
+
+A loop is several LLM calls per cycle, so naively it could cost more than a single prompt. The `models:` policy fixes that: name two tiers and the engine routes the cheap-thinking phases to the fast one and the hard `act` to the strong one — a stack of cheap calls plus one strong call per cycle, not N expensive prompts.
+
+**Grammar (config tier, before any definition, or inside a loop body):**
+
+```loop
+models: fast <model>, strong <model>
+```
+
+**Built-in default mapping:**
+
+| Phase | Tier |
+|---|---|
+| `plan` | fast |
+| `reflect` | fast |
+| `also` passes | fast |
+| `act` | strong |
+| `observe` | shell check — no model |
+
+Override a single phase or a whole scope, and it cascades file→loop→stage the same way the `git:` block does:
+
+```loop
+models: fast haiku, strong opus, plan strong   # flip one phase to strong
+models: all strong                              # whole scope on one tier
+```
+
+**Kill switch:** `--model X` (CLI flag) or `loop.model` (VS Code setting) forces every phase onto one model, overriding any `models:` block.
+
+**Cost summary:** at the end of a run, Loop prints a per-tier call count so the spend is measurable, not a guess.
+
 ## 6. How a run works
 
 `loop run` maps each node to a Claude Code invocation:

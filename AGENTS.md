@@ -53,6 +53,7 @@ a human approves before <action>       (a blocking gate before a stage, e.g. dep
 plan from the archon project "<name>"  (source the plan from Archon instead of generating)
 
 use the <method> method   schedule: <when>   runner: <agent>   target: <dir>   (config tier)
+models: fast <model>, strong <model>   model tiering: plan/reflect/also→fast, act→strong (cascades; override e.g. `act fast`, `all strong`)
 ```
 
 ### Predicates (`done when …`)

@@ -197,6 +197,7 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
     <li class="grp">The engine</li>
     <li><a href="#cycle">5 · The cycle + reflect</a></li>
     <li><a href="#transitions">6 · Transitions + guard</a></li>
+    <li><a href="#models">· Model policy</a></li>
     <li><a href="#also">7 · also — finishing</a></li>
     <li><a href="#humans">8 · Human gates</a></li>
     <li><a href="#fullpower">9 · A full-power loop</a></li>
@@ -615,6 +616,32 @@ after 6 tries:                      stop and warn "thrashing"</code></pre>
     </svg>
     <figcaption>The order is the engine's, not yours. Because <b>attempts</b> is checked before <b>fail</b>, the thrash guard always wins once you hit the limit — so a stuck loop warns and stops instead of looping forever.</figcaption>
   </figure>
+</section>
+
+<!-- models -->
+<section id="models">
+  <h2>· Model policy — cheap where cheap is enough <span class="badge b-inter">intermediate</span></h2>
+  <p>A loop is several LLM calls per cycle, so naively it could cost more than one prompt. The <code class="inl">models:</code> policy fixes that: name two tiers and the engine runs the cheap-thinking phases on the fast one and the hard <code class="inl">act</code> on the strong one — a stack of cheap calls plus one strong call, not N expensive prompts.</p>
+  <pre><code class="loop">models: fast haiku, strong opus</code></pre>
+
+  <figure class="fig">
+    <svg viewBox="0 0 720 150" role="img" aria-label="Phases split across a fast lane and a strong lane">
+      <text class="dg-cap" x="360" y="14">ONE CYCLE — SPLIT ACROSS TWO MODEL TIERS</text>
+      <text class="dg-el-g" x="70" y="52">fast lane</text>
+      <rect class="dg-box dg-plan dg-fp" x="150" y="32" width="150" height="40" rx="9"/><text class="dg-lbl" x="225" y="57">plan</text>
+      <rect class="dg-box dg-plan dg-fp" x="320" y="32" width="150" height="40" rx="9"/><text class="dg-lbl" x="395" y="57">reflect</text>
+      <rect class="dg-box dg-plan dg-fp" x="490" y="32" width="150" height="40" rx="9"/><text class="dg-lbl" x="565" y="57">also</text>
+      <text class="dg-el-p" x="70" y="112">strong lane</text>
+      <rect class="dg-box dg-act dg-fa" x="150" y="92" width="150" height="40" rx="9"/><text class="dg-lbl" x="225" y="117">act</text>
+      <text class="dg-sub" x="470" y="117">observe = shell check · no model</text>
+    </svg>
+    <figcaption>Cheap model for the thinking/summarizing phases, strong model for writing code. The end-of-run summary shows the call mix per tier.</figcaption>
+  </figure>
+
+  <p>Built-in mapping: <code class="inl">plan</code>, <code class="inl">reflect</code> and finishing <code class="inl">also</code> passes → <strong>fast</strong>; <code class="inl">act</code> → <strong>strong</strong>; <code class="inl">observe</code> is a shell check (no model). Override a phase or a whole scope, and it cascades file→loop→stage like the <a href="#git">git:</a> block:</p>
+  <pre><code class="loop">models: fast haiku, strong opus, plan strong   # flip one phase
+models: all strong                              # whole scope on one tier</code></pre>
+  <p><code class="inl">--model X</code> (CLI) or <code class="inl">loop.model</code> (VS Code) is the kill switch — it forces every phase onto one model. At the end of a run Loop prints a per-tier call summary, so the spend is measurable, not a guess.</p>
 </section>
 
 <!-- 7 -->
