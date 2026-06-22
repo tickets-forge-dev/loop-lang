@@ -71,7 +71,25 @@ start with `#`. An epic → a `pipeline`; each story → a `stage`.
 2. **Write the `.loop` file.** Scope it with `look at:` so the agent stays inside the
    existing architecture. Put human gates on risky work (payments, migrations, deploys).
    Always give it a real `done when` and an `after N tries` thrash guard.
-3. **Show it and offer to run it.**
+3. **Print its flow, then offer to run it** (see "Show the flow" below).
+
+## Show the flow — every time it changes
+
+Whenever you **create or edit** a `.loop`, immediately print its flow so the user
+watches the shape evolve. If the `loop` CLI is installed, run `loop show <file>`.
+Otherwise render the same compact ASCII yourself:
+
+```
+loop "fix test"
+   ↻  plan → act → observe        (each cycle)
+   ↺  on fail: reflect → plan     (the back-edge)
+   ✓  done when: test "checkout.spec.ts::tax"
+   ⛔ guard: after 6 tries → stop & warn "stuck"
+   ·  goal: the tax line is correct
+```
+
+For a **pipeline**, list the stages in order and mark 👤 gates; for a **flow**,
+show the file chain (`a.loop → b.loop → …`). `loop ls` lists every loop in the repo.
 
 ---
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { readFileSync, writeFileSync, readdirSync } from "node:fs";
+import { dirname, resolve, relative } from "node:path";
 import { createInterface } from "node:readline";
 import { parse } from "@loop/parser";
 import { resolvePreset } from "@loop/stdlib";
@@ -80,10 +80,51 @@ function render(e: LoopEvent): string {
   }
 }
 
+/** Walk a dir for *.loop files, skipping noise. */
+function findLoops(dir: string, acc: string[] = [], depth = 0): string[] {
+  if (depth > 6) return acc;
+  let ents: import("node:fs").Dirent[];
+  try { ents = readdirSync(dir, { withFileTypes: true }); } catch { return acc; }
+  for (const e of ents) {
+    if (e.name.startsWith(".") || e.name === "node_modules" || e.name === "dist") continue;
+    const full = resolve(dir, e.name);
+    if (e.isDirectory()) findLoops(full, acc, depth + 1);
+    else if (e.name.endsWith(".loop")) acc.push(full);
+  }
+  return acc;
+}
+
 async function main() {
   const [cmd, fileArg, ...rest] = process.argv.slice(2);
+
+  // `loop show <file>` — print the ASCII flow of a loop.
+  if (cmd === "show") {
+    if (!fileArg) { console.error("usage: loop show <file.loop>"); process.exit(2); }
+    const { renderFile } = await import("./show.js");
+    console.log(renderFile(parse(readFileSync(resolve(process.cwd(), fileArg), "utf8"))));
+    return;
+  }
+  // `loop ls` — list every .loop under the current dir with its one-line shape.
+  if (cmd === "ls") {
+    const { oneLine } = await import("./show.js");
+    const root = fileArg ? resolve(process.cwd(), fileArg) : process.cwd();
+    const files = findLoops(root).sort();
+    if (files.length === 0) { console.error("no .loop files found here."); return; }
+    for (const f of files) {
+      const rel = relative(process.cwd(), f) || f;
+      try {
+        const defs = parse(readFileSync(f, "utf8")).definitions;
+        const shape = defs.length ? defs.map(oneLine).join(" ; ") : "(config only)";
+        console.log(`${rel}\n   ${shape}`);
+      } catch (err) {
+        console.log(`${rel}\n   ⚠ parse error: ${String((err as Error)?.message ?? err)}`);
+      }
+    }
+    return;
+  }
+
   if (!cmd || (cmd !== "run" && cmd !== "parse" && cmd !== "export" && cmd !== "viz") || !fileArg) {
-    console.error("usage: loop <run|parse|export|viz> <file.loop>  [--model <alias>] [--out <path>]");
+    console.error("usage: loop <run|parse|export|viz|show|ls> <file.loop>  [--model <alias>] [--out <path>]");
     process.exit(2);
   }
 

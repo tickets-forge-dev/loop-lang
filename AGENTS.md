@@ -220,11 +220,20 @@ loop "add a healthcheck endpoint":
   after 6 tries: stop and warn "healthcheck stuck"
 ```
 
+## Show the flow — every time it changes
+
+Whenever you create or edit a `.loop`, print its flow so the user sees the shape.
+Run `loop show file.loop`, or render the compact ASCII yourself: the cycle
+(`plan → act → observe`), the `↺` reflect back-edge, the `✓ done when` check, the
+`⛔` thrash guard, and any `👤` gates. For a pipeline, list stages in order; for a
+flow, show the file chain. `loop ls` lists every loop in the repo.
+
 ## Running what you wrote
 
 - `loop run file.loop` — execute it on Claude Code (plan/act/observe, reflect on failure,
   verify with `done when`, pause at human gates).
-- `loop viz file.loop` — open a visual schematic of the flow.
+- `loop show file.loop` — print the loop's flow as compact ASCII (and `loop ls` to list them).
+- `loop viz file.loop` — open a visual HTML schematic of the flow.
 - `loop export file.loop` — emit an Archon workflow YAML (optional interop).
 
 ## Authoring checklist
