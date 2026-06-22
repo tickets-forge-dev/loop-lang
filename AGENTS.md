@@ -4,7 +4,7 @@ This file teaches an AI assistant (Claude Code, Copilot, Cursor, etc.) how to wr
 **Loop** flows. When a user asks you to design a staged, self-correcting, or human-gated
 coding workflow — "set up a loop to fix X", "turn this epic into a pipeline", "automate
 this multi-step task" — author a `.loop` file using the grammar below, then let the user
-run it with `loop run file.loop`.
+run it with `loop-run run file.loop`.
 
 Loop is a small natural-language DSL. A `.loop` file describes the *movement* of an AI
 coding loop: its objective, the context it may read, the actions it's allowed, how it
@@ -59,7 +59,7 @@ a human approves the plan first        (human authors/approves the plan before a
 a human reviews before stopping        (human judges the result before the loop stops)
 a human approves before <action>       (a blocking gate before a stage, e.g. deploy)
 
-plan from the archon project "<name>"  (source the plan from Archon instead of generating)
+plan from "<file>"        (read the plan from a file you control instead of generating it)
 
 use the <method> method   schedule: <when>   runner: <agent>   target: <dir>   (config tier)
 models: fast <model>, strong <model>   model tiering: plan/reflect/also→fast, act→strong (cascades; override e.g. `act fast`, `all strong`)
@@ -232,18 +232,17 @@ loop "add a healthcheck endpoint":
 ## Show the flow — every time it changes
 
 Whenever you create or edit a `.loop`, print its flow so the user sees the shape.
-Run `loop show file.loop`, or render the compact ASCII yourself: the cycle
+Run `loop-run show file.loop`, or render the compact ASCII yourself: the cycle
 (`plan → act → observe`), the `↺` reflect back-edge, the `✓ done when` check, the
 `⛔` thrash guard, and any `👤` gates. For a pipeline, list stages in order; for a
-flow, show the file chain. `loop ls` lists every loop in the repo.
+flow, show the file chain. `loop-run ls` lists every loop in the repo.
 
 ## Running what you wrote
 
-- `loop run file.loop` — execute it on Claude Code (plan/act/observe, reflect on failure,
+- `loop-run run file.loop` — execute it on Claude Code (plan/act/observe, reflect on failure,
   verify with `done when`, pause at human gates).
-- `loop show file.loop` — print the loop's flow as compact ASCII (and `loop ls` to list them).
-- `loop viz file.loop` — open a visual HTML schematic of the flow.
-- `loop export file.loop` — emit an Archon workflow YAML (optional interop).
+- `loop-run show file.loop` — print the loop's flow as compact ASCII (and `loop-run ls` to list them).
+- `loop-run viz file.loop` — open a visual HTML schematic of the flow.
 
 ## Authoring checklist
 

@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { parse } from "@loop/parser";
-import { run, runDefinition, MockRunner, ScriptedHumanIO, MockArchonPlanSource } from "../dist/index.js";
+import { parse } from "@loop-lang/parser";
+import { run, runDefinition, MockRunner, ScriptedHumanIO } from "../dist/index.js";
 import { MockGitIO } from "../dist/runners/mockGit.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -115,28 +115,28 @@ test("human review blocks the stop until approved", async () => {
   assert.equal(outcome.reason, "human-approved");
 });
 
-test("plan from archon: plan pulled from Archon, runner.plan never called, status written back", async () => {
-  const def = parse(read("archon_billing.loop")).definitions[0];
+test("plan from file: plan read from the file, runner.plan never called", async () => {
+  const def = parse(read("plan_from_file.loop")).definitions[0];
   const runner = new MockRunner();
-  const archon = new MockArchonPlanSource(["Archon task: escape the apostrophe in the serializer"]);
+  const reads = [];
+  const planText = "Plan: escape the apostrophe in the serializer";
   const outcome = await runDefinition(def, {
     runner,
     verifier: new SeqVerifier([false, true]),
     human: new ScriptedHumanIO({ defaults: { confirm: false } }),
-    archon,
+    readText: async (path) => { reads.push(path); return planText; },
     baseDir: process.cwd(),
   });
 
   assert.equal(outcome.satisfied, true);
-  assert.equal(runner.planCalls.length, 0, "agent plan bypassed — Archon supplied the plan");
-  assert.ok(archon.fetched.length >= 1, "fetched plan from Archon");
-  // the act step received Archon's plan text
+  assert.equal(runner.planCalls.length, 0, "agent plan bypassed — the file supplied the plan");
+  assert.ok(reads.length >= 1 && reads.every((p) => p === "docs/billing-plan.md"), "read the plan file");
+  // the act step received the file's plan text
   assert.match(runner.actCalls[0].plan, /escape the apostrophe/);
-  assert.deepEqual(archon.completed.at(-1), { project: "billing", goal: def.goal, satisfied: true });
 });
 
-test("plan from archon without a source throws", async () => {
-  const def = parse(read("archon_billing.loop")).definitions[0];
+test("plan from file without a file reader throws", async () => {
+  const def = parse(read("plan_from_file.loop")).definitions[0];
   await assert.rejects(
     () =>
       runDefinition(def, {
@@ -145,7 +145,7 @@ test("plan from archon without a source throws", async () => {
         human: new ScriptedHumanIO(),
         baseDir: process.cwd(),
       }),
-    /no Archon plan source/
+    /no file reader/
   );
 });
 

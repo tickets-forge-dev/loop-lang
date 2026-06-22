@@ -13,7 +13,7 @@ const assets = join(pkg, "assets");
 
 const COPIES = [
   [join(root, "AGENTS.md"), join(assets, "AGENTS.md")],
-  [join(root, ".claude", "skills", "loop"), join(assets, "skill")],
+  [join(root, ".claude", "skills", "loopflow"), join(assets, "skill")],
   [join(root, "examples", "fix_test.loop"), join(assets, "examples", "fix_test.loop")],
 ];
 

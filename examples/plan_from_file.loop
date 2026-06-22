@@ -1,0 +1,6 @@
+loop "ship the billing fix":
+  goal: implement the plan and keep the suite green
+  plan from "docs/billing-plan.md"
+  each cycle: act, then observe
+  done when "npm test" passes
+  ask me before I migrate or push

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // @loop-lang/loop — the installer CLI. `loop init` drops Loop into a repo so any
 // agent can author + run .loop files. Running loops happens in your agent (the
-// /loop skill) or headless via the full @loop/runtime CLI.
+// /loopflow skill) or headless via the full @loop/runtime CLI.
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 import { init } from "./init.mjs";
@@ -17,17 +17,17 @@ usage:
 
 init options:
   --dir <path>     install into <path> (default: current directory)
-  --global         install the /loop skill into ~/.claude/skills (not the repo)
-  --no-skill       don't install the Claude Code /loop skill
+  --global         install the /loopflow skill into ~/.claude/skills (not the repo)
+  --no-skill       don't install the Claude Code /loopflow skill
   --no-example     don't write examples/fix_test.loop
-  --claude-md      also write a CLAUDE.md pointer
+  --no-claude-md   don't write the CLAUDE.md pointer (written by default)
   --cursor         also write .cursor/rules/loop.md
   --copilot        also write .github/copilot-instructions.md
   --all-agents     CLAUDE.md + Cursor + Copilot pointers
   --force          overwrite the skill / example if they already exist
 
 after init:
-  • Claude Code: open a chat in the repo and say  /loop run examples/fix_test.loop
+  • Claude Code: open a chat in the repo and say  /loopflow run examples/fix_test.loop
   • any agent:   it reads AGENTS.md and can author + run .loop files
   • headless:    install @loop/runtime for  loop run <file>`;
 
@@ -45,7 +45,9 @@ async function main(argv) {
   if (cmd === "init") {
     const agents = [];
     if (flag(argv, "--all-agents")) agents.push("claude", "cursor", "copilot");
-    if (flag(argv, "--claude-md") && !agents.includes("claude")) agents.push("claude");
+    // CLAUDE.md pointer is on by default (gives Claude Code a standing "author a .loop"
+    // nudge); --no-claude-md opts out. --claude-md still accepted as an explicit yes.
+    if (!flag(argv, "--no-claude-md") && !agents.includes("claude")) agents.push("claude");
     if (flag(argv, "--cursor") && !agents.includes("cursor")) agents.push("cursor");
     if (flag(argv, "--copilot") && !agents.includes("copilot")) agents.push("copilot");
 
@@ -62,14 +64,14 @@ async function main(argv) {
     console.log(`\n  Loop installed into ${targetDir}\n`);
     for (const s of steps) console.log(`  ✓ ${s}`);
     console.log(`\n  Next:`);
-    console.log(`    • In a Claude Code chat here:  /loop run examples/fix_test.loop`);
+    console.log(`    • In a Claude Code chat here:  /loopflow run examples/fix_test.loop`);
     console.log(`    • Or describe the work and the agent writes the .loop for you.`);
     console.log(`    • Any other agent reads AGENTS.md and can do the same.\n`);
     return;
   }
 
   if (["run", "parse", "export", "viz", "show", "ls"].includes(cmd)) {
-    console.error(`\`loop ${cmd}\` runs in your agent (the /loop skill) or via the full runtime CLI (@loop/runtime).\nThis package installs Loop — try \`loop init\`. See \`loop help\`.`);
+    console.error(`\`loop ${cmd}\` runs in your agent (the /loopflow skill) or via the full runtime CLI (@loop/runtime).\nThis package installs Loop — try \`loop init\`. See \`loop help\`.`);
     process.exit(2);
   }
 

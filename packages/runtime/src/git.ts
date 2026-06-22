@@ -1,4 +1,4 @@
-import type { GitPolicy } from "@loop/parser";
+import type { GitPolicy } from "@loop-lang/parser";
 export interface ResolvedGit { isolation: "in-place"|"branch"|"worktree"; branch?: string; commit: "done"|"cycle"|"story"|"never"; push: boolean; openPr: boolean }
 export const BUILTIN_GIT: ResolvedGit = { isolation: "branch", branch: undefined, commit: "done", push: false, openPr: false };
 export function resolveGit(...levels: (GitPolicy | null | undefined)[]): ResolvedGit {

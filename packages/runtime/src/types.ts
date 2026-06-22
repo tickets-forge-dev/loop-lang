@@ -1,4 +1,4 @@
-import type { Loop, Predicate } from "@loop/parser";
+import type { Loop, Predicate } from "@loop-lang/parser";
 
 /** A single event in the live trace emitted as a loop runs. */
 export type LoopEvent =
@@ -98,36 +98,16 @@ export interface HumanIO {
   ask(prompt: string): Promise<void>;
 }
 
-export interface ArchonFetchInput {
-  goal: string;
-  project?: string;
-  reflection: string | null;
-  baseDir: string;
-}
-
-/**
- * A plan/task source backed by Archon (https://github.com/coleam00/Archon).
- * When a loop declares `plan from archon`, the plan step pulls the next task/plan
- * from an Archon project instead of having the agent generate one; `complete` writes
- * status back so Archon and Loop stay in sync.
- */
-export interface ArchonPlanSource {
-  fetchPlan(input: ArchonFetchInput): Promise<string>;
-  complete?(input: { project?: string; goal: string; satisfied: boolean }): Promise<void>;
-}
-
 export interface RunOptions {
   runner: Runner;
   verifier: Verifier;
   human: HumanIO;
   baseDir: string;
-  /** Required only when a loop declares `plan from archon`. */
-  archon?: ArchonPlanSource;
   onEvent?: (e: LoopEvent) => void;
   /** Absolute safety cap on cycle iterations per loop, regardless of transitions. */
   hardCap?: number;
   /** Loads + parses a referenced .loop file. Required only when a `flow` runs. */
-  loadFile?(path: string, baseDir: string): Promise<import("@loop/parser").LoopFile>;
+  loadFile?(path: string, baseDir: string): Promise<import("@loop-lang/parser").LoopFile>;
   /** Reads the raw text of a `for each` source data file. Required only when a flow uses `for each`. */
   readText?(path: string, baseDir: string): Promise<string>;
   /** Upstream handoff text injected into each plan step (set by executeFlow). */
@@ -137,13 +117,13 @@ export interface RunOptions {
   /** GitIO implementation for performing branch/commit/push/PR operations. */
   git?: import("./git.js").GitIO;
   /** File-level git policy resolved from config.git (passed through run opts). */
-  gitPolicy?: import("@loop/parser").GitPolicy;
+  gitPolicy?: import("@loop-lang/parser").GitPolicy;
   /** The active branch name after git start (set by run() for inner calls). */
   gitBranch?: string;
   /** True once git has been started (prevents re-initialising in nested calls). */
   gitStarted?: boolean;
   /** File-level model policy resolved from config.models. */
-  modelPolicy?: import("@loop/parser").ModelPolicy;
+  modelPolicy?: import("@loop-lang/parser").ModelPolicy;
   /** CLI/extension --model — kill switch that forces all phases to one model. */
   cliModel?: string;
 }

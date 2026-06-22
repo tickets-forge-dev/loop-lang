@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parse } from "@loop/parser";
+import { parse } from "@loop-lang/parser";
 import { renderFile, renderDef, oneLine } from "../dist/show.js";
 
 test("renderFile shows a loop's cycle, done-when, reflect and guard", () => {

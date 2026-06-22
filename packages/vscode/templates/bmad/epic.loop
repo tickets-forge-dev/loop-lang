@@ -1,4 +1,4 @@
-# A-to-Z, run in conversation: /loop run epic.loop
+# A-to-Z, run in conversation: /loopflow run epic.loop
 # discover (interview) -> design (approve) -> run the checklist for each story.
 flow "epic: authentication":
   run "discover.loop"

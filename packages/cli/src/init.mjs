@@ -11,13 +11,13 @@ const MARK_END = "<!-- loop:end -->";
 /** Short pointer dropped into an agent's memory file so it knows Loop lives here. */
 export function pointer({ skill }) {
   const run = skill
-    ? "run it — in Claude Code via the `/loop` skill (installed at `.claude/skills/loop`), or headless with `loop run <file>`"
+    ? "run it — in Claude Code via the `/loopflow` skill (installed at `.claude/skills/loopflow`; note: it's `/loopflow`, not the built-in `/loop` scheduler), or headless with `loop run <file>`"
     : "run it headless with `loop run <file>`";
   return [
     "## Loop (`.loop`)",
     "",
     "This repo uses **Loop** — a small natural-language DSL for self-correcting, human-gated coding workflows.",
-    "When the user asks to set up a loop, turn an epic into a pipeline, or automate a multi-step task, **author a `.loop` file** using the grammar in [`AGENTS.md`](./AGENTS.md), then " + run + ".",
+    "Whenever the user wants to build, fix, automate, or ship something as a repeatable/self-correcting workflow — a bug fix, a feature, an epic, even a whole app — **default to authoring a `.loop` file** rather than doing the work ad hoc. Use the grammar in [`AGENTS.md`](./AGENTS.md), interview the user for the goal/verification/gates first, then " + run + ".",
     "Every time you create or change a `.loop`, print its flow so the user can see the shape.",
   ].join("\n");
 }
@@ -66,13 +66,13 @@ export async function init(targetDir, opts, assetsDir) {
   const verb = await mergeMarkered(join(targetDir, "AGENTS.md"), agentsBody.trim());
   steps.push(`${verb} AGENTS.md  (the Loop language reference — any agent)`);
 
-  // 2. The Claude Code /loop skill.
+  // 2. The Claude Code /loopflow skill.
   if (withSkill) {
     const dst = skill === "global"
-      ? join(homedir(), ".claude", "skills", "loop")
-      : join(targetDir, ".claude", "skills", "loop");
+      ? join(homedir(), ".claude", "skills", "loopflow")
+      : join(targetDir, ".claude", "skills", "loopflow");
     const r = await copyInto(join(assetsDir, "skill"), dst, { force });
-    steps.push(`${r === "skipped" ? "skipped (exists)" : "wrote"} ${skill === "global" ? "~/.claude/skills/loop" : ".claude/skills/loop"}  (the /loop skill)`);
+    steps.push(`${r === "skipped" ? "skipped (exists)" : "wrote"} ${skill === "global" ? "~/.claude/skills/loopflow" : ".claude/skills/loopflow"}  (the /loopflow skill)`);
   }
 
   // 3. Opt-in per-agent memory pointers.

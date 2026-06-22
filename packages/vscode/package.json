@@ -5,11 +5,16 @@
   "description": "Syntax, formatting, best-practice templates, completion, and ▶ Run / Claude-session buttons for the Loop (.loop) DSL.",
   "license": "Apache-2.0",
   "publisher": "loop-lang",
+  "private": true,
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": ["Programming Languages"],
+  "keywords": ["loop", "agent", "claude", "ai", "workflow", "dsl", "loop-engineering"],
+  "galleryBanner": { "color": "#0d9488", "theme": "dark" },
   "repository": { "type": "git", "url": "https://github.com/tickets-forge-dev/loop-lang.git", "directory": "packages/vscode" },
+  "homepage": "https://github.com/tickets-forge-dev/loop-lang/tree/master/packages/vscode#readme",
+  "bugs": { "url": "https://github.com/tickets-forge-dev/loop-lang/issues" },
   "main": "./dist/extension.js",
   "activationEvents": ["onLanguage:loop", "onCommand:loop.newFromTemplate"],
   "contributes": {
@@ -53,7 +58,7 @@
             "Run headless via the CLI and stream the trace into the VS Code 'Loop' output panel."
           ],
           "default": "ask",
-          "markdownDescription": "What the ▶ Play button does:\n\n- **ask** — prompt each run (output panel vs Claude Code session)\n- **session** — open a Claude Code session and run `/loop run <file>` there\n- **output** — run headless, stream the trace into the VS Code output panel"
+          "markdownDescription": "What the ▶ Play button does:\n\n- **ask** — prompt each run (output panel vs Claude Code session)\n- **session** — open a Claude Code session and run `/loopflow run <file>` there\n- **output** — run headless, stream the trace into the VS Code output panel"
         },
         "loop.claudePath": {
           "type": "string",
@@ -63,7 +68,7 @@
         "loop.cliPath": {
           "type": "string",
           "default": "",
-          "description": "Path to the `loop` CLI (dist/cli.js), used for output-panel runs. Defaults to the bundled @loop/runtime."
+          "description": "Path to the `loop` CLI (dist/cli.js), used for output-panel runs. Defaults to the bundled @loop-lang/runtime."
         },
         "loop.model": {
           "type": "string",
@@ -81,7 +86,7 @@
     "test": "node --test test/*.test.mjs"
   },
   "devDependencies": {
-    "@loop/parser": "0.1.0",
+    "@loop-lang/parser": "0.1.0",
     "@types/vscode": "1.85.0"
   }
 }

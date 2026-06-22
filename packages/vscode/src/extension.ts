@@ -187,7 +187,7 @@ class LoopHover implements vscode.HoverProvider {
 // is a real native dynamic import and works fine.
 let parserMod: { parse: (s: string) => unknown; ParseError: new (...a: any[]) => Error } | undefined;
 async function loadParser() {
-  if (!parserMod) parserMod = (await import("@loop/parser")) as any;
+  if (!parserMod) parserMod = (await import("@loop-lang/parser")) as any;
   return parserMod!;
 }
 
@@ -228,7 +228,7 @@ function resolveCli(): string | null {
   if (configured && existsSync(configured)) return configured;
   try {
     const require = createRequire(join(__dirname, "package.json"));
-    const cli = join(require.resolve("@loop/runtime/package.json"), "..", "dist", "cli.js");
+    const cli = join(require.resolve("@loop-lang/runtime/package.json"), "..", "dist", "cli.js");
     if (existsSync(cli)) return cli;
   } catch {
     /* not resolvable */
@@ -302,7 +302,7 @@ function runInSession(target: vscode.Uri) {
   const cfg = vscode.workspace.getConfiguration("loop");
   const claude = cfg.get<string>("claudePath") || "claude";
   const model = cfg.get<string>("model");
-  const cmd = `${claude}${model ? ` --model ${shq(model)}` : ""} ${shq(`/loop run ${target.fsPath}`)}`;
+  const cmd = `${claude}${model ? ` --model ${shq(model)}` : ""} ${shq(`/loopflow run ${target.fsPath}`)}`;
   const name = "Loop ▶ Claude";
   const term = vscode.window.terminals.find((t) => t.name === name) ?? vscode.window.createTerminal({ name, cwd: dirnameOf(target.fsPath) });
   term.show(true);

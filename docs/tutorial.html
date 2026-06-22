@@ -233,7 +233,7 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
     </div>
     <div class="pane good">
       <div class="ph">…or one loop</div>
-      <pre><code class="loop"># run in chat:  /loop run rate-limit.loop
+      <pre><code class="loop"># run in chat:  /loopflow run rate-limit.loop
 # (the agent knows Loop from AGENTS.md — your repo's memory)
 
 git:
@@ -250,7 +250,7 @@ loop "add API rate limiting":
   also: run a security check
   when it fails: reflect, then plan again
   after 6 tries: stop and warn "thrashing"</code></pre>
-      <div class="pfoot">Skill: <b>/loop</b> runs it · Memory: AGENTS.md + reflect · Git: branch + commit + PR, never main</div>
+      <div class="pfoot">Skill: <b>/loopflow</b> runs it · Memory: AGENTS.md + reflect · Git: branch + commit + PR, never main</div>
     </div>
   </div>
   <p class="sub" style="margin-top:12px">Left: a dozen messages, and it still pushed to main. Right: the whole job, written once — it runs, verifies, and stops only when it's really done.</p>
@@ -454,7 +454,7 @@ loop "add API rate limiting":
   each cycle: plan, then act, then observe
   done when "test -s sprint.yaml" passes</code></pre>
   <span class="cap">examples/bmad/atoz/discover.loop — runs in conversation; ends on the sprint.yaml artifact check.</span>
-  <p class="cap">Use when: an epic or a from-scratch module. Run it in conversation (<code class="inl">/loop run</code>) so discovery can interview you (Section 13).</p>
+  <p class="cap">Use when: an epic or a from-scratch module. Run it in conversation (<code class="inl">/loopflow run</code>) so discovery can interview you (Section 13).</p>
 
   <div class="key"><span class="kt">Rule of thumb</span>
     <ul>
@@ -473,18 +473,18 @@ loop "add API rate limiting":
   <p>Two ways to run Loop: <strong>inside a Claude Code chat</strong> (the bundled skill — recommended), or the <strong>CLI</strong> — and a <strong>VS Code extension</strong> to write loops by hand and ▶-run them. Two one-time setup steps, then your first loop:</p>
 
   <h3>1 · Install the skill</h3>
-  <p>Copy the bundled Claude Code skill into your skills folder — then <code class="inl">/loop</code> works in any repo:</p>
-  <pre class="sh"><code>cp -r .claude/skills/loop ~/.claude/skills/</code></pre>
+  <p>Copy the bundled Claude Code skill into your skills folder — then <code class="inl">/loopflow</code> works in any repo:</p>
+  <pre class="sh"><code>cp -r .claude/skills/loopflow ~/.claude/skills/</code></pre>
 
   <h3>2 · Give the agent its memory — <code class="inl">AGENTS.md</code></h3>
   <p>Drop Loop's <code class="inl">AGENTS.md</code> (the full language reference) into your repo. It <em>travels with the project</em>, so any agent that opens the repo already knows the Loop language — the project's persistent memory of how to write a <code class="inl">.loop</code>. Methods are shared the same way: <code class="inl">use the &lt;X&gt; method</code> pulls in a <code class="inl">.loop</code> preset another repo can reuse.</p>
 
   <h3>3 · Run your first loop</h3>
-  <pre class="sh"><code>/loop fix the failing auth test in src/auth, gate any database migration   # writes a .loop
-/loop run examples/fix_test.loop                                          # runs it, in the chat</code></pre>
+  <pre class="sh"><code>/loopflow fix the failing auth test in src/auth, gate any database migration   # writes a .loop
+/loopflow run examples/fix_test.loop                                          # runs it, in the chat</code></pre>
   <p>Describe the work and the skill writes the <code class="inl">.loop</code>; name a file and it runs the loop <strong>natively in the session</strong> — you watch every plan → act → observe → reflect step and answer human gates right in the chat. Prefer a terminal? The same files run headless via the CLI — see <a href="#running">Running a loop</a>.</p>
   <p>That first command writes a file like this — yours to read, edit, and re-run:</p>
-  <pre><code class="loop"># /loop "fix the failing auth test in src/auth, gate any database migration" writes:
+  <pre><code class="loop"># /loopflow "fix the failing auth test in src/auth, gate any database migration" writes:
 loop "fix the failing auth test":
   goal: the auth suite passes in src/auth
   done when "pnpm test src/auth" passes
@@ -523,7 +523,7 @@ loop "fix the failing auth test":
   <p><span class="num">3</span><code class="inl">done when the test "…" passes</code> — the verification. The runtime actually runs that test each cycle.</p>
   <p><span class="num">4</span><code class="inl">each cycle:</code> — the repeated steps. <code class="inl">plan, then act, then observe</code> is the default, so you can omit it.</p>
   <p><span class="num">5</span><code class="inl">when it fails: reflect, then plan again</code> — the feedback edge: on a failed check, turn the failure into context and re-plan. That's what makes it self-correcting.</p>
-  <div class="note"><b>Run it:</b> in a chat with the Loop skill, say <code class="inl">/loop run examples/fix_test.loop</code> and the assistant runs the cycle right there. Or headless: <code class="inl">loop run examples/fix_test.loop</code>.</div>
+  <div class="note"><b>Run it:</b> in a chat with the Loop skill, say <code class="inl">/loopflow run examples/fix_test.loop</code> and the assistant runs the cycle right there. Or headless: <code class="inl">loop-run run examples/fix_test.loop</code>.</div>
 </section>
 
 <!-- 3 -->
@@ -895,7 +895,7 @@ items:
   then run "design.loop"
   then for each story in "sprint.yaml":
     run "story-template.loop"</code></pre>
-  <span class="cap">examples/bmad/atoz/epic.loop — run this in conversation: /loop run epic.loop</span>
+  <span class="cap">examples/bmad/atoz/epic.loop — run this in conversation: /loopflow run epic.loop</span>
 
   <figure class="fig">
     <svg viewBox="0 0 720 176" role="img" aria-label="A-to-Z: discover, then a human-approved design, then a template run per story">
@@ -935,7 +935,7 @@ items:
   <h3>A ticket from Jira (the daily driver)</h3>
   <p>You picked up <code class="inl">PROJ-412 — "Applying a coupon can make the cart total negative."</code> Turn the ticket into a loop:</p>
   <ol>
-    <li><strong>Describe it.</strong> In the chat: <code class="inl">/loop PROJ-412: a coupon must never make the cart total negative; done when the coupon-floor tests pass</code> — the skill writes the <code class="inl">.loop</code>. (Or write it yourself — the ticket's acceptance criterion becomes <code class="inl">done when</code>, in plain words.)</li>
+    <li><strong>Describe it.</strong> In the chat: <code class="inl">/loopflow PROJ-412: a coupon must never make the cart total negative; done when the coupon-floor tests pass</code> — the skill writes the <code class="inl">.loop</code>. (Or write it yourself — the ticket's acceptance criterion becomes <code class="inl">done when</code>, in plain words.)</li>
     <li><strong>What it produces:</strong></li>
   </ol>
   <pre><code class="loop">loop "PROJ-412: coupon must not make the cart total negative":
@@ -947,7 +947,7 @@ items:
   when it fails: reflect on which layer broke, then plan again
   after 6 tries: stop and warn "PROJ-412 thrashing — check the spec"</code></pre>
   <ol start="3">
-    <li><strong>Run it:</strong> <code class="inl">/loop run proj-412.loop</code>. Watch plan → act → observe; answer the migration confirm if it asks.</li>
+    <li><strong>Run it:</strong> <code class="inl">/loopflow run proj-412.loop</code>. Watch plan → act → observe; answer the migration confirm if it asks.</li>
     <li><strong>It lands on a branch</strong> and commits when the test passes (the default git). Add a <code class="inl">git:</code> block with <code class="inl">push when done</code> + <code class="inl">open a pull request</code> to get a PR — paste that link back into the ticket.</li>
   </ol>
   <div class="note"><b>No failing test yet?</b> Tell the loop to write one first — a tiny "reproduce PROJ-412 with a failing test" loop, then the fix loop. Now <code class="inl">done when</code> has something real to check.</div>
@@ -961,7 +961,7 @@ items:
     run "story-template.loop"</code></pre>
   <ol>
     <li><strong>Drop <code class="inl">AGENTS.md</code> in the repo</strong> so the agent knows the language (see Getting started).</li>
-    <li><strong>Run it in the chat:</strong> <code class="inl">/loop run epic.loop</code>. Discovery <em>interviews you</em> (take your time — an hour is fine) and writes <code class="inl">sprint.yaml</code>; you approve the design; then it builds story by story, pausing to ask if one fails.</li>
+    <li><strong>Run it in the chat:</strong> <code class="inl">/loopflow run epic.loop</code>. Discovery <em>interviews you</em> (take your time — an hour is fine) and writes <code class="inl">sprint.yaml</code>; you approve the design; then it builds story by story, pausing to ask if one fails.</li>
     <li><strong>Methods are presets:</strong> <code class="inl">discover.loop</code> uses <code class="inl">use the BMAD method</code>; swap BMAD for your own later. Full bundle: <code class="inl">examples/bmad/atoz/</code>.</li>
   </ol>
 
@@ -969,7 +969,7 @@ items:
   <ol>
     <li><strong>Reproduce</strong> — get (or write) a test that fails because of the bug.</li>
     <li><strong>Loop it</strong> — a single loop whose <code class="inl">done when</code> is that test, with <code class="inl">when it fails: reflect, then plan again</code> and an <code class="inl">after N tries</code> guard (the bug-fix recipe in <a href="#whenuse">When to reach for Loop</a>).</li>
-    <li><strong>Run + ship</strong> — <code class="inl">/loop run</code>; it reflects until the test is green, commits on a branch, opens a PR if you asked.</li>
+    <li><strong>Run + ship</strong> — <code class="inl">/loopflow run</code>; it reflects until the test is green, commits on a branch, opens a PR if you asked.</li>
   </ol>
 
   <h3>Add a feature</h3>
@@ -1004,17 +1004,17 @@ schedule: nightly
 target: ./src
 notify: slack</code></pre>
   <span class="cap">examples/project.loop — the config tier: which method, which runner, when, where, who to notify.</span>
-  <p>And the plan itself can come from elsewhere. <code class="inl">plan from</code> sources the plan from an external system (e.g. an Archon project) instead of generating it — Loop just drives Claude Code to execute it and feeds results back:</p>
+  <p>And the plan itself can come from a file you control. <code class="inl">plan from "&lt;file&gt;"</code> reads the loop's plan from that file (a hand-written <code class="inl">.md</code>, say) instead of having the agent generate one — so the loop executes a plan you wrote, and Loop just drives Claude Code to carry it out:</p>
   <pre><code class="loop">loop "fix billing":
   goal: settings save when the company name has an apostrophe
-  plan from the archon project "billing"
+  plan from "docs/plan.md"
   look at: billing/form.tsx, api/settings.ts, and the last failure
   allow edits automatically, but ask me before migrations or pushes
   each cycle: act, then observe
   done when the test "billing.spec.ts::apostrophe" passes
   when it fails: reflect, then plan again
   after 6 tries: stop and warn "thrashing"</code></pre>
-  <span class="cap">examples/archon_billing.loop (needs ARCHON_URL set)</span>
+  <span class="cap">examples/plan_from_file.loop — the plan lives in docs/plan.md</span>
 </section>
 
 <!-- 15 -->
@@ -1097,13 +1097,13 @@ loop "fix the failing checkout tax test":
   after 5 tries: stop and warn "stuck"</code></pre>
   <h3>In conversation (recommended)</h3>
   <p>With the Loop skill loaded, run it inside the chat — the assistant executes the cycle itself, narrates every step, and you answer gates inline:</p>
-  <pre class="sh"><code>/loop "fix the failing checkout tax test"   # write a .loop from a request
-/loop run examples/fix_test.loop            # run it, right here in the chat</code></pre>
+  <pre class="sh"><code>/loopflow "fix the failing checkout tax test"   # write a .loop from a request
+/loopflow run examples/fix_test.loop            # run it, right here in the chat</code></pre>
   <p>Here's what that looks like in the session — the assistant drives <strong>plan → act → observe → reflect</strong> itself, pauses at the human gate, and stops only when the real test passes:</p>
   <div class="pane term" style="margin:14px 0;">
     <div class="ph">claude code — running fix_test.loop<span class="dots">● ● ●</span></div>
     <div class="termbody" style="height:auto; overflow:visible;">
-      <div class="ln tl-u">❯ /loop run examples/fix_test.loop</div>
+      <div class="ln tl-u">❯ /loopflow run examples/fix_test.loop</div>
       <div class="ln tl-dim">  started · branch loop/fix-checkout-tax · stop after 5 tries</div>
       <div class="ln">&nbsp;</div>
       <div class="ln tl-dim">  cycle 1</div>
@@ -1128,12 +1128,11 @@ loop "fix the failing checkout tax test":
   </div>
   <p>You stay in the chat the whole time: you watch each step, you answer the gate, and the loop ends on a <em>real</em> green test — not the assistant saying "done". This is the only mode where a long interactive discovery works, because the human is already in the loop.</p>
   <h3>Headless CLI</h3>
-  <pre class="sh"><code>loop run   examples/ship_feature.loop      # drive Claude Code, glyph trace
-loop show  examples/ship_feature.loop      # print the loop's flow as compact ASCII
-loop ls                                    # list every .loop in the repo + its shape
-loop parse examples/ship_flow.loop         # print the parsed spec (the loop-spec IR)
-loop viz   examples/ship_flow.loop         # write a self-contained HTML schematic
-loop export examples/bmad-auth.loop        # export to an Archon workflow
+  <pre class="sh"><code>loop-run run   examples/ship_feature.loop  # drive Claude Code, glyph trace
+loop-run show  examples/ship_feature.loop  # print the loop's flow as compact ASCII
+loop-run ls                                # list every .loop in the repo + its shape
+loop-run parse examples/ship_flow.loop     # print the parsed spec (the loop-spec IR)
+loop-run viz   examples/ship_flow.loop     # write a self-contained HTML schematic
 # flags: --model <alias>, --out <path>, --events (NDJSON for a UI host), --json</code></pre>
   <h3>In VS Code</h3>
   <ul>
@@ -1147,11 +1146,11 @@ loop export examples/bmad-auth.loop        # export to an Archon workflow
 <!-- skills & memory -->
 <section id="skills">
   <h2>Skills — Loop <em>is</em> a Claude Code skill <span class="badge b-basic">ecosystem</span></h2>
-  <p>First, the word. <strong>"Skill" here means a Claude Code skill</strong> — the platform feature, not something Loop invented. A Claude Code skill is just a folder with a <code class="inl">SKILL.md</code> that teaches the agent a capability; when your request matches its <code class="inl">description</code>, Claude Code loads it. <strong>Loop ships as exactly one of these</strong> — that's the whole reason <code class="inl">/loop</code> exists.</p>
+  <p>First, the word. <strong>"Skill" here means a Claude Code skill</strong> — the platform feature, not something Loop invented. A Claude Code skill is just a folder with a <code class="inl">SKILL.md</code> that teaches the agent a capability; when your request matches its <code class="inl">description</code>, Claude Code loads it. <strong>Loop ships as exactly one of these</strong> — that's the whole reason <code class="inl">/loopflow</code> exists.</p>
 
-  <p>This is the real file that makes it work — <code class="inl">.claude/skills/loop/SKILL.md</code>:</p>
+  <p>This is the real file that makes it work — <code class="inl">.claude/skills/loopflow/SKILL.md</code>:</p>
   <pre><code class="loop"><span class="tok-com">---</span>
-<span class="tok-name">name</span>: loop
+<span class="tok-name">name</span>: loopflow
 <span class="tok-name">description</span>: Create and run Loop (.loop) flows — a natural-language DSL for
   loop engineering. Use when the user wants to author, write, run, or execute a
   self-correcting or human-gated AI coding loop … or mentions a .loop file.
@@ -1160,19 +1159,19 @@ loop export examples/bmad-auth.loop        # export to an Archon workflow
 <span class="tok-com"># Loop</span>
 You do two things with this skill: <span class="tok-kw">create</span> .loop files, and <span class="tok-kw">run</span> them —
 natively, in this conversation, so the user watches every step and answers gates.</code></pre>
-  <span class="cap">.claude/skills/loop/SKILL.md (abridged). The YAML frontmatter (<code>name</code> + <code>description</code>) is the Claude Code skill format; the body is the instructions the agent follows.</span>
+  <span class="cap">.claude/skills/loopflow/SKILL.md (abridged). The YAML frontmatter (<code>name</code> + <code>description</code>) is the Claude Code skill format; the body is the instructions the agent follows.</span>
 
-  <p><strong>Use it:</strong> copy that one folder into your skills directory, and <code class="inl">/loop</code> works in every repo afterward:</p>
-  <pre class="sh"><code>cp -r .claude/skills/loop ~/.claude/skills/   # install once
-/loop "fix the failing auth test"             # now available in any chat</code></pre>
+  <p><strong>Use it:</strong> copy that one folder into your skills directory, and <code class="inl">/loopflow</code> works in every repo afterward:</p>
+  <pre class="sh"><code>cp -r .claude/skills/loopflow ~/.claude/skills/   # install once
+/loopflow "fix the failing auth test"             # now available in any chat</code></pre>
 
   <h3>A skill is not a method — keep them straight</h3>
   <p>Two nearby words get confused. A Claude Code <em>skill</em> teaches the agent <strong>how to do Loop at all</strong>; a Loop <em>method</em> is a reusable <code class="inl">.loop</code> <strong>preset</strong> you import inside a loop.</p>
   <table>
     <tr><th></th><th>A Claude Code <em>skill</em></th><th>A Loop <em>method</em></th></tr>
-    <tr><td>What it is</td><td>A folder + <code>SKILL.md</code> that gives the agent the <code>/loop</code> capability</td><td>A <code>.loop</code> preset — a <strong>library of stages</strong> (e.g. BMAD's analyze→architect→story→qa)</td></tr>
-    <tr><td>Where it lives</td><td><code>.claude/skills/loop/</code></td><td>a <code>.loop</code> file you import</td></tr>
-    <tr><td>You use it by</td><td>installing it once, then typing <code>/loop</code></td><td><code>use the &lt;X&gt; method</code> inside a loop</td></tr>
+    <tr><td>What it is</td><td>A folder + <code>SKILL.md</code> that gives the agent the <code>/loopflow</code> capability</td><td>A <code>.loop</code> preset — a <strong>library of stages</strong> (e.g. BMAD's analyze→architect→story→qa)</td></tr>
+    <tr><td>Where it lives</td><td><code>.claude/skills/loopflow/</code></td><td>a <code>.loop</code> file you import</td></tr>
+    <tr><td>You use it by</td><td>installing it once, then typing <code>/loopflow</code></td><td><code>use the &lt;X&gt; method</code> inside a loop</td></tr>
   </table>
   <p>A method lets a three-line file behave like a whole hand-written pipeline:</p>
   <pre><code class="loop">use the BMAD method   <span class="tok-com"># import the method's whole pipeline (the "library")</span>

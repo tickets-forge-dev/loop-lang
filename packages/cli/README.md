@@ -9,7 +9,7 @@ npx @loop-lang/loop init
 That scaffolds, into the current repo:
 
 - **`AGENTS.md`** — the full Loop language reference. Any agent that opens the repo (Claude Code, Cursor, Copilot, Codex…) now knows how to write a `.loop`.
-- **`.claude/skills/loop`** — the Claude Code `/loop` skill (author + run loops natively in a chat).
+- **`.claude/skills/loopflow`** — the Claude Code `/loopflow` skill (author + run loops natively in a chat).
 - **`examples/fix_test.loop`** — a starter loop to run.
 
 ### Options
@@ -27,7 +27,7 @@ Re-running `init` is safe: the `AGENTS.md` block is managed between markers and 
 
 ### After install
 
-- **Claude Code:** open a chat in the repo → `/loop run examples/fix_test.loop`, or just describe the work and the agent writes the `.loop`.
+- **Claude Code:** open a chat in the repo → `/loopflow run examples/fix_test.loop`, or just describe the work and the agent writes the `.loop`.
 - **Any agent:** it reads `AGENTS.md` and can author + run loops the same way.
 - **Headless:** install the full runtime for `loop run <file>`.
 

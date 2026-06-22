@@ -88,9 +88,15 @@ export interface Policy {
   confirm?: string[];
 }
 
+/**
+ * Where a loop's `plan` step gets its plan. Omitted = the agent writes the plan.
+ * `plan from "<path>"` reads the plan from a file instead (e.g. a hand-written
+ * `.md`), so the loop executes a plan you control. `type` leaves room for future
+ * sources (a URL, a command) without changing callers.
+ */
 export interface PlanSource {
-  type: "agent" | "archon";
-  project?: string;
+  type: "file";
+  path: string;
 }
 
 export type Predicate =

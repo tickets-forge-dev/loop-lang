@@ -5,9 +5,9 @@ Loop is a community project and an open standard. Contributions of every size ar
 ## Ways to contribute
 
 - **Presets** (easiest, highest value) — author a method as a `.loop` file in `packages/stdlib/`. This is how the ecosystem grows. See `packages/stdlib/BMAD.loop` for the pattern.
-- **Grammar / parser** — handle a syntax edge case in `@loop/parser`. Add a fixture under `examples/` and a snapshot test.
-- **Runtime** — improve how `@loop/runtime` drives Claude Code, verifies, or handles human gates.
-- **Editor** — TextMate grammar, formatter rules, or CodeLens behavior in `@loop/vscode`.
+- **Grammar / parser** — handle a syntax edge case in `@loop-lang/parser`. Add a fixture under `examples/` and a snapshot test.
+- **Runtime** — improve how `@loop-lang/runtime` drives Claude Code, verifies, or handles human gates.
+- **Editor** — TextMate grammar, formatter rules, or CodeLens behavior in `@loop-lang/vscode`.
 - **Docs** — the README, the language reference, examples.
 
 ## The open standard
@@ -22,7 +22,7 @@ npm run build
 npm test
 ```
 
-Each package builds and tests independently (`npm run test -w @loop/parser`).
+Each package builds and tests independently (`npm run test -w @loop-lang/parser`).
 
 ## Pull requests
 

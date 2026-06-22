@@ -6,4 +6,6 @@ dist/
 coverage/
 .vscode-test/
 .playwright-mcp/
+.claude/worktrees/
 packages/cli/assets/
+packages/cli/AGENTS.md

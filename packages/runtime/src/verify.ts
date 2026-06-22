@@ -1,5 +1,5 @@
 import { exec } from "node:child_process";
-import type { Predicate } from "@loop/parser";
+import type { Predicate } from "@loop-lang/parser";
 import type { VerifyResult, Verifier } from "./types.js";
 
 /**

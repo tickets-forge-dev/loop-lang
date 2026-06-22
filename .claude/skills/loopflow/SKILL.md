@@ -1,6 +1,6 @@
 ---
-name: loop
-description: Create and run Loop (.loop) flows — a natural-language DSL for loop engineering. Use when the user wants to author, write, run, or execute a self-correcting or human-gated AI coding loop, turn an epic into a pipeline, fix a bug "as a loop", or mentions a .loop file or "loop engineering".
+name: loopflow
+description: Create and run Loop (.loop) flows — a natural-language DSL for loop engineering. Use when the user wants to author, write, run, or execute a self-correcting or human-gated AI coding loop, turn an epic into a pipeline, fix a bug "as a loop", build a feature or whole app "as a loop", learn what Loop is or how to use it, or mentions a .loop file or "loop engineering". Invoked as /loopflow (the name avoids colliding with the built-in /loop scheduler).
 ---
 
 # Loop
@@ -62,36 +62,76 @@ start with `#`. An epic → a `pipeline`; each story → a `stage`.
 
 ---
 
-## Creating a .loop — interview the user first
+## Creating a .loop — be a guide, not a guesser
 
-Don't silently guess the loop. **Walk the five decisions with the user**, asking
-the high-leverage questions out loud and offering a default for the rest, so a
-confident user can accept everything in one reply. Ask one topic at a time:
+Most people reaching for this skill don't yet know what Loop can do. Your job is to
+**guide them to the right loop for their purpose** — and teach the language by writing
+it in front of them. Never silently guess the loop; interview first, then author. Ask
+one topic at a time, and always offer a default so a confident user can accept it all
+in one reply.
 
-1. **Goal (objective)** — "What's the goal — what does *done* look like?"
-   Required; never guess this one.
-2. **Verification — `done when`** — "How do we know it's done: a test passing, a
-   shell command passing, a scan that must *find nothing*, or a human confirming?"
-   The most important answer — always ask.
-3. **Context — `look at`** — "What should it read first?" Offer to infer the files
-   from the repo; append `and the last failure`.
-4. **Actions — policy** — "Anything risky to gate — migrations, pushes, deploys?"
-   Default offered: edits automatically, nothing else gated.
-5. **Stopping — transitions + guard** — confirm the default (reflect on failure,
-   `after N tries: stop and warn`); ask for N only if they care.
+### Step 0 — scope the purpose first (ask this before anything else)
 
-Then two more that shape the run:
+Open with **"What do you want the loop to accomplish?"** and show the range, so the
+user sees what's possible and picks a scale:
 
-6. **Human gates** — "Approve the plan before any work? Review before it stops?"
-   Default: none unless the work is risky.
-7. **Git strategy** — state the safe default ("work on a branch, commit when the
-   goal is met, never push to `main`") and ask if they want a PR, a worktree, or
-   to work in place.
+| Scale | Example purpose | Shape in Loop |
+|-------|-----------------|---------------|
+| **Tiny** | "Make this one failing test pass." | a single `loop` |
+| **Small** | "Fix this bug across a few files; gate the migration." | a `loop` + policy + gate |
+| **Medium** | "Build the checkout feature — a few stories, each tested." | a `pipeline` of `stage`s |
+| **Large** | "Build a whole app, A-to-Z." | a `flow`: discover → design → build each story |
 
-Offer the defaults inline (e.g. *"I'll gate nothing, add a 6-try guard, and work
-on a branch — ok?"*) so the whole interview can be one exchange. Then **write the
-`.loop`**, scoping it with `look at:` and always giving it a real `done when` and a
-thrash guard. Finally **print its flow** (below) and offer to run it.
+Name the shape their answer implies (*"that's a **pipeline** — a sequence of stages"*)
+so the vocabulary attaches to their own goal. This one question turns a vague request
+into a scoped loop and teaches the three top-level forms at once.
+
+### Step 1 — do they already have a plan?
+
+Ask **"Do you have a spec, plan, ticket, or epic already?"**
+- **Yes** → point `look at:` at it; if it's an epic / story list, turn each story into a
+  `stage` of a `pipeline` (or `for each` over the plan file).
+- **No, and it's medium/large** → begin the flow with a **discovery loop** whose
+  `done when` is "the plan file exists and validates" — it interviews them, writes the plan.
+- **No, and it's small** → skip planning; go straight to the loop.
+
+### Step 2 — which quality passes? (offer the menu — don't wait to be asked)
+
+This is what makes Loop worth running. Proactively offer the quality sub-loops:
+
+> "Want the loop to enforce quality every cycle too? Common ones: **tests** (write/keep
+> green), **security** (a scan that must find nothing), **code review**, **clean
+> architecture** (boundary checks). I can add these as `also:` finishing passes on one
+> loop, or as their own gated `stage`s in a pipeline."
+
+Translate their picks into syntax in front of them so they see the mapping:
+- tests → `done when "<test cmd>" passes`
+- security → `also: a security scan`, or `done when "semgrep --severity=high" finds nothing`
+- review / architecture → `also: <pass>`, or a `stage` with `a human approves before <X>`
+
+### Step 3 — the remaining decisions (defaults offered, one reply to accept)
+
+Walk these quickly, naming the keyword each time so they learn it:
+1. **Goal** → `goal:` — "what does *done* look like?" Required; never guess this one.
+2. **Verification** → `done when` — a test passing, a command passing, a scan finding
+   nothing, or a human confirming. The most important line; always pin it down.
+3. **Context** → `look at:` — offer to infer the files from the repo; append `and the last failure`.
+4. **Actions** → policy — "anything risky to gate: migrations, pushes, deploys?" Default:
+   `allow edits automatically`, nothing else gated.
+5. **Stopping** → `after N tries: stop and warn` (default 6) + `when it fails: reflect … then plan again`.
+6. **Human gates** → `a human approves the plan first` / `a human reviews before stopping`
+   — default none unless the work is risky.
+7. **Git** → state the safe default ("branch, commit when the goal is met, never push to
+   `main`"); ask if they want a PR, a worktree, or to work in place.
+
+Offer the defaults inline (*"I'll add a tests + security pass, gate the migration, a
+6-try guard, work on a branch — sound right?"*) so the whole interview is one exchange.
+Then **write the `.loop`**, always with a real `done when` and a thrash guard, **print
+its flow** (below), and offer to run it.
+
+> **Teach by building.** As you write each clause, say what it is (*"`done when` is how
+> the loop checks itself"*). By the end of one loop the user has seen the whole language —
+> that is the point of authoring it here, in the open, rather than headless.
 
 ## Show the flow — every time it changes
 
@@ -223,7 +263,7 @@ Two protections are unconditional and cannot be overridden by any `git:` block:
 
 ### In-chat runner note
 
-When you run a loop *inside this conversation* (the `/loop` skill), you are the git
+When you run a loop *inside this conversation* (the `/loopflow` skill), you are the git
 operator — you execute plan/act/observe yourself. Before acting, check the `git:` block
 and honor the policy: if `push when done` is set and the current branch is `main` or
 `master`, refuse with a clear message rather than pushing.

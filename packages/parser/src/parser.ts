@@ -325,8 +325,8 @@ function interpretLoopBody(name: string | null, body: Line[]): LoopBodyResult {
         .filter((s) => s.length > 0);
       i++; continue;
     }
-    if ((m = t.match(/^plan from (?:the )?archon(?:\s+project\s+"([^"]+)")?$/i))) {
-      loop.planSource = { type: "archon", ...(m[1] ? { project: m[1] } : {}) };
+    if ((m = t.match(/^plan from "([^"]+)"$/i))) {
+      loop.planSource = { type: "file", path: m[1] };
       i++; continue;
     }
     if (/^a human approves the plan first$/i.test(t)) {

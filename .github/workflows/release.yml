@@ -1,0 +1,45 @@
+name: Release
+
+# Fires on a pushed version tag, e.g. `git tag v0.1.0 && git push --tags`.
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  npm:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci
+      - run: npm run build   # build all workspaces in dependency order before publishing
+      - run: npm test
+      # Publishes every non-private workspace (the five @loop-lang/* libs + the CLI).
+      # vscode is private:true, so it is skipped here and ships via the vscode job.
+      # publishConfig.access=public on each package makes the scoped publish public.
+      - run: npm publish --workspaces
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  vscode:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build -w loop-vscode
+      - run: npx --yes @vscode/vsce@latest publish --no-dependencies
+        working-directory: packages/vscode
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}

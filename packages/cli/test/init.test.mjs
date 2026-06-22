@@ -16,7 +16,7 @@ test("init scaffolds AGENTS.md, the skill, per-agent memory, and a starter loop"
   const { steps } = await init(dir, { skill: "local", agents: ["claude", "cursor", "copilot"], example: true }, ASSETS);
 
   assert.ok(existsSync(join(dir, "AGENTS.md")), "AGENTS.md written");
-  assert.ok(existsSync(join(dir, ".claude", "skills", "loop", "SKILL.md")), "skill installed");
+  assert.ok(existsSync(join(dir, ".claude", "skills", "loopflow", "SKILL.md")), "skill installed");
   assert.ok(existsSync(join(dir, "CLAUDE.md")), "CLAUDE.md pointer");
   assert.ok(existsSync(join(dir, ".cursor", "rules", "loop.md")), "cursor rule");
   assert.ok(existsSync(join(dir, ".github", "copilot-instructions.md")), "copilot instructions");
@@ -53,6 +53,6 @@ test("init respects skill:none and example:false", async () => {
 });
 
 test("pointer mentions the skill only when one is installed", () => {
-  assert.match(pointer({ skill: true }), /\/loop` skill/);
-  assert.doesNotMatch(pointer({ skill: false }), /\/loop` skill/);
+  assert.match(pointer({ skill: true }), /\/loopflow` skill/);
+  assert.doesNotMatch(pointer({ skill: false }), /\/loopflow` skill/);
 });

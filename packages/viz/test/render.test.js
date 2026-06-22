@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parse } from "@loop/parser";
+import { parse } from "@loop-lang/parser";
 import { renderHtml } from "../dist/index.js";
 
 test("renders a self-contained HTML document with embedded spec + svg", () => {

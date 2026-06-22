@@ -27,7 +27,7 @@
       "name": "keyword.control.structure.loop"
     },
     "sections": {
-      "match": "(?i)\\b(goal|done when|look at|each cycle|plan from|archon)\\b",
+      "match": "(?i)\\b(goal|done when|look at|each cycle|plan from)\\b",
       "name": "keyword.other.section.loop"
     },
     "flow": {

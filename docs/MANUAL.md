@@ -17,9 +17,8 @@ a prompt.
 - [7. VSCode extension](#7-vscode-extension)
 - [8. Authoring with an AI agent](#8-authoring-with-an-ai-agent)
 - [9. Presets (methods)](#9-presets-methods)
-- [10. Exporting to Archon](#10-exporting-to-archon)
-- [11. Troubleshooting](#11-troubleshooting)
-- [12. The loop-spec IR](#12-the-loop-spec-ir)
+- [10. Troubleshooting](#10-troubleshooting)
+- [11. The loop-spec IR](#11-the-loop-spec-ir)
 
 ---
 
@@ -57,8 +56,8 @@ thrash guard) — a warning, never an error. Structure guides; it doesn't cage.
 ## 1. Requirements
 
 - **Node.js 18+**
-- The **Claude Code CLI** (`claude`) installed and authenticated — `loop run` drives it.
-  Other commands (`parse`, `viz`, `export`) do not need it.
+- The **Claude Code CLI** (`claude`) installed and authenticated — `loop-run run` drives it.
+  Other commands (`parse`, `viz`) do not need it.
 
 ## 2. Install
 
@@ -78,13 +77,13 @@ The CLI entry point is `packages/runtime/dist/cli.js`. Either run it directly:
 node packages/runtime/dist/cli.js <command> <file.loop>
 ```
 
-or expose a `loop` command by linking the runtime package:
+or expose a `loop-run` command by linking the runtime package:
 
 ```bash
-npm link --workspace @loop/runtime   # then: loop <command> <file.loop>
+npm link --workspace @loop-lang/runtime   # then: loop-run <command> <file.loop>
 ```
 
-This manual writes `loop` for brevity; substitute `node packages/runtime/dist/cli.js` if
+This manual writes `loop-run` for brevity; substitute `node packages/runtime/dist/cli.js` if
 you did not link.
 
 ## 3. Quickstart
@@ -105,37 +104,35 @@ loop "fix add":
 Check it parses, see it, then run it:
 
 ```bash
-loop parse fix.loop          # prints the loop-spec JSON (validates syntax)
-loop viz fix.loop            # writes fix.html — open it in a browser
-loop run fix.loop            # drives Claude Code: plan -> act -> observe -> done
+loop-run parse fix.loop      # prints the loop-spec JSON (validates syntax)
+loop-run viz fix.loop        # writes fix.html — open it in a browser
+loop-run run fix.loop        # drives Claude Code: plan -> act -> observe -> done
 ```
 
-`loop run` works in the directory the `.loop` file lives in: it plans, edits files,
+`loop-run run` works in the directory the `.loop` file lives in: it plans, edits files,
 runs your `done when` check, reflects on failure, and stops when the goal is met (or at
 the thrash guard).
 
 ## 4. The CLI
 
 ```
-loop <run|parse|export|viz> <file.loop> [--model <alias>] [--out <path>]
+loop-run <run|parse|viz> <file.loop> [--model <alias>] [--out <path>]
 ```
 
 | Command | What it does |
 |---|---|
-| `loop run <file>` | Execute the flow on Claude Code (plan/act/observe, reflect, verify, human gates). |
-| `loop parse <file>` | Parse to the loop-spec IR and print it as JSON (use to validate syntax). |
-| `loop viz <file>` | Write a self-contained HTML schematic of the flow. |
-| `loop export <file>` | Compile to an Archon workflow YAML (optional interop). |
+| `loop-run run <file>` | Execute the flow on Claude Code (plan/act/observe, reflect, verify, human gates). |
+| `loop-run parse <file>` | Parse to the loop-spec IR and print it as JSON (use to validate syntax). |
+| `loop-run viz <file>` | Write a self-contained HTML schematic of the flow. |
 
 **Flags**
 
 - `--model <alias>` — model for `run` (e.g. `opus`, `sonnet`, `haiku`); passed to Claude
   Code. Omit to use the CLI default.
 - `--out <path>` — for `viz`, the HTML output file (default: the `.loop` name with an
-  `.html` extension). For `export`, a directory to write `<workflow-name>.yaml` into
-  (omit to print the YAML to stdout).
+  `.html` extension).
 - `--json` — print the parsed loop-spec JSON before the command's normal work (handy with
-  `run`; also works with `export`/`viz`). For `parse`, the JSON is the entire output.
+  `run`; also works with `viz`). For `parse`, the JSON is the entire output.
 
 **Config files.** A `.loop` file containing only a config block with `use` (and no
 definitions) resolves the named preset and runs it — e.g. a `project.loop` with
@@ -225,7 +222,7 @@ BMAD flow (discover → design → for each story) as one example method.
 | `after <N> tries: stop and warn "<msg>"` | Thrash guard — stop after N attempts. |
 | `a human approves the plan first` | A person approves the plan before the agent acts. |
 | `a human reviews before stopping` | A person judges the result before the loop may stop. |
-| `plan from the archon project "<name>"` | Source the plan from an Archon project instead of generating it. |
+| `plan from "<file>"` | Read the loop's plan from a file you control (e.g. a hand-written `.md`) instead of having the agent generate it. Omit it and the agent writes the plan (the default). |
 
 ### In a stage only
 
@@ -347,7 +344,7 @@ models: all strong                              # whole scope on one tier
 
 ## 6. How a run works
 
-`loop run` maps each node to a Claude Code invocation:
+`loop-run run` maps each node to a Claude Code invocation:
 
 | Node | What happens |
 |---|---|
@@ -381,7 +378,7 @@ Inline AI prediction is intentionally left to Copilot/your editor's AI — write
 comment describing intent and let it draft the `.loop`.
 
 **Install (development):** open `packages/vscode` in VSCode and press F5 to launch an
-Extension Development Host. **Package a VSIX:** `npm run build --workspace @loop/vscode`
+Extension Development Host. **Package a VSIX:** `npm run build --workspace @loop-lang/vscode`
 produces a bundled `dist/extension.js`; package with `vsce package`.
 
 Settings: `loop.cliPath` (path to the CLI for the Run button) and `loop.model`.
@@ -393,21 +390,21 @@ ask Claude Code (or Copilot) in plain English — "set up a loop to fix the auth
 gate the deploy." The agent reads the reference and writes the `.loop` for you. The
 language travels with the project, so there's no separate generator step.
 
-### The Claude Code skill (`/loop`)
+### The Claude Code skill (`/loopflow`)
 
-The repo ships a Claude Code skill at `.claude/skills/loop/`. Copy it to `~/.claude/skills/`
+The repo ships a Claude Code skill at `.claude/skills/loopflow/`. Copy it to `~/.claude/skills/`
 to use it in any project (it's already active inside the loop-lang repo). Then:
 
 ```
-/loop fix the failing checkout tax test, gate any migration   # creates a .loop
-/loop run examples/bmad-auth.loop                             # runs one natively
+/loopflow fix the failing checkout tax test, gate any migration   # creates a .loop
+/loopflow run examples/bmad-auth.loop                             # runs one natively
 ```
 
 The skill both **creates** `.loop` files from a description and **runs** them *inside your
 Claude Code session* — walking plan → act → observe → reflect, honoring each `done when`
 and thrash guard, and pausing for human gates by asking you in the chat. Because Claude
 runs the loop itself, you see every step and answer gates inline, instead of a headless
-subprocess. (The `loop run` CLI and the VSCode ▶ button remain the headless ways to run
+subprocess. (The `loop-run run` CLI and the VSCode ▶ button remain the headless ways to run
 the same files.)
 
 ## 9. Presets (methods)
@@ -416,22 +413,9 @@ A method is just a `.loop` file in the standard library. `use the BMAD method` p
 `BMAD.loop` (an analyze → architect → build → qa pipeline). Fork it, or point `use` at
 your own `./method.loop`. The core is method-agnostic.
 
-## 10. Exporting to Archon
+## 10. Troubleshooting
 
-If you already run [Archon](https://github.com/coleam00/Archon), export a flow to its
-workflow format:
-
-```bash
-loop export file.loop --out .archon/workflows/
-```
-
-Loops become Archon **loop nodes** (`until_bash` from `done when`, `max_iterations` from
-the thrash guard), pipelines become a DAG via `depends_on`, and human gates become
-**approval nodes**. This is optional interop — Loop runs natively on Claude Code without it.
-
-## 11. Troubleshooting
-
-- **`loop run` does nothing / errors immediately** — ensure `claude` is installed and
+- **`loop-run run` does nothing / errors immediately** — ensure `claude` is installed and
   authenticated (`claude --version`). `run` shells out to it.
 - **"parse error (line N)"** — the line doesn't match the grammar; check indentation
   (two spaces) and that the `done when` predicate is one of the supported forms.
@@ -441,17 +425,17 @@ the thrash guard), pipelines become a DAG via `depends_on`, and human gates beco
   if your runner differs, use a command predicate instead: `done when "pnpm test -- x" passes`.
 - **A migration/push happened that you didn't want** — add it to the policy:
   `ask me before migrations or pushes`. Only `auto` classes run unattended.
-- **`plan from archon` errors** — set `ARCHON_URL` (and `ARCHON_TOKEN` /
-  `ARCHON_CODEBASE_ID` if needed) before `loop run`.
+- **`plan from "<file>"` doesn't load** — check the path is relative to the `.loop` file
+  and the file exists; the loop reads its plan from that file verbatim.
 
-## 12. The loop-spec IR
+## 11. The loop-spec IR
 
 Every `.loop` parses to a JSON **loop-spec** — the open contract defined in
-[`spec/loop-spec.schema.json`](../spec/loop-spec.schema.json). Parser, runtime, visualizer,
-and the Archon exporter all read it. Build your own tooling against it:
+[`spec/loop-spec.schema.json`](../spec/loop-spec.schema.json). Parser, runtime, and
+visualizer all read it. Build your own tooling against it:
 
 ```bash
-loop parse file.loop          # prints the loop-spec for a file
+loop-run parse file.loop      # prints the loop-spec for a file
 ```
 
 The language and the IR are an open standard (Apache-2.0) — implement against them freely.

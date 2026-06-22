@@ -1,5 +1,5 @@
 import { resolve, dirname, basename } from "node:path";
-import type { Loop, Pipeline, Flow, FlowStep, Definition, Transition, Action, LoopFile } from "@loop/parser";
+import type { Loop, Pipeline, Flow, FlowStep, Definition, Transition, Action, LoopFile } from "@loop-lang/parser";
 import type { CycleNode, LoopEvent, LoopOutcome, RunOptions, StopReason } from "./types.js";
 import { enumerateItems } from "./iterate.js";
 import { resolveGit, isProtected } from "./git.js";
@@ -74,10 +74,10 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
   // "a human approves the plan first" — gate at the very start.
   let humanPlanApproved = false;
 
-  // A `plan from archon` loop fetches its plan even when the author omits `plan`
-  // from the cycle (the plan comes from Archon, the cycle just executes it).
+  // A `plan from "<file>"` loop loads its plan even when the author omits `plan`
+  // from the cycle (the plan comes from the file, the cycle just executes it).
   const cycleSteps: CycleNode[] =
-    loop.planSource?.type === "archon" && !loop.cycle.includes("plan")
+    loop.planSource?.type === "file" && !loop.cycle.includes("plan")
       ? ["plan", ...(loop.cycle as CycleNode[])]
       : (loop.cycle as CycleNode[]);
 
@@ -102,14 +102,9 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
       emit(opts, { type: "node-enter", node: step, attempt: attempts });
 
       if (step === "plan") {
-        if (loop.planSource?.type === "archon") {
-          if (!opts.archon) throw new Error(`loop "${loop.name ?? ""}" uses "plan from archon" but no Archon plan source was provided`);
-          lastPlan = await opts.archon.fetchPlan({
-            goal: loop.goal,
-            project: loop.planSource.project,
-            reflection,
-            baseDir: opts.baseDir,
-          });
+        if (loop.planSource?.type === "file") {
+          if (!opts.readText) throw new Error(`loop "${loop.name ?? ""}" uses 'plan from "${loop.planSource.path}"' but no file reader was provided`);
+          lastPlan = await opts.readText(loop.planSource.path, opts.baseDir);
         } else {
           emit(opts, { type: "model", node: "plan", tier: eff.phases.plan, model: pick("plan") });
           lastPlan = await opts.runner.plan({
@@ -272,7 +267,6 @@ async function executePipeline(pipeline: Pipeline, opts: RunOptions): Promise<Lo
       }
     }
     const outcome = await executeLoopFull(stage.loop, opts);
-    await writeBackArchon(stage.loop, opts, outcome.satisfied);
     lastAttempts = outcome.attempts;
     emit(opts, { type: "stage-end", name: stage.name, satisfied: outcome.satisfied });
     if (!outcome.satisfied) {
@@ -431,19 +425,11 @@ async function executeLoopFull(loop: Loop, opts: RunOptions): Promise<LoopOutcom
   return outcome;
 }
 
-async function writeBackArchon(loop: Loop, opts: RunOptions, satisfied: boolean): Promise<void> {
-  if (loop.planSource?.type === "archon" && opts.archon?.complete) {
-    await opts.archon.complete({ project: loop.planSource.project, goal: loop.goal, satisfied });
-  }
-}
-
 /** Run a single definition (a loop or a pipeline). */
 export async function runDefinition(def: Definition, opts: RunOptions): Promise<LoopOutcome> {
   if (def.kind === "pipeline") return executePipeline(def, opts);
   if (def.kind === "flow") return executeFlow(def, opts);
-  const outcome = await executeLoopFull(def, opts);
-  await writeBackArchon(def, opts, outcome.satisfied);
-  return outcome;
+  return executeLoopFull(def, opts);
 }
 
 /** Run every definition in a parsed file, in order. */

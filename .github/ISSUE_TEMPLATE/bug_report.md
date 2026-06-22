@@ -17,6 +17,6 @@ labels: ["bug"]
 
 ## Package + version
 
-- [ ] @loop/parser
-- [ ] @loop/runtime
-- [ ] @loop/vscode
+- [ ] @loop-lang/parser
+- [ ] @loop-lang/runtime
+- [ ] @loop-lang/vscode

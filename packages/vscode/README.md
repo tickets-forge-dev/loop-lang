@@ -19,7 +19,7 @@ comment describing intent and let it draft the `.loop`.
 
 ## Settings
 
-- `loop.cliPath` — path to the `loop` CLI (`@loop/runtime` `dist/cli.js`) for the Run button.
+- `loop.cliPath` — path to the `loop` CLI (`@loop-lang/runtime` `dist/cli.js`) for the Run button.
 - `loop.model` — model alias passed to Claude Code on Run (e.g. `opus`, `sonnet`).
 
 ## License

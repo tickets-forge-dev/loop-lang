@@ -10,8 +10,6 @@ export { ClaudeCodeRunner, interpretStreamLine, buildPlanPrompt, claudeArgs } fr
 export type { ClaudeCodeRunnerOptions, AgentNode } from "./runners/claudeCode.js";
 export { IpcHumanIO } from "./ipc.js";
 export type { HumanRequest } from "./ipc.js";
-export { HttpArchonPlanSource, MockArchonPlanSource } from "./runners/archon.js";
-export type { HttpArchonOptions } from "./runners/archon.js";
 export { enumerateItems } from "./iterate.js";
 export { resolveGit, isProtected, BUILTIN_GIT } from "./git.js";
 export type { GitIO, ResolvedGit } from "./git.js";

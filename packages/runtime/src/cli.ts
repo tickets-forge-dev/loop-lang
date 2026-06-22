@@ -2,13 +2,12 @@
 import { readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { dirname, resolve, relative } from "node:path";
 import { createInterface } from "node:readline";
-import { parse } from "@loop/parser";
-import { resolvePreset } from "@loop/stdlib";
+import { parse } from "@loop-lang/parser";
+import { resolvePreset } from "@loop-lang/stdlib";
 import { run } from "./engine.js";
 import { ShellVerifier } from "./verify.js";
 import { CliHumanIO } from "./human.js";
 import { ClaudeCodeRunner } from "./runners/claudeCode.js";
-import { HttpArchonPlanSource } from "./runners/archon.js";
 import { IpcHumanIO } from "./ipc.js";
 import { ShellGitIO } from "./runners/shellGit.js";
 import type { LoopEvent } from "./types.js";
@@ -99,7 +98,7 @@ async function main() {
 
   // `loop show <file>` — print the ASCII flow of a loop.
   if (cmd === "show") {
-    if (!fileArg) { console.error("usage: loop show <file.loop>"); process.exit(2); }
+    if (!fileArg) { console.error("usage: loop-run show <file.loop>"); process.exit(2); }
     const { renderFile } = await import("./show.js");
     console.log(renderFile(parse(readFileSync(resolve(process.cwd(), fileArg), "utf8"))));
     return;
@@ -123,8 +122,8 @@ async function main() {
     return;
   }
 
-  if (!cmd || (cmd !== "run" && cmd !== "parse" && cmd !== "export" && cmd !== "viz") || !fileArg) {
-    console.error("usage: loop <run|parse|export|viz|show|ls> <file.loop>  [--model <alias>] [--out <path>]");
+  if (!cmd || (cmd !== "run" && cmd !== "parse" && cmd !== "viz") || !fileArg) {
+    console.error("usage: loop-run <run|parse|viz|show|ls> <file.loop>  [--model <alias>] [--out <path>]");
     process.exit(2);
   }
 
@@ -151,7 +150,7 @@ async function main() {
 
   // Visualize: write a self-contained HTML schematic of the flow.
   if (cmd === "viz") {
-    const { renderHtml } = await import("@loop/viz");
+    const { renderHtml } = await import("@loop-lang/viz");
     const html = renderHtml(file, { title: fileArg.split("/").pop() });
     const vOutIdx = rest.indexOf("--out");
     const dest = resolve(process.cwd(), vOutIdx >= 0 ? rest[vOutIdx + 1] : fileArg.replace(/\.loop$/, "") + ".html");
@@ -160,37 +159,9 @@ async function main() {
     return;
   }
 
-  // Optional interop: export to Archon workflow YAML instead of running natively.
-  if (cmd === "export") {
-    const { exportToArchonYaml } = await import("@loop/export-archon");
-    const outIdx = rest.indexOf("--out");
-    const outDir = outIdx >= 0 ? resolve(process.cwd(), rest[outIdx + 1]) : null;
-    const workflows = exportToArchonYaml(file);
-    for (const wf of workflows) {
-      if (outDir) {
-        const dest = resolve(outDir, `${wf.name}.yaml`);
-        writeFileSync(dest, wf.yaml);
-        console.log(`wrote ${dest}`);
-      } else {
-        console.log(`# --- ${wf.name}.yaml ---`);
-        console.log(wf.yaml);
-      }
-    }
-    return;
-  }
-
   const modelIdx = rest.indexOf("--model");
   const model = modelIdx >= 0 ? rest[modelIdx + 1] : undefined;
   const target = file.config?.target ? resolve(baseDir, file.config.target) : baseDir;
-
-  // Archon plan source, if any loop uses `plan from archon` and ARCHON_URL is set.
-  const archon = process.env.ARCHON_URL
-    ? new HttpArchonPlanSource({
-        baseUrl: process.env.ARCHON_URL,
-        token: process.env.ARCHON_TOKEN,
-        codebaseId: process.env.ARCHON_CODEBASE_ID,
-      })
-    : undefined;
 
   const git = new ShellGitIO();
 
@@ -212,7 +183,6 @@ async function main() {
       runner: new ClaudeCodeRunner({ onActivity: (node, text) => emit({ kind: "agent", node, text }) }),
       verifier: new ShellVerifier(),
       human: ipc,
-      archon,
       git,
       baseDir: target,
       loadFile,
@@ -233,7 +203,6 @@ async function main() {
     runner: new ClaudeCodeRunner({}),
     verifier: new ShellVerifier(),
     human: new CliHumanIO(),
-    archon,
     git,
     baseDir: target,
     loadFile,

@@ -1,18 +1,24 @@
 {
-  "name": "@loop/viz",
+  "name": "@loop-lang/viz",
   "version": "0.1.0",
   "description": "Render a Loop loop-spec as a self-contained HTML control-loop schematic — the plan/act/observe cycle and the reflect back-edge, made visible.",
   "license": "Apache-2.0",
   "type": "module",
+  "publishConfig": { "access": "public" },
+  "keywords": ["loop", "agent", "claude", "ai", "workflow", "dsl", "loop-engineering", "visualization"],
+  "repository": { "type": "git", "url": "https://github.com/tickets-forge-dev/loop-lang.git", "directory": "packages/viz" },
+  "homepage": "https://github.com/tickets-forge-dev/loop-lang/tree/master/packages/viz#readme",
+  "bugs": { "url": "https://github.com/tickets-forge-dev/loop-lang/issues" },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": { ".": "./dist/index.js" },
   "files": ["dist", "src"],
   "dependencies": {
-    "@loop/parser": "0.1.0"
+    "@loop-lang/parser": "0.1.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm run build"
   }
 }

@@ -1,12 +1,12 @@
 # Loop examples
 
 A library of runnable `.loop` files, from one-line loops to full A-to-Z method
-pipelines. **Every `.loop` file here parses** (verified with `loop parse`) and
+pipelines. **Every `.loop` file here parses** (verified with `loop-run parse`) and
 can be run with:
 
 ```
-loop run <file>      # from your shell
-/loop run <file>     # from inside Claude Code (conversational / human-gated)
+loop-run run <file>  # from your shell
+/loopflow run <file>     # from inside Claude Code (conversational / human-gated)
 ```
 
 The headers in each file explain what it teaches; this index is the map. Files
@@ -72,11 +72,10 @@ fixtures) are listed at the end.
 | File | What it shows |
 | --- | --- |
 | [methods/use-bmad.loop](methods/use-bmad.loop) | The config tier: `use the BMAD method` to pull in a whole pipeline shape without writing any stages. |
-| [methods/plan-from-archon.loop](methods/plan-from-archon.loop) | Planning by reference: pull the plan from an Archon project instead of writing it inline (set `ARCHON_URL`). |
 
 ## foreach/ — iterate a plan (run the same checklist per item)
 
-Run `loop run foreach/deliver.loop`. Edit `plan.yaml` to change the work; the
+Run `loop-run run foreach/deliver.loop`. Edit `plan.yaml` to change the work; the
 loop files stay put. See also [foreach/README.md](foreach/README.md).
 
 | File | What it shows |
@@ -120,4 +119,4 @@ small, copy-friendly starting points.
 | [project.loop](project.loop) | Project-level config: use the BMAD method, run with Claude Code, schedule nightly, notify Slack. |
 | [git_policy.loop](git_policy.loop) | A file-level `git:` block opting into branch → commit → push → pull request. |
 | [bmad-auth.loop](bmad-auth.loop) | A BMAD-shaped feature as one pipeline: human-gated planning, per-story build stages, QA on human review. |
-| [archon_billing.loop](archon_billing.loop) | The billing bugfix with its plan pulled from an Archon project (set `ARCHON_URL`). |
+| [plan_from_file.loop](plan_from_file.loop) | The billing bugfix with its plan read from a file you control (`plan from "docs/plan.md"`) instead of agent-generated. |

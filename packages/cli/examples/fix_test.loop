@@ -1,0 +1,6 @@
+loop "fix test":
+  goal: the checkout tax test passes
+  done when the test "checkout.spec.ts::tax" passes
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again

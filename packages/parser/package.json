@@ -1,9 +1,14 @@
 {
-  "name": "@loop/parser",
+  "name": "@loop-lang/parser",
   "version": "0.1.0",
   "description": "Parses Loop (.loop) natural-language source into the open loop-spec IR.",
   "license": "Apache-2.0",
   "type": "module",
+  "publishConfig": { "access": "public" },
+  "keywords": ["loop", "agent", "claude", "ai", "workflow", "dsl", "loop-engineering", "parser"],
+  "repository": { "type": "git", "url": "https://github.com/tickets-forge-dev/loop-lang.git", "directory": "packages/parser" },
+  "homepage": "https://github.com/tickets-forge-dev/loop-lang/tree/master/packages/parser#readme",
+  "bugs": { "url": "https://github.com/tickets-forge-dev/loop-lang/issues" },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -12,6 +17,7 @@
   "files": ["dist", "src"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm run build"
   }
 }

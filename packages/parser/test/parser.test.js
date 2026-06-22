@@ -84,12 +84,11 @@ test("project: config tier", () => {
   assert.equal(file.definitions.length, 0);
 });
 
-test("archon_billing: plan from archon", () => {
-  const file = parse(read("archon_billing.loop"));
+test("plan_from_file: plan read from a file", () => {
+  const file = parse(read("plan_from_file.loop"));
   const loop = file.definitions[0];
-  assert.deepEqual(loop.planSource, { type: "archon", project: "billing" });
+  assert.deepEqual(loop.planSource, { type: "file", path: "docs/billing-plan.md" });
   assert.deepEqual(loop.cycle, ["act", "observe"]);
-  assert.deepEqual(loop.policy.confirm, ["migrate", "push"]);
 });
 
 test("errors carry a line number", () => {

@@ -1,4 +1,4 @@
-import type { ModelPolicy } from "@loop/parser";
+import type { ModelPolicy } from "@loop-lang/parser";
 
 export type Tier = "fast" | "strong";
 export type Phase = "plan" | "act" | "reflect" | "also";

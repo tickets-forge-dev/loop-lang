@@ -1,4 +1,4 @@
-import type { LoopFile } from "@loop/parser";
+import type { LoopFile } from "@loop-lang/parser";
 
 export interface VizOptions {
   /** Heading shown in the wordmark (e.g. the source file name). */

@@ -26,7 +26,7 @@ discover (interview) → design (human approves) → for each story → story ch
 ## Run it
 
 ```bash
-/loop run epic.loop    # inside Claude Code conversation
+/loopflow run epic.loop    # inside Claude Code conversation
 loop run epic.loop     # via the CLI
 ```
 

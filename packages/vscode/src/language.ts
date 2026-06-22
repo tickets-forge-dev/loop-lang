@@ -64,7 +64,7 @@ const LOOP_BODY: Suggestion[] = [
   { label: "after N tries:", insert: 'after ${1:6} tries: stop and warn "${2:thrashing}"', detail: "thrash guard", doc: "Stop after N attempts so the loop can't spin forever." },
   { label: "a human approves the plan first", insert: "a human approves the plan first", detail: "human plan gate", doc: "A person approves the plan before the agent acts." },
   { label: "a human reviews before stopping", insert: "a human reviews before stopping", detail: "human review gate", doc: "A person judges the result before the loop may stop." },
-  { label: "plan from archon", insert: 'plan from the archon project "${1:project}"', detail: "source the plan from Archon", doc: "Pull the plan from an Archon project instead of generating it." },
+  { label: "plan from a file", insert: 'plan from "${1:docs/plan.md}"', detail: "read the plan from a file", doc: "Read the plan from a file instead of having the agent generate it — the loop executes a plan you control." },
 ];
 
 const STAGE_EXTRA: Suggestion = {

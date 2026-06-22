@@ -1,0 +1,10 @@
+# fix a failing test until the CLI suite is green
+loop "fix test":
+  goal: the CLI test suite passes
+  look at: src/, test/, and the last failure
+  allow edits automatically
+  each cycle: plan, then act, then observe
+  done when "npm test" passes
+  when it fails: reflect on the last failure, then plan again
+  when it passes and the goal is met: stop
+  after 6 tries: stop and warn "test still red after 6 tries — needs a human"

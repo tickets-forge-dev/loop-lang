@@ -150,17 +150,17 @@ generator is needed.
 
 ## Run it inside Claude Code
 
-A bundled **Claude Code skill** (`.claude/skills/loop/`) lets you create and run loops
+A bundled **Claude Code skill** (`.claude/skills/loopflow/`) lets you create and run loops
 *inside your Claude Code conversation* — no separate process:
 
 ```
-/loop fix the failing auth test in src/auth, gate any database migration
-/loop run examples/bmad-auth.loop
+/loopflow fix the failing auth test in src/auth, gate any database migration
+/loopflow run examples/bmad-auth.loop
 ```
 
 Describe work and it writes the `.loop`; name a `.loop` file and it runs the loop
 **natively in the session** — you watch every plan/act/observe/reflect step and answer
-human gates right in the chat. Copy `.claude/skills/loop/` to `~/.claude/skills/` to use it
+human gates right in the chat. Copy `.claude/skills/loopflow/` to `~/.claude/skills/` to use it
 in any repo (it's already active inside this one).
 
 ## Methods are libraries, not syntax
@@ -181,19 +181,18 @@ Each node maps to a Claude Code invocation:
 | `done when` | runtime checks the predicate — you can't fake "done" |
 
 Loop runs natively on Claude Code — no extra infrastructure. The `loop-spec` IR is open,
-so a `.loop` file can also be **exported to other runtimes** (e.g. [Archon](https://github.com/coleam00/Archon))
-if you already run one. Native is the default; export is opt-in.
+so a `.loop` file can also be **consumed by other tooling** built against the contract.
+Native is the default.
 
 ## Project layout
 
 | Package | Purpose |
 |---|---|
-| `@loop/parser` | `.loop` text → `loop-spec` JSON (the open IR) |
-| `@loop/runtime` | walks a spec, drives Claude Code, emits a live trace |
-| `@loop/vscode` | highlight, formatter, ▶ Play CodeLens, live gutter trace |
-| `@loop/stdlib` | `BMAD.loop` + starter presets |
-| `@loop/viz` | `loop viz file.loop` → self-contained HTML schematic (the cycle + reflect back-edge) |
-| `@loop/export-archon` | optional: `loop export file.loop` → Archon workflow YAML |
+| `@loop-lang/parser` | `.loop` text → `loop-spec` JSON (the open IR) |
+| `@loop-lang/runtime` | walks a spec, drives Claude Code, emits a live trace |
+| `@loop-lang/vscode` | highlight, formatter, ▶ Play CodeLens, live gutter trace |
+| `@loop-lang/stdlib` | `BMAD.loop` + starter presets |
+| `@loop-lang/viz` | `loop-run viz file.loop` → self-contained HTML schematic (the cycle + reflect back-edge) |
 | `spec/loop-spec.schema.json` | the open IR contract |
 
 ## Status

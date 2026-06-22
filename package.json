@@ -8,9 +8,9 @@
   "workspaces": [
     "packages/parser",
     "packages/stdlib",
-    "packages/export-archon",
     "packages/viz",
     "packages/runtime",
+    "packages/cli",
     "packages/vscode"
   ],
   "scripts": {

@@ -1,10 +1,10 @@
 /**
  * Render a parsed loop-spec as a compact ASCII flow — the "see the shape" view.
  * Pure (no IO), so the CLI's `show`/`ls` wrap it and it's unit-testable. The
- * `/loop` skill prints this after every create/edit so the user watches the
+ * `/loopflow` skill prints this after every create/edit so the user watches the
  * flow evolve.
  */
-import type { LoopFile, Definition, Loop, Pipeline, Flow, Predicate, Transition, FlowStep } from "@loop/parser";
+import type { LoopFile, Definition, Loop, Pipeline, Flow, Predicate, Transition, FlowStep } from "@loop-lang/parser";
 
 function predicateStr(p?: Predicate | null): string | null {
   if (!p) return null;
