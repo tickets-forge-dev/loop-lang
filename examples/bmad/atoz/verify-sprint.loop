@@ -1,0 +1,5 @@
+# Run the coding + security checklist for every story in the sprint.
+# You already have the plan (sprint.yaml), so no discover/design step.
+flow "verify sprint":
+  for each story in "sprint.yaml":
+    run "verify-story.loop"

@@ -1,7 +1,13 @@
+# Flat stories list, each tagged with its epic.
+# for-each iterates ONE level, so epics live as a field on each story
+# (the epic name rides into the story's context for the loop).
 stories:
-  - title: User can log in
+  - epic: Authentication
+    title: User can log in
     acceptance: a registered user logs in with email + password
-  - title: User can sign up
+  - epic: Authentication
+    title: User can sign up
     acceptance: a new user creates an account and gets a verification email
-  - title: User can reset their password
+  - epic: Authentication
+    title: User can reset their password
     acceptance: user requests a reset, gets a link, and sets a new password

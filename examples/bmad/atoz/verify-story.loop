@@ -1,0 +1,10 @@
+# Runs once per story in sprint.yaml. The story (with its epic) arrives as context.
+# Coding gate only: implement the story, tests green.
+loop "verify story":
+  goal: implement the story described in the provided context, tests green
+  look at: src, and the last failure
+  allow edits automatically
+  each cycle: plan, then act, then observe
+  done when "npm test" passes
+  when it fails: reflect on which layer broke, then plan again
+  after 6 tries: stop and warn "thrashing on this story — needs a human"
