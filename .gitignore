@@ -11,3 +11,4 @@ docs/superpowers/
 packages/cli/assets/
 packages/cli/AGENTS.md
 packages/cli/.claude/
+.vercel
