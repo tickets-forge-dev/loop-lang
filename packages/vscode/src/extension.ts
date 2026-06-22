@@ -21,6 +21,11 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerCompletionItemProvider(LOOP_SELECTOR, new LoopCompletion()),
     vscode.languages.registerHoverProvider(LOOP_SELECTOR, new LoopHover()),
     vscode.commands.registerCommand("loop.run", (uri?: vscode.Uri) => runLoop(uri, output)),
+    vscode.commands.registerCommand("loop.runInSession", (uri?: vscode.Uri) => {
+      const target = uri ?? vscode.window.activeTextEditor?.document.uri;
+      if (!target) return void vscode.window.showErrorMessage("Loop: no .loop file to run.");
+      runInSession(target);
+    }),
     vscode.commands.registerCommand("loop.newFromTemplate", () => newFromTemplate(context))
   );
 
@@ -112,8 +117,10 @@ class RunCodeLensProvider implements vscode.CodeLensProvider {
     for (let i = 0; i < document.lineCount; i++) {
       const line = document.lineAt(i);
       if (HEADER.test(line.text.trim()) && line.firstNonWhitespaceCharacterIndex === 0) {
+        const range = new vscode.Range(i, 0, i, 0);
         lenses.push(
-          new vscode.CodeLens(new vscode.Range(i, 0, i, 0), { title: "▶ Run loop", command: "loop.run", arguments: [document.uri] })
+          new vscode.CodeLens(range, { title: "▶ Run", command: "loop.run", arguments: [document.uri] }),
+          new vscode.CodeLens(range, { title: "$(comment-discussion) Claude session", command: "loop.runInSession", arguments: [document.uri] })
         );
       }
     }
@@ -147,11 +154,17 @@ class LoopCompletion implements vscode.CompletionItemProvider {
   provideCompletionItems(document: vscode.TextDocument, position: vscode.Position): vscode.CompletionItem[] {
     const lines = document.getText().split(/\r?\n/);
     const ctx = contextAt(lines, position.line);
-    return completionsFor(ctx).map((s) => {
-      const it = new vscode.CompletionItem(s.label, vscode.CompletionItemKind.Keyword);
+    return completionsFor(ctx).map((s, i) => {
+      const isTemplate = s.kind === "template";
+      const it = new vscode.CompletionItem(
+        s.label,
+        isTemplate ? vscode.CompletionItemKind.Snippet : vscode.CompletionItemKind.Keyword
+      );
       it.insertText = new vscode.SnippetString(s.insert);
-      it.detail = `loop · ${s.detail}`;
+      it.detail = isTemplate ? `loop template · ${s.detail}` : `loop · ${s.detail}`;
       it.documentation = new vscode.MarkdownString(s.doc);
+      // Rank templates first, then constructs; stable within each group by source order.
+      it.sortText = `${isTemplate ? "0" : "1"}${String(i).padStart(3, "0")}`;
       return it;
     });
   }

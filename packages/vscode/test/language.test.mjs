@@ -43,6 +43,25 @@ test("completionsFor top and pipeline", () => {
   assert.deepEqual(completionsFor("pipeline").map((s) => s.label), ["stage"]);
 });
 
+test("completionsFor top offers best-practice templates, ranked before constructs", () => {
+  const top = completionsFor("top");
+  const templates = top.filter((s) => s.kind === "template");
+  // a representative spread of the common patterns
+  const labels = templates.map((s) => s.label).join(" | ");
+  for (const want of ["bugfix", "feature", "pipeline", "flow", "for each", "A-to-Z", "git", "models"]) {
+    assert.ok(labels.includes(want), `templates should include a "${want}" pattern`);
+  }
+  // every template is a multi-construct snippet with at least one tab stop
+  for (const t of templates) {
+    assert.match(t.insert, /\$\{?\d/, `${t.label} should have a tab stop`);
+    assert.ok(t.insert.includes("\n"), `${t.label} should be a multi-line pattern`);
+  }
+  // templates come first (they carry kind:"template"); constructs follow
+  const firstConstruct = top.findIndex((s) => s.kind !== "template");
+  const lastTemplate = top.map((s) => s.kind).lastIndexOf("template");
+  assert.ok(lastTemplate < firstConstruct, "templates should be ranked ahead of constructs");
+});
+
 test("predictNext gives the conventional next line", () => {
   assert.equal(predictNext('loop "x":'), "goal: ");
   assert.equal(predictNext("  goal: ship it"), 'done when the test "" passes');

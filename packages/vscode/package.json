@@ -1,8 +1,8 @@
 {
   "name": "loop-vscode",
   "displayName": "Loop",
-  "version": "0.1.0",
-  "description": "Syntax, formatting, completion, and a ▶ Play button for the Loop (.loop) DSL.",
+  "version": "0.2.0",
+  "description": "Syntax, formatting, best-practice templates, completion, and ▶ Run / Claude-session buttons for the Loop (.loop) DSL.",
   "license": "Apache-2.0",
   "publisher": "loop-lang",
   "engines": {
@@ -11,7 +11,7 @@
   "categories": ["Programming Languages"],
   "repository": { "type": "git", "url": "https://github.com/tickets-forge-dev/loop-lang.git", "directory": "packages/vscode" },
   "main": "./dist/extension.js",
-  "activationEvents": ["onCommand:loop.newFromTemplate"],
+  "activationEvents": ["onLanguage:loop", "onCommand:loop.newFromTemplate"],
   "contributes": {
     "languages": [
       {
@@ -32,6 +32,11 @@
       {
         "command": "loop.run",
         "title": "Loop: Run this loop",
+        "category": "Loop"
+      },
+      {
+        "command": "loop.runInSession",
+        "title": "Loop: Run in a Claude Code session",
         "category": "Loop"
       },
       { "command": "loop.newFromTemplate", "title": "Loop: New from template" }

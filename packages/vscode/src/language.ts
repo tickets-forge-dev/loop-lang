@@ -12,6 +12,8 @@ export interface Suggestion {
   insert: string;
   detail: string;
   doc: string;
+  /** "template" = a whole best-practice pattern (shown as a Snippet, ranked first); default a single construct. */
+  kind?: "construct" | "template";
 }
 
 const indent = (s: string): number => s.length - s.trimStart().length;
@@ -76,8 +78,71 @@ const PIPELINE: Suggestion[] = [
   { label: "stage", insert: 'stage "${1:story}":\n    goal: ${2:...}\n    each cycle: plan, then act, then observe\n', detail: "a pipeline stage", doc: "One stage of the pipeline; its body is a loop." },
 ];
 
+/**
+ * Whole, ready-to-fill best-practice patterns — the "drop it in and tab through
+ * the holes" experience. Each is a complete, runnable shape: a real `done when`,
+ * scoped `look at`, gates where the work is risky, and a thrash guard — so what
+ * you scaffold already passes the soft linter. Surfaced only at the top level.
+ */
+const TEMPLATES: Suggestion[] = [
+  { label: "bugfix — fix a failing test", kind: "template",
+    detail: "the canonical self-correcting loop",
+    doc: "Keep working until a real test passes: scoped context + last failure, reflect on failure, thrash guard.",
+    insert: 'loop "fix ${1:the failing checkout tax test}":\n  goal: ${2:the tax line is correct at checkout}\n  done when ${3:the test "checkout.spec.ts::tax" passes}\n  look at: ${4:the checkout code}, and the last failure\n  each cycle: plan, then act, then observe\n  when it fails: reflect on which layer broke, then plan again\n  after ${5:6} tries: stop and warn "${6:stuck — needs a human}"\n$0' },
+
+  { label: "feature — build behind a plan gate", kind: "template",
+    detail: "plan-approved feature with tests",
+    doc: "A feature where the plan is approved before any code, then built to a green test suite.",
+    insert: 'loop "build ${1:the wishlist feature}":\n  goal: ${2:users can save items to a wishlist}\n  a human approves the plan first\n  look at: ${3:src/wishlist, the API}, and the last failure\n  allow edits automatically, but ask me before migrations or pushes\n  done when ${4:"pnpm test wishlist" passes}\n  each cycle: plan, then act, then observe\n  when it fails: reflect, then plan again\n  after 8 tries: stop and warn "${5:wishlist stuck}"\n$0' },
+
+  { label: "gated — a risky change (migration/deploy)", kind: "template",
+    detail: "ask-before + ask-a-human-when-blocked",
+    doc: "Risky work gated: confirm the risky class, and ask a human when the agent is blocked.",
+    insert: 'loop "${1:add the orders table}":\n  goal: ${2:the orders migration is applied and verified}\n  look at: ${3:the schema and the migrations folder}, and the last failure\n  allow edits automatically, but ask me before ${4:migrations or deploys}\n  done when ${5:"pnpm test db" passes}\n  each cycle: plan, then act, then observe\n  when it fails: reflect, then plan again\n  when blocked: ask a human\n  after 6 tries: stop and warn "${6:migration needs a human}"\n$0' },
+
+  { label: "security — scan must find nothing", kind: "template",
+    detail: "done when … finds nothing",
+    doc: "A loop that finishes only when a scanner reports zero (exit 0 AND empty output).",
+    insert: 'loop "${1:harden the API}":\n  goal: ${2:no high or critical vulnerabilities}\n  done when ${3:"semgrep --config auto --severity=high" finds nothing}\n  look at: ${4:the API and its middleware}, and the last failure\n  each cycle: plan, then act, then observe\n  when it fails: reflect, then plan again\n  after 4 tries: stop and warn "${5:security needs a human}"\n$0' },
+
+  { label: "pipeline — an epic (stages in order)", kind: "template",
+    detail: "security → build (gate) → review",
+    doc: "An epic as a pipeline: each story a stage with its own check and gates; fail-fast.",
+    insert: 'pipeline "${1:ship the feature}":\n\n  stage "${2:security}":\n    goal: ${3:no high or critical vulnerabilities}\n    done when "${4:semgrep --severity=high}" finds nothing\n    each cycle: plan, then act, then observe\n    when it fails: reflect, then plan again\n\n  stage "${5:build}":\n    goal: ${6:the feature works and tests pass}\n    a human approves the plan first\n    done when "${7:pnpm test}" passes\n    each cycle: plan, then act, then observe\n    when it fails: reflect, then plan again\n    after 8 tries: stop and warn "${8:build stuck}"\n\n  stage "${9:review}":\n    goal: ${10:the UI matches the design}\n    a human reviews before stopping\n    each cycle: plan, then act, then observe\n$0' },
+
+  { label: "flow — chain build → test → deploy", kind: "template",
+    detail: "whole .loop files, deploy gated",
+    doc: "Chain separate .loop files in order; a text summary carries forward; the deploy waits for approval.",
+    insert: 'flow "${1:ship}":\n  run "${2:build.loop}"\n  then run "${3:test.loop}"\n  then run "${4:deploy.loop}":\n    a human approves first\n$0' },
+
+  { label: "for each — run a template per item", kind: "template",
+    detail: "fan out over a plan file",
+    doc: "Enumerate items from a .yaml/.md plan and run the template once per item.",
+    insert: 'flow "${1:deliver}":\n  for each ${2:item} in "${3:plan.yaml}":\n    run "${4:item-template.loop}"\n$0' },
+
+  { label: "A-to-Z — discover → design → for each story", kind: "template",
+    detail: "the whole feature as one flow",
+    doc: "Interactive discovery, a human-approved design, then the per-story checklist for every story.",
+    insert: 'flow "${1:epic: authentication}":\n  run "${2:discover.loop}"\n  then run "${3:design.loop}"\n  then for each ${4:story} in "${5:sprint.yaml}":\n    run "${6:story-template.loop}"\n$0' },
+
+  { label: "git — branch + commit + pull request", kind: "template",
+    detail: "git policy, then a loop",
+    doc: "A git: policy (work on a branch, commit on success, open a PR — never push to main) plus a loop.",
+    insert: 'git:\n  work on a branch\n  commit when the goal is met\n  open a pull request\n\nloop "${1:add a healthcheck endpoint}":\n  goal: ${2:GET /healthz returns 200 with a JSON status}\n  done when ${3:"pnpm test health" passes}\n  each cycle: plan, then act, then observe\n  when it fails: reflect, then plan again\n  after 6 tries: stop and warn "${4:healthcheck stuck}"\n$0' },
+
+  { label: "models — tier the model per phase", kind: "template",
+    detail: "fast plan/reflect, strong act",
+    doc: "Run the cheap phases on a fast model and act on a strong one — cheaper than one big prompt.",
+    insert: 'models: fast ${1:haiku}, strong ${2:opus}\n\nloop "${3:fix the failing test}":\n  goal: ${4:the test passes}\n  done when ${5:"pnpm test" passes}\n  each cycle: plan, then act, then observe\n  when it fails: reflect, then plan again\n  after 6 tries: stop and warn "${6:stuck}"\n$0' },
+
+  { label: "scheduled — config tier (method + schedule)", kind: "template",
+    detail: "run a method on a schedule",
+    doc: "The config tier: import a method and run it on a schedule against a target, notifying the team.",
+    insert: 'use the ${1:audit} method\nschedule: ${2:nightly}\ntarget: ${3:./src}\nnotify: ${4:slack}\n$0' },
+];
+
 export function completionsFor(ctx: Context): Suggestion[] {
-  if (ctx === "top") return TOP;
+  if (ctx === "top") return [...TEMPLATES, ...TOP];
   if (ctx === "pipeline") return PIPELINE;
   if (ctx === "stage-body") return [...LOOP_BODY, STAGE_EXTRA];
   return LOOP_BODY;
