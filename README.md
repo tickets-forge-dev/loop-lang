@@ -195,6 +195,11 @@ Native is the default.
 | `@loop-lang/viz` | `loop-run viz file.loop` → self-contained HTML schematic (the cycle + reflect back-edge) |
 | `spec/loop-spec.schema.json` | the open IR contract |
 
+## Is this just another &lt;X&gt;?
+
+"Is this another LangChain?", "why not YAML?", "won't better models make this pointless?",
+"doesn't it lock me into Claude Code?" — answered straight in the [**FAQ**](docs/FAQ.md).
+
 ## Status
 
 Early. v1 in progress: parser, runtime, VSCode extension, BMAD preset. See the [roadmap](#roadmap) and [open issues](../../issues).

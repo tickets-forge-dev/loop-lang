@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // @loop-lang/loop — the installer CLI. `loop init` drops Loop into a repo so any
 // agent can author + run .loop files. Running loops happens in your agent (the
-// /loopflow skill) or headless via the full @loop/runtime CLI.
+// /loopflow skill) or headless via the full @loop-lang/runtime CLI.
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 import { init } from "./init.mjs";
@@ -29,7 +29,7 @@ init options:
 after init:
   • Claude Code: open a chat in the repo and say  /loopflow run examples/fix_test.loop
   • any agent:   it reads AGENTS.md and can author + run .loop files
-  • headless:    install @loop/runtime for  loop run <file>`;
+  • headless:    install @loop-lang/runtime for  loop-run run <file>`;
 
 function flag(argv, name) { return argv.includes(name); }
 function opt(argv, name) { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : undefined; }
@@ -70,8 +70,8 @@ async function main(argv) {
     return;
   }
 
-  if (["run", "parse", "export", "viz", "show", "ls"].includes(cmd)) {
-    console.error(`\`loop ${cmd}\` runs in your agent (the /loopflow skill) or via the full runtime CLI (@loop/runtime).\nThis package installs Loop — try \`loop init\`. See \`loop help\`.`);
+  if (["run", "parse", "viz", "show", "ls"].includes(cmd)) {
+    console.error(`\`loop ${cmd}\` runs in your agent (the /loopflow skill) or via the full runtime CLI: \`loop-run ${cmd}\` (install @loop-lang/runtime).\nThis package installs Loop — try \`loop init\`. See \`loop help\`.`);
     process.exit(2);
   }
 

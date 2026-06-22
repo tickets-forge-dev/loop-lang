@@ -1,6 +1,6 @@
 {
   "name": "@loop-lang/loop",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Install Loop (.loop) into any repo so Claude Code — or any agent — can author and run self-correcting, human-gated coding loops.",
   "license": "Apache-2.0",
   "publishConfig": { "access": "public" },

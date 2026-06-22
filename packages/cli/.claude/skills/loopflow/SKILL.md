@@ -47,14 +47,6 @@ after <N> tries: stop and warn "<message>"   thrash guard
 a human approves the plan first              human plan gate
 a human reviews before stopping              human review gate
 a human approves before <action>             stage gate (in a stage)
-
-# config tier (top of file): how the loop is powered & scheduled
-use the <method> method      pull a preset (e.g. BMAD) as the base
-models: fast <m>, strong <m> model tiering — plan/reflect/also→fast, act→strong
-                             (cascades; override e.g. `act fast`, `all strong`)
-schedule: <when>             run unattended on a cadence
-runner: <agent>              which agent executes the loop
-target: <dir>                operate on another directory/repo
 ```
 
 Predicates:
@@ -130,23 +122,10 @@ Walk these quickly, naming the keyword each time so they learn it:
 6. **Human gates** → `a human approves the plan first` / `a human reviews before stopping`
    — default none unless the work is risky.
 7. **Git** → state the safe default ("branch, commit when the goal is met, never push to
-   `main`"); ask if they want a PR, a worktree, or to work in place. (Full grammar below.)
-8. **Models (LLM policy)** → `models:` — which model does the work. Default: one model
-   throughout (the session's). Offer **tiering** for cost/speed: `models: fast <model>,
-   strong <model>` → plan/reflect/also run on *fast*, act runs on *strong*; cascades, and
-   you can override per phase (`act fast`, `all strong`).
-9. **Schedule / runner / target (config tier — only if automating)** → ask only when the
-   loop runs unattended or against another repo: `schedule: <when>` (run on a cadence),
-   `runner: <agent>` (which agent executes), `target: <dir>` (operate on another directory).
-   Skip silently for a normal in-session loop.
-
-Don't forget the menu in Step 2 also covers `use the <method> method` — pull a whole
-preset (e.g. BMAD) instead of hand-picking passes.
+   `main`"); ask if they want a PR, a worktree, or to work in place.
 
 Offer the defaults inline (*"I'll add a tests + security pass, gate the migration, a
-6-try guard, work on a branch, one model throughout, no schedule — sound right?"*) so the
-whole interview is one exchange. Name every topic once even when you default it, so the
-user knows the knob exists and can override it.
+6-try guard, work on a branch — sound right?"*) so the whole interview is one exchange.
 Then **write the `.loop`**, always with a real `done when` and a thrash guard, **print
 its flow** (below), and offer to run it.
 
