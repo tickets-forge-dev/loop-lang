@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Loop — the workshop</title>
+<title>LoopFlow — the workshop</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
@@ -113,18 +113,18 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
 <body>
 
 <div class="topbar">
-  <div class="brand"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="Loop"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span>Loop</div>
-  <a class="nav" href="tutorial.html">Tutorial</a>
+  <div class="brand"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="LoopFlow"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span>LoopFlow</div>
+  <a class="nav" href="index.html">Tutorial</a>
   <a class="nav here" href="workshop.html">Workshop</a>
   <a class="nav" href="keywords/index.html">Keywords</a>
-  <a class="nav lab" href="game.html">🎮 Loop Lab</a>
+  <a class="nav lab" href="game.html">🎮 LoopFlow Lab</a>
 </div>
 
 <main>
 <header class="hero">
-  <h1>Loop, the workshop</h1>
-  <div class="lede">Learn Loop by <em>doing</em>. Pick your tool, then work the tasks top to bottom — each one is a real thing to run.</div>
-  <p class="sub">There are <b>two ways</b> to drive Loop: straight from a <b>Claude Code chat</b>, or from <b>VS Code</b> with the extension. Same <code>.loop</code> files, same engine — pick the one you live in. Switch tracks any time; your progress is saved per track in this browser.</p>
+  <h1>LoopFlow, the workshop</h1>
+  <div class="lede">Learn LoopFlow by <em>doing</em> — <b>build a small todo app from an empty folder</b>, one loop at a time. Pick your tool and work the tasks top to bottom.</div>
+  <p class="sub">Two ways to drive LoopFlow: straight from a <b>Claude Code chat</b>, or from <b>VS Code</b> with the extension. Same <code>.loop</code> files, same engine — pick the one you live in. By the last task you'll have a working, tested todo app. Switch tracks any time; your progress is saved per track in this browser.</p>
 </header>
 
 <div class="tracks">
@@ -145,18 +145,18 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
   <button class="reset" id="reset">Reset track</button>
 </div>
 
-<div class="note" id="repo"><b>Before you start:</b> clone the Loop repo and open it — every task uses the real <code>examples/</code> files that ship with it, so you can run them as-is.</div>
+<div class="note" id="repo"><b>Before you start:</b> an empty repo or a fresh scratch folder is all you need — step&nbsp;1 installs LoopFlow into it with <code>npx</code>, and you'll build the todo app from zero. (Have Node 18+ and the <a href="https://docs.anthropic.com/en/docs/claude-code">Claude Code</a> CLI.)</div>
 
 <div id="tasklist"></div>
 
 <div class="fin" id="fin">
-  <h2>🎉 Workshop complete</h2>
-  <p>You ran loops, answered a gate, authored one from English, and watched it stop on a real check — both by hand and from the agent. That's loop engineering.</p>
-  <a class="btn" href="tutorial.html">Deep dive — the full language →</a>
-  <a class="btn alt" href="game.html">Play Loop Lab 🎮</a>
+  <h2>🎉 You built a todo app</h2>
+  <p>From an empty folder to a working, tested app — add, complete, persist behind a gate, a CRUD pipeline, a quality pass, saved to your library, and shipped on a branch with a PR. Every step was a loop that verified itself. That's loop engineering.</p>
+  <a class="btn" href="index.html">Deep dive — the full language →</a>
+  <a class="btn alt" href="game.html">Play LoopFlow Lab 🎮</a>
 </div>
 
-<footer>Loop · learn by doing. The same engine the <a href="tutorial.html">tutorial</a> and <a href="game.html">Loop Lab</a> teach: plan → act → observe, a reflect back-edge, a thrash guard, and "you can't fake done."</footer>
+<footer>LoopFlow · learn by doing. The same engine the <a href="index.html">tutorial</a> and <a href="game.html">LoopFlow Lab</a> teach: plan → act → observe, a reflect back-edge, a thrash guard, and "you can't fake done."</footer>
 </main>
 
 <script>
@@ -165,86 +165,80 @@ var TRACKS = {claude:"Claude Code track", vscode:"VS Code track"};
 /* Each task has a concept tag, a one-line lead, and per-track {do, code, codeClass, see}.
    {both:{...}} means the step is identical in both tools. */
 var TASKS = [
-  { tag:"Setup", title:"Set up your tool",
-    lead:"One-time setup so Loop is available where you work.",
-    claude:{ do:"Copy the bundled skill into your Claude Code skills folder, then open this repo in a chat.",
-      code:"cp -r .claude/skills/loopflow ~/.claude/skills/", codeClass:"sh",
-      see:"Type <b>/loopflow</b> in the chat — autocomplete lists the Loop skill." },
-    vscode:{ do:"Install the <b>Loop</b> VS Code extension, then open this repo folder.",
-      code:"Extensions  ▸  search “Loop”  ▸  Install", codeClass:"ui",
-      see:"Open any <b>.loop</b> file — keywords are colored and a <b>▶ Run this loop</b> lens sits above every <code>loop</code>." } },
+  { tag:"Setup", title:"Install LoopFlow with npm",
+    lead:"One command drops the LoopFlow skill and its language reference into your project. Start in an empty repo or a fresh scratch folder — you'll build the todo app from zero.",
+    claude:{ do:"From your project folder, run the installer. It writes the <code>/loopflow</code> skill and <code>AGENTS.md</code> into the repo.",
+      code:"npx @loop-lang/loop init", codeClass:"sh",
+      see:"Open a chat in the folder and type <b>/loopflow</b> — autocomplete lists the skill." },
+    vscode:{ do:"Run the same installer, then add the editor extension.",
+      code:"npx @loop-lang/loop init\n# then: Extensions ▸ search “LoopFlow” ▸ Install", codeClass:"sh",
+      see:"<code>AGENTS.md</code> is in the repo, and any <b>.loop</b> file gets syntax + a <b>▶ Run this loop</b> lens." } },
 
-  { tag:"Setup", title:"Give the agent its memory",
-    lead:"AGENTS.md is the Loop language reference. With it in the repo, any agent that opens the project already knows how to read and write a .loop.",
-    both:{ do:"Confirm <code>AGENTS.md</code> is at the repo root.",
+  { tag:"Setup", title:"Check the agent's memory",
+    lead:"The installer dropped <code>AGENTS.md</code> — the LoopFlow language reference. Any agent that opens the repo now knows how to read and write a .loop.",
+    both:{ do:"Confirm it landed at the repo root.",
       code:"ls AGENTS.md", codeClass:"sh",
-      see:"The file exists. That's the project's persistent memory — it travels with the repo." } },
+      see:"The file exists. It travels with the repo, so the loop language is always available." } },
 
-  { tag:"Run", title:"Run your first loop",
-    lead:"The canonical example: keep working until a checkout test goes green.",
-    claude:{ do:"Run it right in the chat.",
-      code:"/loopflow run examples/fix_test.loop", codeClass:"sh",
-      see:"The assistant narrates <b>plan → act → observe</b>. On a red test it <b>reflects</b> and re-plans, and it stops only when <code>checkout.spec.ts::tax</code> passes." },
-    vscode:{ do:"Open <code>examples/fix_test.loop</code> and click the <b>▶ Run this loop</b> lens above the <code>loop</code> line.",
-      code:"examples/fix_test.loop  →  ▶ Run this loop", codeClass:"ui",
-      see:"Pick a run mode when asked (try <b>session</b>). Watch the cycle run; it ends when the test is green." } },
+  { tag:"Build", title:"Slice 1 — add a todo (your first loop)",
+    lead:"Build the app one provable slice at a time. First: add a todo and list it back — driven by a loop whose <code>done when</code> is a test.",
+    claude:{ do:"Describe the slice; let the skill write and run the loop.",
+      code:"/loopflow \"start a tiny todo app: add a todo and list todos; done when the todos test passes\"", codeClass:"sh",
+      see:"It writes a <code>.loop</code>, then runs <b>plan → act → observe</b>: it scaffolds the module + a test, and on a red test <b>reflects</b> and re-plans until <code>todos</code> is green." },
+    vscode:{ do:"<b>LoopFlow: New from template</b>, set the goal to the add-todo slice + a real <code>done when</code>, save, ▶ Run.",
+      code:"New from template  →  goal + done-when  →  ▶ Run", codeClass:"ui",
+      see:"The cycle runs in your chosen mode and stops when the todos test is green." } },
 
-  { tag:"Run", title:"Choose where it runs",
-    lead:"Same loop, two homes. Decide whether a run is an interactive chat or a headless trace.",
-    claude:{ do:"In a chat, the conversation IS the session — re-run and answer any prompt inline.",
-      code:"/loopflow run examples/fix_test.loop", codeClass:"sh",
-      see:"You watch every step and answer gates without leaving the chat. (Prefer a terminal? <code>loop run &lt;file&gt;</code> runs the same file headless.)" },
-    vscode:{ do:"Set how ▶ runs: open Settings and search <code>loop.runMode</code>.",
-      code:"loop.runMode:  ask  |  session  |  output", codeClass:"ui",
-      see:"<b>session</b> opens interactive Claude in the terminal; <b>output</b> is a headless trace with native gate dialogs; <b>ask</b> lets you choose each time." } },
+  { tag:"Verify", title:"Slice 2 — complete a todo (done when = the spec)",
+    lead:"Each feature is pinned by its check. <code>done when</code> turns an acceptance criterion into something the loop can prove — you can't fake done.",
+    both:{ do:"Add the next slice; the test is the spec.",
+      code:"/loopflow \"completing a todo flips its done flag to true; done when the complete-todo test passes\"", codeClass:"sh",
+      see:"The loop won't stop on the agent's say-so — only when the complete-todo test actually passes. Two slices in, the app really works." } },
 
-  { tag:"Gates", title:"Answer a human gate",
-    lead:"Some loops pause for a person. Here the agent must get your OK on the plan before it touches code.",
-    claude:{ do:"Run the plan-gate example.",
-      code:"/loopflow run examples/human-gates/approve-the-plan.loop", codeClass:"sh",
-      see:"The agent shows its plan and <b>pauses</b>. Nothing is acted on until you approve in the chat." },
-    vscode:{ do:"Open <code>examples/human-gates/approve-the-plan.loop</code> and ▶ Run it in <b>session</b> mode.",
-      code:"approve-the-plan.loop  →  ▶ Run this loop", codeClass:"ui",
-      see:"The run stops at the plan gate; approve to let it continue. The gate line is <code>a human approves the plan first</code>." } },
+  { tag:"Gates", title:"Slice 3 — persist todos (gate the risky step)",
+    lead:"Now it touches storage. Make a human approve the plan before any code is written.",
+    claude:{ do:"Add persistence behind a plan gate.",
+      code:"/loopflow \"persist todos to a sqlite file; a human approves the plan first; done when the persistence test passes\"", codeClass:"sh",
+      see:"The agent shows its storage plan and <b>pauses</b>. Nothing is written until you approve in the chat — then it builds and verifies." },
+    vscode:{ do:"Edit the generated loop to add the gate line, then ▶ Run in <b>session</b> mode.",
+      code:"a human approves the plan first", codeClass:"loop",
+      see:"The run stops at the plan gate; approve to continue. That one line is the whole gate." } },
 
-  { tag:"Author", title:"Make a loop from plain English",
-    lead:"You don't have to write the file yourself — describe the work and get a real .loop back.",
-    claude:{ do:"Ask the skill to write one from a sentence.",
-      code:"/loopflow \"fix the failing auth test in src/auth, and gate any database migration\"", codeClass:"sh",
-      see:"The skill writes a <code>.loop</code> with a goal, a <code>done when</code> test, and an <code>ask me before migrations</code> gate. Read it, then run it." },
-    vscode:{ do:"Command Palette → <b>Loop: New from template</b>.",
-      code:"Cmd/Ctrl-Shift-P  →  Loop: New from template", codeClass:"ui",
-      see:"A ready-to-edit <code>.loop</code> is scaffolded. Fill in the goal, save, and ▶ Run." } },
+  { tag:"Compose", title:"Slice 4 — the REST API as a pipeline",
+    lead:"Four endpoints, each provable. A <b>pipeline</b> runs stages in order and halts the rest if one fails — so you never ship a half-built API.",
+    both:{ do:"Ask for the CRUD pipeline.",
+      code:"/loopflow \"build the todo REST API as a pipeline: add, list, complete, delete — each stage done when its endpoint test passes\"", codeClass:"sh",
+      see:"It writes a <code>pipeline</code> with four stages. <code>add</code> must be green before <code>list</code> is attempted; a failing stage stops the rest." } },
 
-  { tag:"Edit", title:"Edit a loop, change its behavior",
-    lead:"A .loop is just text you control. Add a thrash guard so it can never spin forever.",
-    both:{ do:"Open <code>examples/basics/minimal.loop</code> and add this line inside the loop, then re-run it.",
-      code:"  after 5 tries: stop and warn \"stuck\"", codeClass:"loop",
-      see:"Now if it can't reach the goal it <b>warns and stops</b> at 5 tries instead of grinding to the hard cap." } },
+  { tag:"Edit", title:"Add a quality pass + a thrash guard",
+    lead:"A .loop is text you control. Add a finishing security pass and a guard so a stuck loop can't spin forever.",
+    both:{ do:"Open the pipeline and add these inside a stage, then re-run.",
+      code:"  also: a security scan\n  after 6 tries: stop and warn \"stuck\"", codeClass:"loop",
+      see:"After the goal is met it runs a security pass; and it now <b>warns and stops at 6 tries</b> instead of grinding to the hard cap." } },
 
-  { tag:"Compose", title:"Run a multi-step job",
-    lead:"Real work is more than one loop. A flow chains whole files in order, carrying a summary forward.",
-    claude:{ do:"Run a chained flow.",
-      code:"/loopflow run examples/ship_flow.loop", codeClass:"sh",
-      see:"It runs <b>build → test → deploy</b> in order; each step's summary feeds the next, and <b>deploy waits for your approval</b>." },
-    vscode:{ do:"Open <code>examples/ship_flow.loop</code> and ▶ Run it.",
-      code:"ship_flow.loop  →  ▶ Run this loop", codeClass:"ui",
-      see:"The same chain runs with a live trace; the deploy step pauses for the approval gate." } },
+  { tag:"Reuse", title:"Save your loop to the global library",
+    lead:"Built a loop worth keeping? Save it once and run it in any project — no copy-paste. The library lives at <code>~/.claude/loopflow/</code> and is driven from the chat.",
+    claude:{ do:"Save the todo build, then list your library.",
+      code:"/loopflow save this as todo-app\n/loopflow list", codeClass:"sh",
+      see:"It lands in <code>~/.claude/loopflow/</code>. From any other repo, <code>/loopflow run todo-app</code> runs it there — same loop, new project." },
+    vscode:{ do:"The library is Claude-first — in a chat, save the loop you're editing.",
+      code:"/loopflow save this as todo-app", codeClass:"sh",
+      see:"Saved to your global library; <code>/loopflow list</code> shows it with its one-line shape." } },
 
   { tag:"Git", title:"See the git safety net",
     lead:"You never have to remember 'don't push to main' — it's built in.",
-    both:{ do:"After running any loop, check where the work landed.",
+    both:{ do:"After a run, check where the work landed.",
       code:"git branch --show-current\ngit log --oneline -3", codeClass:"sh",
       see:"Work happened on a <b>feature branch</b> and committed on success — and a push to <code>main</code>/<code>master</code> is <b>always refused</b>, no config needed." } },
 
-  { tag:"Ship", title:"Graduate — write your own loop",
-    lead:"Now do it for real: pick an actual bug or small task in your code with a test that can decide 'done'.",
-    claude:{ do:"Describe your task as a loop — name a real command for <code>done when</code>.",
-      code:"/loopflow \"<your task> — done when <your test/command> passes\"", codeClass:"sh",
-      see:"You wrote the loop once; the runtime ran it, verified against a real check, and stopped. 🎉" },
-    vscode:{ do:"<b>Loop: New from template</b>, set your goal + a real <code>done when</code>, save, then ▶ Run.",
-      code:"New from template  →  edit goal & done-when  →  ▶ Run", codeClass:"ui",
-      see:"It self-corrects until your real check passes — then stops. You're the author, not the for-loop. 🎉" } },
+  { tag:"Ship", title:"Ship the todo app",
+    lead:"Wire it together and open a PR. You started with an empty folder; you're finishing with a working, tested todo app.",
+    claude:{ do:"Serve the list and ship it.",
+      code:"/loopflow \"serve the todo list at GET /; done when the page test passes; push when done and open a pull request\"", codeClass:"sh",
+      see:"The loop builds the page, verifies it, and opens a PR from the feature branch. You authored the loops; LoopFlow built the app. 🎉" },
+    vscode:{ do:"Add a <code>git:</code> block, then ▶ Run the final slice.",
+      code:"git:\n  push when done\n  open a pull request", codeClass:"loop",
+      see:"It self-corrects until the page test passes, then opens the PR. You're the author, not the for-loop. 🎉" } },
 ];
 
 var state = localStorage.getItem("loopws_track") || "claude";

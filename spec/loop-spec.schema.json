@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://loop-lang.dev/spec/loop-spec.schema.json",
-  "title": "Loop Spec",
+  "title": "LoopFlow Spec",
   "description": "The open intermediate representation a .loop file parses to. The contract between @loop-lang/parser, @loop-lang/runtime, and the loop-vscode extension. Anyone may implement against this.",
   "type": "object",
   "required": ["loopVersion", "definitions"],
@@ -316,7 +316,7 @@
           "additionalProperties": false,
           "required": ["var", "source"],
           "properties": {
-            "var": { "type": "string", "description": "Loop variable name (e.g. \"story\")." },
+            "var": { "type": "string", "description": "LoopFlow variable name (e.g. \"story\")." },
             "source": { "type": "string", "description": "Data file to enumerate (.yaml/.yml/.md), relative to the flow file." }
           },
           "description": "Present when this step iterates: run `ref` once per item enumerated from `source`."

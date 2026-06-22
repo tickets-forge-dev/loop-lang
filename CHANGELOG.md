@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Loop are recorded here. The packages share the `0.x`
+All notable changes to LoopFlow are recorded here. The packages share the `0.x`
 line; the `loop-vscode` extension versions independently (it had an earlier cut).
 
 ## [Unreleased]
@@ -19,7 +19,7 @@ line; the `loop-vscode` extension versions independently (it had an earlier cut)
 ### Removed
 - Dropped all Archon coupling: the `@loop-lang/export-archon` package, the
   `loop export` (Archon workflow YAML) command, the `plan from archon` source,
-  and the `ARCHON_URL`/`ARCHON_TOKEN`/`ARCHON_CODEBASE_ID` env vars. Loop runs
+  and the `ARCHON_URL`/`ARCHON_TOKEN`/`ARCHON_CODEBASE_ID` env vars. LoopFlow runs
   natively on Claude Code; the language no longer references any third-party tool.
 
 ### Added
@@ -29,6 +29,6 @@ line; the `loop-vscode` extension versions independently (it had an earlier cut)
 
 ## [0.1.0]
 
-- First public release: the Loop (`.loop`) language, parser, runtime, viz,
+- First public release: the LoopFlow (`.loop`) language, parser, runtime, viz,
   stdlib presets, the `loop` installer CLI, and the `loop-vscode` extension
   (published as `0.2.0`).

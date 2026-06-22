@@ -1,12 +1,12 @@
-# AGENTS.md — authoring Loop (`.loop`) flows
+# AGENTS.md — authoring LoopFlow (`.loop`) flows
 
 This file teaches an AI assistant (Claude Code, Copilot, Cursor, etc.) how to write
-**Loop** flows. When a user asks you to design a staged, self-correcting, or human-gated
+**LoopFlow** flows. When a user asks you to design a staged, self-correcting, or human-gated
 coding workflow — "set up a loop to fix X", "turn this epic into a pipeline", "automate
 this multi-step task" — author a `.loop` file using the grammar below, then let the user
 run it with `loop-run run file.loop`.
 
-Loop is a small natural-language DSL. A `.loop` file describes the *movement* of an AI
+LoopFlow is a small natural-language DSL. A `.loop` file describes the *movement* of an AI
 coding loop: its objective, the context it may read, the actions it's allowed, how it
 verifies itself, when it stops, and where a human steps in. The five knobs —
 **objective, context, actions, verification, stopping rules** — are first-class instead

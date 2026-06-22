@@ -2,7 +2,7 @@
   "name": "loop-lang",
   "private": true,
   "version": "0.1.0",
-  "description": "Loop — an open, natural-language DSL for loop engineering. Describe staged, self-correcting, human-gated agent workflows; press Play to run them on Claude Code.",
+  "description": "LoopFlow — an open, natural-language DSL for loop engineering. Describe staged, self-correcting, human-gated agent workflows; press Play to run them on Claude Code.",
   "license": "Apache-2.0",
   "type": "module",
   "workspaces": [

@@ -7,5 +7,7 @@ coverage/
 .vscode-test/
 .playwright-mcp/
 .claude/worktrees/
+docs/superpowers/
 packages/cli/assets/
 packages/cli/AGENTS.md
+packages/cli/.claude/

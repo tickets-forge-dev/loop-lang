@@ -1,0 +1,24 @@
+# examples/forge-sandbox.loop — how Forge's sandbox runner was built with LoopFlow.
+# Forge is a ticket-driven implementation platform; this module runs agent-written
+# code in isolation. Built one provable stage at a time — a failing stage halts the rest.
+pipeline "forge sandbox runner":
+  stage isolate:
+    goal: every run gets a fresh, network-less container with CPU and memory caps
+    look at: the runner service and the container config, and the last failure
+    each cycle: plan, then act, then observe
+    done when "pnpm test sandbox/isolation" passes
+    when it fails: reflect, then plan again
+    after 6 tries: stop and warn "isolation thrashing"
+  stage execute:
+    goal: run agent code, capture stdout, stderr and exit code, kill on timeout
+    each cycle: act, then observe
+    done when "pnpm test sandbox/execute" passes
+  stage harden:
+    goal: no container escape, no host filesystem or cloud-metadata access
+    also: a security scan
+    done when "pnpm test sandbox/security" passes
+    a human approves before enabling network egress
+  stage integrate:
+    goal: a real ticket's generated code runs end to end inside the sandbox
+    done when "pnpm test:e2e sandbox" passes
+    a human reviews before stopping

@@ -1,7 +1,7 @@
 {
   "name": "@loop-lang/parser",
   "version": "0.1.0",
-  "description": "Parses Loop (.loop) natural-language source into the open loop-spec IR.",
+  "description": "Parses LoopFlow (.loop) natural-language source into the open loop-spec IR.",
   "license": "Apache-2.0",
   "type": "module",
   "publishConfig": { "access": "public" },

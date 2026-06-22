@@ -291,8 +291,41 @@ and honor the policy: if `push when done` is set and the current branch is `main
 
 ---
 
+## Global library — save a loop, reuse it in any project
+
+The user keeps a personal library of loops at **`~/.claude/loopflow/`** — one
+`<name>.loop` per saved loop. It lives beside the installed skill, so a loop saved once is
+runnable from **every** repo. The library is driven entirely from this chat; there is no
+terminal command for it. Create the directory on first save (`mkdir -p ~/.claude/loopflow`).
+
+Four operations — recognize them from `/loopflow <verb>` or from plain language:
+
+- **save** — *"save this as `<name>`"*, *"save it to my library"*, `/loopflow save …`
+  Write the loop's `.loop` source to `~/.claude/loopflow/<name>.loop`. Take `<name>` from
+  the user; if they don't give one, slugify the loop's name (`"fix the auth test"` →
+  `fix-the-auth-test`). **If that file already exists, show the saved version and confirm
+  before overwriting.** Report the path you wrote.
+
+- **list** — `/loopflow list`, *"what loops do I have saved"*
+  List every `*.loop` in `~/.claude/loopflow/`. For each, print `name — <goal>` (add the
+  one-line shape when it helps). An empty or missing dir → say it's empty and how to save one.
+
+- **run** — `/loopflow run <name>`, *"run my security loop here"*
+  Read `~/.claude/loopflow/<name>.loop` and run it **in the current repo**, exactly as in
+  *Running a .loop (in this session)* above. A bare `<name>` means the library; a path or a
+  name ending in `.loop` is a local file, so the library never shadows a loop in the repo.
+  If `<name>` isn't in the library, say so and offer `list`.
+
+- **remove** — `/loopflow remove <name>`, *"delete my `<name>` loop"*
+  Delete `~/.claude/loopflow/<name>.loop` after confirming. If it doesn't exist, say so.
+
+These are plain files — the user may also open or edit them directly. Saving is a copy, so
+removing a library entry never touches the original loop in a repo.
+
+---
+
 ## Reference
 
 The full language reference is in `AGENTS.md` and `docs/MANUAL.md` of the loop-lang repo;
-the CLI (`loop run|viz|export|parse`) and the VSCode extension are alternative ways to run
+the CLI (`loop-run run|viz|parse`) and the VSCode extension are alternative ways to run
 the same `.loop` files.

@@ -1,8 +1,18 @@
-# Loop
+<p align="center">
+  <img src="docs/gyro-icon.svg" alt="LoopFlow" width="104" height="104" />
+</p>
 
-**An open, natural-language DSL for loop engineering.** Describe a staged, self-correcting, human-gated agent workflow in plain English, press ▶, and it runs on Claude Code.
+<h1 align="center">LoopFlow</h1>
 
-> Stop tuning prompts. Start editing the loop.
+<p align="center"><b>An open, natural-language DSL for loop engineering.</b><br/>Describe a staged, self-correcting, human-gated agent workflow in plain English, press ▶, and it runs on Claude Code.</p>
+
+<p align="center"><i>Stop tuning prompts. Start editing the loop.</i></p>
+
+<p align="center">
+  <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/License-Apache_2.0-34e0c4.svg"></a>
+  <a href="https://www.npmjs.com/package/@loop-lang/loop"><img alt="npm" src="https://img.shields.io/npm/v/@loop-lang/loop?color=84b6ff&label=%40loop-lang%2Floop"></a>
+  <img alt="Node >=18" src="https://img.shields.io/badge/node-%3E%3D18-5fd99a.svg">
+</p>
 
 ---
 
@@ -10,9 +20,9 @@
 
 AI writes the code now. But you're still the conductor — kicking off manual pass after manual pass: *"fix the security issues", "now refactor", "now fix the UI."* Even strong methods leave you iterating by hand, in layers, forever.
 
-Loop lets you describe that **movement once**. You don't type the app — you type the *loop*: the objective, the context, the allowed actions, how it verifies itself, when it stops, and where a human steps in. Then you reuse it.
+LoopFlow lets you describe that **movement once**. You don't type the app — you type the *loop*: the objective, the context, the allowed actions, how it verifies itself, when it stops, and where a human steps in. Then you reuse it.
 
-A loop has five knobs — **objective, context, actions, verification, stopping rules**. Today they're buried in a prompt. Loop makes them first-class, editable, and shareable.
+A loop has five knobs — **objective, context, actions, verification, stopping rules**. Today they're buried in a prompt. LoopFlow makes them first-class, editable, and shareable.
 
 ## The shape
 
@@ -125,7 +135,7 @@ Power comes from **composition**, not keyword count.
 
 ## Git strategy (safe by default)
 
-Without any `git:` block, Loop works on a branch and commits when the goal is met — it
+Without any `git:` block, LoopFlow works on a branch and commits when the goal is met — it
 never pushes to `main` or `master`. A `git:` block at the top of the file lets you opt
 into push and a pull request:
 
@@ -180,7 +190,7 @@ Each node maps to a Claude Code invocation:
 | `a human…` | pauses, waits for the person, resumes |
 | `done when` | runtime checks the predicate — you can't fake "done" |
 
-Loop runs natively on Claude Code — no extra infrastructure. The `loop-spec` IR is open,
+LoopFlow runs natively on Claude Code — no extra infrastructure. The `loop-spec` IR is open,
 so a `.loop` file can also be **consumed by other tooling** built against the contract.
 Native is the default.
 
@@ -209,6 +219,10 @@ Early. v1 in progress: parser, runtime, VSCode extension, BMAD preset. See the [
 - **v1** — parser, single-loop + sequential pipeline runtime on Claude Code, blocking human nodes, VSCode extension, BMAD preset.
 - **v2** — visual graph editor (the `loop-spec` IR is built for it), async human nodes, reactive stages, scheduling, a community preset registry (`use someone/their-method`).
 
+## Built with LoopFlow
+
+LoopFlow ships real software. **Forge** — a ticket-driven implementation platform (hand it a ticket, agents implement it) — is built with LoopFlow, including its **sandbox runner**: isolated, network-less execution of agent-written code. The pipeline that built it is [`examples/forge-sandbox.loop`](examples/forge-sandbox.loop); the walkthrough is the [case study in the tutorial](docs/index.html#workflows).
+
 ## Contributing
 
 This is a **community project** and an **open standard**. Good first issues: new presets, grammar edge cases, formatter rules. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
@@ -216,3 +230,14 @@ This is a **community project** and an **open standard**. Good first issues: new
 ## License
 
 [Apache-2.0](LICENSE). The language and the `loop-spec` IR are an open standard — implement against them freely.
+
+## Maintainer
+
+<a href="https://www.linkedin.com/in/idan-ayalon/"><img src="docs/idan.jpg" alt="Idan Ayalon" width="104" align="left" hspace="18" vspace="4" /></a>
+
+**Idan Ayalon** — creator &amp; maintainer of LoopFlow. Built **Forge** with it.
+
+📧 [bar.idan@gmail.com](mailto:bar.idan@gmail.com)  
+💼 [linkedin.com/in/idan-ayalon](https://www.linkedin.com/in/idan-ayalon/)
+
+<br clear="left" />

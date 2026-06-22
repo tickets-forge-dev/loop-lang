@@ -1,8 +1,8 @@
 {
   "name": "loop-vscode",
-  "displayName": "Loop",
+  "displayName": "LoopFlow",
   "version": "0.2.0",
-  "description": "Syntax, formatting, best-practice templates, completion, and ▶ Run / Claude-session buttons for the Loop (.loop) DSL.",
+  "description": "Syntax, formatting, best-practice templates, completion, and ▶ Run / Claude-session buttons for the LoopFlow (.loop) DSL.",
   "license": "Apache-2.0",
   "publisher": "loop-lang",
   "private": true,
@@ -21,7 +21,7 @@
     "languages": [
       {
         "id": "loop",
-        "aliases": ["Loop", "loop"],
+        "aliases": ["LoopFlow", "loop"],
         "extensions": [".loop"],
         "configuration": "./language-configuration.json"
       }
@@ -36,18 +36,18 @@
     "commands": [
       {
         "command": "loop.run",
-        "title": "Loop: Run this loop",
-        "category": "Loop"
+        "title": "LoopFlow: Run this loop",
+        "category": "LoopFlow"
       },
       {
         "command": "loop.runInSession",
-        "title": "Loop: Run in a Claude Code session",
-        "category": "Loop"
+        "title": "LoopFlow: Run in a Claude Code session",
+        "category": "LoopFlow"
       },
-      { "command": "loop.newFromTemplate", "title": "Loop: New from template" }
+      { "command": "loop.newFromTemplate", "title": "LoopFlow: New from template" }
     ],
     "configuration": {
-      "title": "Loop",
+      "title": "LoopFlow",
       "properties": {
         "loop.runMode": {
           "type": "string",
@@ -55,7 +55,7 @@
           "enumDescriptions": [
             "Ask each time which way to run.",
             "Open a Claude Code session in the integrated terminal and run the loop there (interactive — you watch every step and answer gates in chat).",
-            "Run headless via the CLI and stream the trace into the VS Code 'Loop' output panel."
+            "Run headless via the CLI and stream the trace into the VS Code 'LoopFlow' output panel."
           ],
           "default": "ask",
           "markdownDescription": "What the ▶ Play button does:\n\n- **ask** — prompt each run (output panel vs Claude Code session)\n- **session** — open a Claude Code session and run `/loopflow run <file>` there\n- **output** — run headless, stream the trace into the VS Code output panel"

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Loop Lab — learn loops by building them</title>
+<title>LoopFlow Lab — learn loops by building them</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
@@ -224,9 +224,9 @@ pre.loop code{font-family:var(--mono); color:var(--ink);}
 <body>
 <div class="wrap" id="app">
   <div class="topbar">
-    <div class="wordmark"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="Loop"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span><span class="brand" id="brand">Loop Studio</span></div>
+    <div class="wordmark"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="LoopFlow"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span><span class="brand" id="brand">LoopFlow Studio</span></div>
     <div class="spacer"></div>
-    <span class="tlink"><a href="tutorial.html">← tutorial</a></span>
+    <span class="tlink"><a href="index.html">← tutorial</a></span>
     <span class="tlink"><a href="workshop.html">🛠️ workshop</a></span>
     <span class="tlink"><a href="keywords/index.html">📖 keywords</a></span>
     <div class="toggle" id="toggle">
@@ -270,14 +270,14 @@ pre.loop code{font-family:var(--mono); color:var(--ink);}
 
   <div class="modal" id="welcome">
     <div class="dialog">
-      <div class="dlogo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="Loop"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></div>
-      <h2>Welcome to Loop Studio</h2>
-      <p>Learn the <b>Loop</b> language by <b>building</b> it. Each chapter teaches one idea — snap blocks into a loop, hit <b>Run</b>, and watch it plan&nbsp;→&nbsp;act&nbsp;→&nbsp;observe. You'll build a real system, one loop at a time.</p>
+      <div class="dlogo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="LoopFlow"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></div>
+      <h2>Welcome to LoopFlow Studio</h2>
+      <p>Learn the <b>LoopFlow</b> language by <b>building</b> it. Each chapter teaches one idea — snap blocks into a loop, hit <b>Run</b>, and watch it plan&nbsp;→&nbsp;act&nbsp;→&nbsp;observe. You'll build a real system, one loop at a time.</p>
       <button class="startbtn" id="welcomeStart">Start building</button>
     </div>
   </div>
 
-  <div class="foot">Loop Lab teaches the same engine the real <a href="index.html">Loop</a> runs: plan → act → observe, a reflect back-edge, a thrash guard, and "you can't fake done." One concept per chapter — knowledge builds up as you go. <b>Every block and every cycle costs loop-time</b>, so each chapter has an effort budget: pick the <i>right</i> blocks, not all of them. Progress is saved in your browser.</div>
+  <div class="foot">LoopFlow Lab teaches the same engine the real <a href="index.html">LoopFlow</a> runs: plan → act → observe, a reflect back-edge, a thrash guard, and "you can't fake done." One concept per chapter — knowledge builds up as you go. <b>Every block and every cycle costs loop-time</b>, so each chapter has an effort budget: pick the <i>right</i> blocks, not all of them. Progress is saved in your browser.</div>
 </div>
 
 <script>
@@ -483,8 +483,8 @@ var LEVELS={
      obj:"Tempting: just push it. But pushing to <b>main</b> is blocked, always. Ship safely — open a pull request, and don't push to main.",
      intro:["pr","pushmain"], need:["goal","done","cycle","pr"], forbid:["pushmain"], distract:["pushmain"], world:{meetsAt:1,pushTrap:true},
      subject:"the store API", goalText:"requests are rate-limited per key", check:"pnpm test rate-limit", guardN:6,
-     forbidTip:"Loop refuses to push to main/master — remove “push to main” and ship via a pull request.",
-     requiredOutcome:"done", learned:"Loop never pushes to main/master — ship via a branch + pull request."},
+     forbidTip:"LoopFlow refuses to push to main/master — remove “push to main” and ship via a pull request.",
+     requiredOutcome:"done", learned:"LoopFlow never pushes to main/master — ship via a branch + pull request."},
     {id:"L12",focus:"methods",title:"The team playbook",concept:"Methods",piece:{ico:"book-open",name:"Playbook"},
      story:"Package how Nimbus ships — gates, git, checks — and reuse it everywhere.",
      obj:"Package your team's way of working — gates, git, checks — once, and reuse it. Add <b>use the team method</b>.",
@@ -905,7 +905,7 @@ var ROBO='<svg width="56" height="56" viewBox="0 0 56 56" aria-label="Robo"><rec
 
 /* ============================ wire-up ============================ */
 function renderAll(){ renderSysmap(); renderLevelCard(); renderBuild(); renderTray(); clearStage();
-  $("brand").textContent = state.mode==="kids" ? "Robo's Studio" : "Loop Studio";
+  $("brand").textContent = state.mode==="kids" ? "Robo's Studio" : "LoopFlow Studio";
   app.className = state.mode==="kids" ? "wrap kids" : "wrap";
   document.body.className = state.mode==="kids" ? "kids" : "";
   var tg=$("toggle"); tg.className= state.mode==="kids"?"toggle kids":"toggle";

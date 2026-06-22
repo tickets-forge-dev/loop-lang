@@ -1,6 +1,6 @@
-# Loop — User Manual
+# LoopFlow — User Manual
 
-Loop is an open-source natural-language DSL for **loop engineering**. You describe a
+LoopFlow is an open-source natural-language DSL for **loop engineering**. You describe a
 staged, self-correcting, human-gated AI coding workflow in plain English in a `.loop`
 file, then run it natively on Claude Code. The loop's five knobs — objective, context,
 actions, verification, stopping rules — are first-class and editable instead of buried in
@@ -258,7 +258,7 @@ A `git:` block sets the version-control strategy for the run. It can appear at t
 the file (config tier, applying to all loops) or inside a single `loop` body (refining
 the commit cadence for that loop only).
 
-**Built-in default (no `git:` block):** Loop works on a branch and commits when the goal
+**Built-in default (no `git:` block):** LoopFlow works on a branch and commits when the goal
 is met. No push happens. This default applies whenever no git block is present.
 
 **Line forms:**
@@ -340,7 +340,7 @@ models: all strong                              # whole scope on one tier
 
 **Kill switch:** `--model X` (CLI flag) or `loop.model` (VS Code setting) forces every phase onto one model, overriding any `models:` block.
 
-**Cost summary:** at the end of a run, Loop prints a per-tier call count so the spend is measurable, not a guess.
+**Cost summary:** at the end of a run, LoopFlow prints a per-tier call count so the spend is measurable, not a guess.
 
 ## 6. How a run works
 
