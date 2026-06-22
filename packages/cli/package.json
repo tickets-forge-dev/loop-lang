@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Install Loop (.loop) into any repo so Claude Code — or any agent — can author and run self-correcting, human-gated coding loops.",
   "license": "Apache-2.0",
+  "publishConfig": { "access": "public" },
   "type": "module",
   "bin": { "loop": "src/cli.mjs" },
   "files": ["src", "assets", "README.md"],
