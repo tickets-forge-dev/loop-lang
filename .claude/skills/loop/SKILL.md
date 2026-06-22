@@ -62,16 +62,36 @@ start with `#`. An epic → a `pipeline`; each story → a `stage`.
 
 ---
 
-## Creating a .loop
+## Creating a .loop — interview the user first
 
-1. **Get the five decisions** — objective, context, actions, verification, stopping. If
-   the user gave a vague request, ask at most a couple of sharp questions only for the
-   forks that matter (mainly: what's the `done when` check, and what's risky enough to gate).
-   Don't over-ask — defaults are fine (cycle defaults to plan→act→observe; edits auto).
-2. **Write the `.loop` file.** Scope it with `look at:` so the agent stays inside the
-   existing architecture. Put human gates on risky work (payments, migrations, deploys).
-   Always give it a real `done when` and an `after N tries` thrash guard.
-3. **Print its flow, then offer to run it** (see "Show the flow" below).
+Don't silently guess the loop. **Walk the five decisions with the user**, asking
+the high-leverage questions out loud and offering a default for the rest, so a
+confident user can accept everything in one reply. Ask one topic at a time:
+
+1. **Goal (objective)** — "What's the goal — what does *done* look like?"
+   Required; never guess this one.
+2. **Verification — `done when`** — "How do we know it's done: a test passing, a
+   shell command passing, a scan that must *find nothing*, or a human confirming?"
+   The most important answer — always ask.
+3. **Context — `look at`** — "What should it read first?" Offer to infer the files
+   from the repo; append `and the last failure`.
+4. **Actions — policy** — "Anything risky to gate — migrations, pushes, deploys?"
+   Default offered: edits automatically, nothing else gated.
+5. **Stopping — transitions + guard** — confirm the default (reflect on failure,
+   `after N tries: stop and warn`); ask for N only if they care.
+
+Then two more that shape the run:
+
+6. **Human gates** — "Approve the plan before any work? Review before it stops?"
+   Default: none unless the work is risky.
+7. **Git strategy** — state the safe default ("work on a branch, commit when the
+   goal is met, never push to `main`") and ask if they want a PR, a worktree, or
+   to work in place.
+
+Offer the defaults inline (e.g. *"I'll gate nothing, add a 6-try guard, and work
+on a branch — ok?"*) so the whole interview can be one exchange. Then **write the
+`.loop`**, scoping it with `look at:` and always giving it a real `done when` and a
+thrash guard. Finally **print its flow** (below) and offer to run it.
 
 ## Show the flow — every time it changes
 

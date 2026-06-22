@@ -19,6 +19,15 @@ bug fixes with a test, refactors gated by a check, an epic broken into stories, 
 migration with a verification step. Don't write one for a one-off question or a trivial
 edit — just do those directly.
 
+**Interview the user before writing it.** Walk the five decisions, asking the
+high-leverage questions and offering defaults for the rest: (1) the **goal**;
+(2) the **`done when`** check (test / command / scan finds-nothing / human);
+(3) **`look at`** context; (4) the **action policy** (what's risky enough to gate);
+(5) **stopping** (reflect on failure + an `after N tries` guard). Then the
+**human gates** and the **git strategy** (default: branch + commit when done,
+never push to `main`; ask if they want a PR or a worktree). Offer the defaults
+inline so a confident user can accept everything at once.
+
 ## Vocabulary (the whole language)
 
 ```
