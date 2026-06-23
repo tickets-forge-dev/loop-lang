@@ -16,6 +16,31 @@
 
 ---
 
+<p align="center">
+  <a href="https://loopflow.live"><b>📖 Read the tutorial → loopflow.live</b></a>
+</p>
+
+<p align="center">
+  <a href="https://loopflow.live">Tutorial</a> ·
+  <a href="https://loopflow.live/workshop.html">Workshop</a> ·
+  <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md">Manual</a> ·
+  <a href="https://loopflow.live/keywords/index.html">Keyword reference</a>
+</p>
+
+## Quickstart
+
+```bash
+npx @loop-lang/loop init      # installs the /loopflow skill + AGENTS.md
+```
+
+Then, in a Claude Code chat:
+
+```
+/loopflow fix the failing test — done when the suite passes
+```
+
+It plans → acts → observes, reflects on a red test, and stops only when the check is green — never pushing to `main`. Full walkthrough at **[loopflow.live](https://loopflow.live)**.
+
 ## Why
 
 AI writes the code now. But you're still the conductor — kicking off manual pass after manual pass: *"fix the security issues", "now refactor", "now fix the UI."* Even strong methods leave you iterating by hand, in layers, forever.
@@ -79,53 +104,9 @@ pipeline "ship feature":
     a human reviews before stopping
 ```
 
-## Finishing passes: `also`
+## Compose loops
 
-Tack lightweight extra operations onto a loop — they run in order *after* the goal is
-met (and are skipped if it fails). Polish, security check, docs — the stuff you'd
-otherwise forget:
-
-```loop
-loop "fix billing":
-  goal: settings save with an apostrophe
-  done when the test "billing.spec.ts::apostrophe" passes
-  each cycle: plan, then act, then observe
-  also: polish the code, run a security check, update the docs
-```
-
-Each is a policy-gated Claude Code pass. When one needs its own verification, promote it
-to a full `stage` instead.
-
-## Chaining loops across files: `flow`
-
-A `flow` sequences loop files, passing the text result of each one forward as context to
-the next. Each step runs the whole file; a step that fails stops the chain:
-
-```loop
-flow "ship":
-  run "build.loop"
-  then run "test.loop"
-  then run "deploy.loop":
-    a human approves first
-```
-
-The result of `build.loop` is automatically handed to `test.loop` (text-only). Use
-`with the result of <name>` to reference a specific step's output explicitly.
-
-## Iterating over a plan: `for each`
-
-Inside a `flow`, `for each` reads a list from a YAML or Markdown file and runs a template
-once per entry — the item's text becomes the template's context:
-
-```loop
-flow "deliver":
-  for each item in "plan.yaml":
-    run "item-template.loop"
-```
-
-Each entry in `plan.yaml` triggers one full run of `item-template.loop` with that entry's
-text as context. A failed item pauses the flow and asks whether to continue or stop.
-See [`examples/foreach/`](examples/foreach/) for a full working bundle.
+Compose loops into **pipelines** (stages in order, fail-fast), chain whole files with **`flow`**, and fan out over a plan with **`for each`** — humans wired in where judgment lives. Full grammar with worked examples: the [tutorial](https://loopflow.live) and the [manual](docs/MANUAL.md).
 
 ## The vocabulary (~15 words — learn it once)
 
@@ -173,27 +154,6 @@ Describe work and it writes the `.loop`; name a `.loop` file and it runs the loo
 human gates right in the chat. Copy `.claude/skills/loopflow/` to `~/.claude/skills/` to use it
 in any repo (it's already active inside this one).
 
-## Methods are libraries, not syntax
-
-A method like **BMAD** is just a `.loop` file in the standard library. The core is method-agnostic; `use the BMAD method` pulls in a preset, and your own method is a fork. Sharing a method is the whole flywheel.
-
-## How it runs
-
-Each node maps to a Claude Code invocation:
-
-| Node | What happens |
-|---|---|
-| `plan` | Claude Code, plan-only, scoped to your `look at` context |
-| `act` | Claude Code headless; edits gated by your policy |
-| `observe` | runs the verify command, captures pass/fail |
-| `reflect` | feeds the failure back as context for the next plan |
-| `a human…` | pauses, waits for the person, resumes |
-| `done when` | runtime checks the predicate — you can't fake "done" |
-
-LoopFlow runs natively on Claude Code — no extra infrastructure. The `loop-spec` IR is open,
-so a `.loop` file can also be **consumed by other tooling** built against the contract.
-Native is the default.
-
 ## Project layout
 
 | Package | Purpose |
@@ -221,7 +181,7 @@ Early. v1 in progress: parser, runtime, VSCode extension, BMAD preset. See the [
 
 ## Built with LoopFlow
 
-LoopFlow ships real software. **Forge** — a ticket-driven implementation platform (hand it a ticket, agents implement it) — is built with LoopFlow, including its **sandbox runner**: isolated, network-less execution of agent-written code. The pipeline that built it is [`examples/forge-sandbox.loop`](examples/forge-sandbox.loop); the walkthrough is the [case study in the tutorial](docs/index.html#workflows).
+LoopFlow ships real software. **Forge** — a ticket-driven implementation platform (hand it a ticket, agents implement it) — is built with LoopFlow, including its **sandbox runner**: isolated, network-less execution of agent-written code. The pipeline that built it is [`examples/forge-sandbox.loop`](examples/forge-sandbox.loop); the walkthrough is the [case study in the tutorial](https://loopflow.live/#workflows).
 
 ## Contributing
 
