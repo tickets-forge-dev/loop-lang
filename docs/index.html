@@ -188,6 +188,7 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
     <li><a href="#what">1 · What is a loop</a></li>
     <li><a href="#today">· You are the loop (today)</a></li>
     <li><a href="#vs">· Prompt vs LoopFlow</a></li>
+    <li><a href="#vsbuiltins">· vs /loop &amp; /goal</a></li>
     <li><a href="#whenuse">· When to reach for LoopFlow</a></li>
     <li class="grp">Get started</li>
     <li><a href="#start">· Getting started</a></li>
@@ -208,6 +209,7 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
     <li><a href="#atoz">13 · A-to-Z</a></li>
     <li class="grp">In practice</li>
     <li><a href="#workflows">· Real workflows</a></li>
+    <li><a href="#byrole">· LoopFlow by role</a></li>
     <li class="grp">Going further</li>
     <li><a href="#methods">14 · Methods are libraries</a></li>
     <li><a href="#git">15 · Git strategy</a></li>
@@ -383,6 +385,27 @@ loop "add API rate limiting":
   after 6 tries: stop and warn "tax fix thrashing"</code></pre>
   <p>Runs the test every cycle. Fails → reflects on why → fixes again. Stops <em>only</em> when the test is green (or warns after 6). Works on a branch, never touches <code class="inl">main</code>. The same file works tomorrow, and a teammate can read exactly what "done" meant.</p>
   <div class="key"><span class="kt">The point</span><ul><li>Prompting asks for an <strong>answer</strong>. A loop guarantees a <strong>result</strong>.</li></ul></div>
+</section>
+
+<!-- vs built-ins -->
+<section id="vsbuiltins">
+  <h2>vs Claude Code's <code class="inl">/loop</code> and <code class="inl">/goal</code> <span class="badge b-basic">why</span></h2>
+  <p>Claude Code already has two looping built-ins — they're useful, and they're not the same tool. <code class="inl">/loop</code> is a <strong>scheduler</strong> (re-run a prompt every few minutes). <code class="inl">/goal</code> is the closest cousin: <strong>keep going until a condition holds</strong>. The catch with <code class="inl">/goal</code> — its condition is judged by a fast model <em>reading the transcript</em>; it can't run your test or open a file. So "done" is what the model <em>says</em>, not a command that <em>passed</em>.</p>
+  <table>
+    <tr><th></th><th><code>/loop</code></th><th><code>/goal</code></th><th>LoopFlow</th></tr>
+    <tr><td>What it's for</td><td>run a prompt on a schedule</td><td>loop until a condition reads true</td><td>a verified, gated, reusable workflow</td></tr>
+    <tr><td>"Done" means</td><td>never — you stop it</td><td>a model judges your condition from the transcript</td><td>a real command passes — <code>done when "pnpm test" passes</code>, can't be faked</td></tr>
+    <tr><td>On failure</td><td>fires again next interval</td><td>next turn; no introspection</td><td><strong>reflect</strong> on the failure, then re-plan (the back-edge)</td></tr>
+    <tr><td>Human gate mid-run</td><td>no</td><td>no — fully autonomous</td><td>yes — <code>a human approves the plan first</code></td></tr>
+    <tr><td>Never push to <code>main</code></td><td>no</td><td>no</td><td>built-in, unconditional</td></tr>
+    <tr><td>Reusable / shareable</td><td>no</td><td>no — ephemeral per session</td><td>a version-controlled <code>.loop</code> — run in any repo, save to your library</td></tr>
+    <tr><td>Multi-step</td><td>—</td><td>one condition</td><td>pipelines, flows, <code>for each</code></td></tr>
+  </table>
+  <div class="key"><span class="kt">When to reach for which</span><ul>
+    <li><code class="inl">/loop</code> — polling and cadence ("check the deploy every 5 minutes").</li>
+    <li><code class="inl">/goal</code> — a quick, throwaway "keep going until it looks done" in this session.</li>
+    <li><strong>LoopFlow</strong> — when "done" must be <em>provable</em>, the loop must self-correct, a human gates the risky step, and you want to keep and reuse the workflow. A <code class="inl">.loop</code> is <code class="inl">/goal</code> with a real check, a retry, a gate, and a file.</li>
+  </ul></div>
 </section>
 
 <!-- when to use -->
@@ -1036,6 +1059,68 @@ pipeline "forge sandbox runner":
   <p><strong>Why a pipeline, not one loop:</strong> a sandbox is only as trustworthy as the stage you trust least. <code class="inl">isolate</code> has to be green before <code class="inl">execute</code> is even attempted — a failing stage halts the rest, so the runner is never "half-isolated." <code class="inl">harden</code> pairs a security suite with a scan and <strong>gates network egress on a human</strong> — the one call I never wanted an agent to make alone. <code class="inl">integrate</code> won't declare done until a real ticket's generated code actually runs inside the box, with me reviewing before it stops.</p>
   <p>Every stage carried its own <code class="inl">done when</code>, so "done" meant a green check, not a vibe — and when the escape test failed, the loop reflected on <em>why</em> and re-planned, instead of me re-prompting from scratch. The whole module is now a single file I re-run whenever the base image changes.</p>
   <span class="cap">examples/forge-sandbox.loop — the real pipeline behind Forge's sandbox executor. Built with LoopFlow, gated where it counts.</span>
+</section>
+
+<!-- by role -->
+<section id="byrole">
+  <h2>LoopFlow by role — where it earns its keep <span class="badge b-inter">examples</span></h2>
+  <p>Anywhere "done" is a command, LoopFlow fits. A few real shapes by role — each a runnable <code class="inl">.loop</code> you'd write in seconds (or have the agent write):</p>
+
+  <h3>Backend</h3>
+  <p>Ship an endpoint against its tests; gate the migration.</p>
+  <pre><code class="loop">loop "add POST /orders":
+  goal: the endpoint creates an order and returns 201
+  done when "pytest tests/api/test_orders.py" passes
+  look at: the orders router and schema, and the last failure
+  ask me before I run a database migration
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 6 tries: stop and warn "orders endpoint stuck"</code></pre>
+
+  <h3>Mobile / frontend</h3>
+  <p>Build a screen until its widget tests are green.</p>
+  <pre><code class="loop">loop "build the login screen":
+  goal: the login screen validates input and matches the spec
+  done when "flutter test test/login_test.dart" passes
+  look at: the login widget and the design spec, and the last failure
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 6 tries: stop and warn "login screen stuck"</code></pre>
+
+  <h3>DevOps</h3>
+  <p>A gated infra change — the scan must pass, and a human approves before it touches staging.</p>
+  <pre><code class="loop">pipeline "harden the staging cluster":
+  stage scan:
+    goal: no high-severity misconfigurations in the manifests
+    done when "kube-score score manifests/" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect, then plan again
+  stage apply:
+    goal: the change is live on staging
+    a human approves the plan first
+    done when "kubectl rollout status deploy/web -n staging" passes</code></pre>
+
+  <h3>QA</h3>
+  <p>Turn a bug report into a reproducing test, then make it pass — "done" is the test, not a vibe.</p>
+  <pre><code class="loop">loop "reproduce + fix BUG-481: coupon makes the total negative":
+  goal: a regression test reproduces the bug, then the fix makes it pass
+  done when "pnpm test cart/coupon" passes
+  look at: the cart total logic and the bug report
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 6 tries: stop and warn "BUG-481 stuck"</code></pre>
+
+  <h3>Security</h3>
+  <p>A scan that must find nothing — save it to your library and run it in every repo.</p>
+  <pre><code class="loop">loop "security pass on the auth module":
+  goal: no high or critical findings in src/auth
+  done when "semgrep --config p/owasp-top-ten --severity=high src/auth" finds nothing
+  also: a security scan
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 6 tries: stop and warn "findings remain"</code></pre>
+
+  <div class="note">Notice the shape is identical across roles: a <strong>goal</strong>, a real <strong><code>done when</code></strong>, the <strong>reflect</strong> back-edge, a <strong>guard</strong>, and a gate where it's risky. Learn it once; it travels to whatever you build.</div>
 </section>
 
 <!-- 14 -->
