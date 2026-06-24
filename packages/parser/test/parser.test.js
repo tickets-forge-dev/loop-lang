@@ -188,3 +188,32 @@ test("models: per-phase overrides all regardless of order", () => {
   const b = parse(`loop "y":\n  goal: g\n  done when "true" passes\n  models: all strong, act fast\n`);
   assert.deepEqual(b.definitions[0].models, { phases: { plan: "strong", act: "fast", reflect: "strong", also: "strong" } });
 });
+
+// ---- skills + memory ----
+
+test("skills + memory: use skills, remember, and a skill predicate", () => {
+  const file = parse(read("skills_memory.loop"));
+  const loop = file.definitions[0];
+  assert.equal(loop.name, "decide whether to cancel the morning run");
+  assert.deepEqual(loop.skills, ["check-weather", "analyze-workout"]);
+  assert.deepEqual(loop.memory, { file: "morning-run.memory.md" });
+  assert.deepEqual(loop.doneWhen, { type: "skill", skill: "workout-review", expect: "approve" });
+});
+
+test("skill predicate: scores N or more carries a minScore", () => {
+  const file = parse(read("email_review.loop"));
+  const loop = file.definitions[0];
+  assert.deepEqual(loop.skills, ["write-email"]);
+  assert.deepEqual(loop.memory, { file: "launch-email.memory.md" });
+  assert.deepEqual(loop.doneWhen, { type: "skill", skill: "email-review", expect: "approve", minScore: 8 });
+});
+
+test("use skills: also accepts 'and' as a separator", () => {
+  const loop = parse('loop "x":\n  goal: g\n  use skills: a and b, c').definitions[0];
+  assert.deepEqual(loop.skills, ["a", "b", "c"]);
+});
+
+test("memory: 'keep a memory in' is an accepted alias", () => {
+  const loop = parse('loop "x":\n  goal: g\n  keep a memory in "notes.md"').definitions[0];
+  assert.deepEqual(loop.memory, { file: "notes.md" });
+});

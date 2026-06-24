@@ -177,6 +177,20 @@
           "description": "Extra finishing passes run in order after the goal is met (e.g. \"polish\", \"run a security check\", \"update the docs\"). Lightweight agent passes; promote to a stage when one needs its own verification.",
           "items": { "type": "string" }
         },
+        "skills": {
+          "type": "array",
+          "description": "Named execution skills the loop may invoke during plan/act (e.g. [\"check-weather\", \"analyze-workout\"]). The runner surfaces them as available capabilities to coordinate, instead of one mega-prompt.",
+          "items": { "type": "string" }
+        },
+        "memory": {
+          "description": "Cross-run memory: a markdown file the loop reads on start (its lessons feed the first plan) and appends an outcome entry to on stop.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["file"],
+          "properties": {
+            "file": { "type": "string", "description": "Markdown file, resolved relative to the loop file." }
+          }
+        },
         "planSource": {
           "description": "Where the `plan` step gets its plan. Default (omitted) = the agent generates it. \"file\" reads the plan from a file (`plan from \"<path>\"`), so the loop executes a plan you control. The `type` enum is open to future sources (a URL, a command).",
           "type": "object",
@@ -216,11 +230,19 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["test", "command", "human"]
+          "enum": ["test", "command", "human", "skill"]
         },
         "target": {
           "type": "string",
           "description": "For type=test: the test id, e.g. \"billing.spec.ts::apostrophe\"."
+        },
+        "skill": {
+          "type": "string",
+          "description": "For type=skill: the review skill name. It is invoked to judge the goal and return an approved/score verdict (\"bridge the abstract to the verifiable\")."
+        },
+        "minScore": {
+          "type": "integer",
+          "description": "For type=skill: when present (\"scores N or more\"), the verdict passes only when the skill's numeric score is at least this. Absent means a plain approve/reject."
         },
         "command": {
           "type": "string",
@@ -228,8 +250,8 @@
         },
         "expect": {
           "type": "string",
-          "enum": ["exit-zero", "empty"],
-          "description": "For type=command: \"empty\" encodes \"finds nothing\" (no stdout). Defaults to exit-zero.",
+          "enum": ["exit-zero", "empty", "approve"],
+          "description": "For type=command: \"empty\" encodes \"finds nothing\" (no stdout); defaults to exit-zero. For type=skill: \"approve\" (the verdict must be approving).",
           "default": "exit-zero"
         },
         "description": {

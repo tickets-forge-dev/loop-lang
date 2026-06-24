@@ -104,13 +104,34 @@ pipeline "ship feature":
     a human reviews before stopping
 ```
 
+## Skills and memory
+
+Two knobs make a loop coordinate proven work and learn over time:
+
+```loop
+loop "decide whether to cancel the morning run":
+  goal: a clear go / no-go call the runner trusts
+  use skills: check-weather, analyze-workout     # coordinate battle-tested skills
+  remember in "morning-run.memory.md"            # cross-run history + lessons learned
+  each cycle: plan, then act, then observe
+  done when the skill "workout-review" approves   # bridge the abstract to the verifiable
+```
+
+- **`use skills:`** names skills the loop may invoke while planning and acting — compose
+  proven skills instead of one mega-prompt (skill-driven development).
+- **`done when the skill "…" approves`** (or `scores N or more`) lets a review skill verify
+  a goal that isn't a test or command — a good email, a sound design, a sensible call.
+- **`remember in "<file>"`** gives the loop a markdown memory: it reads past lessons into its
+  first plan and appends an outcome entry when it stops. `reflect` is within-run memory;
+  `remember` is its across-run counterpart. See [`examples/skills_memory.loop`](examples/skills_memory.loop).
+
 ## Compose loops
 
 Compose loops into **pipelines** (stages in order, fail-fast), chain whole files with **`flow`**, and fan out over a plan with **`for each`** — humans wired in where judgment lives. Full grammar with worked examples: the [tutorial](https://loopflow.live) and the [manual](docs/MANUAL.md).
 
 ## The vocabulary (~15 words — learn it once)
 
-`pipeline` · `stage` · `loop` · `flow` · `for each … in …` · `run … then …` · `each cycle` · `goal` · `done when` · `look at` · `allow…/ask me before…` · `also` · `when…` · `reflect` · `a human…` · `stop` · `use` · `schedule` · `git`
+`pipeline` · `stage` · `loop` · `flow` · `for each … in …` · `run … then …` · `each cycle` · `goal` · `done when` · `look at` · `allow…/ask me before…` · `also` · `use skills` · `remember in` · `when…` · `reflect` · `a human…` · `stop` · `use` · `schedule` · `git`
 
 Power comes from **composition**, not keyword count.
 

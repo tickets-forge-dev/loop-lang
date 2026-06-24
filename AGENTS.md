@@ -19,6 +19,16 @@ bug fixes with a test, refactors gated by a check, an epic broken into stories, 
 migration with a verification step. Don't write one for a one-off question or a trivial
 edit — just do those directly.
 
+Before building a loop, run the four-condition test — build one only when all four hold:
+
+1. **Does the task repeat?** A one-time task is just a normal prompt.
+2. **Is there a clear definition of "done"?** You must be able to verify completion — a
+   `done when` predicate (a test, a command, or a review skill). No check, no loop.
+3. **Can you afford the iterations?** A loop re-prompts itself until done; that costs tokens.
+   Keep the `done when` check fast and add an `after N tries` thrash guard.
+4. **Does the loop have the tools to verify itself?** It needs a way to implement *and* check
+   its own work — the predicate command or the review skill must actually be runnable.
+
 **Interview the user before writing it.** Walk the five decisions, asking the
 high-leverage questions and offering defaults for the rest: (1) the **goal**;
 (2) the **`done when`** check (test / command / scan finds-nothing / human);
@@ -48,6 +58,8 @@ look at: <files>, and the last failure   context the agent reads before acting (
 allow edits automatically, but ask me before <classes>   action policy
 each cycle: plan, then act, then observe   the repeated steps (any subset, in order)
 also: <pass>, <pass>      extra finishing passes run after the goal is met
+use skills: <a>, <b>      named skills the loop may invoke during plan/act
+remember in "<file.md>"   cross-run memory: read lessons on start, append an outcome on stop
 reflect                   turn a failure into context for the next plan (the back-edge)
 
 when it passes and the goal is met: stop
@@ -72,10 +84,48 @@ done when the test "billing.spec.ts::apostrophe" passes   # a named test
 done when "pnpm test" passes                               # a shell command, exit 0
 done when "semgrep --severity=high" finds nothing          # a shell command, empty output
 done when a human confirms "looks right at 375px"          # a human check
+done when the skill "email-review" approves                # a review skill: approved / not
+done when the skill "email-review" scores 8 or more        # a review skill: numeric threshold
 ```
 
 The command in a predicate runs in the user's shell with their privileges (like an npm
 script). It IS meant to be a real command. Prefer a fast, deterministic check.
+
+The **skill** predicate bridges an abstract goal to a verifiable one: when "done" isn't a
+test or a command (a good email, a sound design), have a review skill return an
+approved/rejected verdict or a numeric score. Build that review skill manually first and
+confirm it judges well, then wire it in as the loop's check.
+
+### `use skills` — coordinate proven skills
+
+Instead of one giant prompt, a loop can name skills it may call while planning and acting:
+
+```loop
+loop "decide whether to cancel the morning run":
+  goal: a clear go / no-go call the runner trusts
+  use skills: check-weather, analyze-workout
+  done when the skill "workout-review" approves
+```
+
+This is **skill-driven development**: build and battle-test each skill on its own first,
+then have the loop coordinate them. Don't invent a loop around skills that don't exist yet —
+prove the skill manually, then wire it in (as an execution skill via `use skills:`, or as a
+verifier via `done when the skill "…" approves`). See `examples/skills_memory.loop`.
+
+### `remember in` — cross-run memory
+
+A loop forgets everything between runs unless you give it a memory file. `remember in` makes
+the loop read the file's lessons into its first plan and append a dated outcome entry when it
+stops — so it improves run over run instead of repeating mistakes.
+
+```loop
+loop "...":
+  goal: ...
+  remember in "morning-run.memory.md"
+```
+
+`reflect` is *within-run* memory (a failure feeds the next plan); `remember` is its
+*across-run* counterpart. The file is plain markdown — readable and editable by a human.
 
 ### `flow` — chaining loops across files
 

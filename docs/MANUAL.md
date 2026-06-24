@@ -216,6 +216,8 @@ BMAD flow (discover → design → for each story) as one example method.
 | `allow edits automatically, but ask me before <classes>` | Action policy. Auto classes run unattended; confirm classes pause for you. Classes: `edit`, `migrate`, `push`, `deploy`, `delete`. |
 | `each cycle: plan, then act, then observe` | The repeated steps — any subset of `plan` / `act` / `observe`, in order. |
 | `also: <pass>, <pass>` | Extra finishing passes run **after** the goal is met (skipped on failure). |
+| `use skills: <a>, <b>` | Named skills the loop may invoke during `plan`/`act` — coordinate proven skills instead of one mega-prompt. |
+| `remember in "<file.md>"` | Cross-run memory: read the file's lessons into the first plan, append a dated outcome entry on stop. (`keep a memory in "<file>"` also works.) |
 | `when it passes and the goal is met: stop` | Success transition. |
 | `when it fails: reflect on <focus>, then plan again` | The feedback edge — reflect, then re-enter the cycle. |
 | `when blocked: ask a human` | Pause for a person when stuck. |
@@ -237,10 +239,18 @@ done when the test "billing.spec.ts::apostrophe" passes   # a named test
 done when "pnpm test" passes                               # shell command, exit 0 (`succeeds` also works)
 done when "semgrep --severity=high" finds nothing          # shell command, empty stdout
 done when a human confirms "looks right at 375px"          # a human check
+done when the skill "email-review" approves                # a review skill: approved / not
+done when the skill "email-review" scores 8 or more        # a review skill: numeric threshold
 ```
 
 The command runs in your shell with your privileges (like an npm script). Keep it fast
 and deterministic.
+
+The **skill** predicate bridges an abstract goal to a verifiable one. When "done" isn't a
+test or a command — a good email, a sound design, a sensible go/no-go call — a review skill
+returns an approved/rejected verdict or a 0–10 score, and the loop treats that as its check.
+Build the review skill manually first and confirm it judges well, then wire it in. See
+`examples/skills_memory.loop` and `examples/email_review.loop`.
 
 ### Config tier (top of file)
 

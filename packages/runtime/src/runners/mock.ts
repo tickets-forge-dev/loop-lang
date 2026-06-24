@@ -1,9 +1,10 @@
-import type { ActInput, ActResult, PlanInput, ReflectInput, Runner } from "../types.js";
+import type { ActInput, ActResult, PlanInput, ReflectInput, Runner, SkillVerifyInput } from "../types.js";
 
 export interface MockRunnerOptions {
   planText?: (input: PlanInput) => string;
   act?: (input: ActInput) => ActResult;
   reflectText?: (input: ReflectInput) => string;
+  skill?: (input: SkillVerifyInput) => { passed: boolean; detail: string };
 }
 
 /**
@@ -15,6 +16,7 @@ export class MockRunner implements Runner {
   public readonly planCalls: PlanInput[] = [];
   public readonly actCalls: ActInput[] = [];
   public readonly reflectCalls: ReflectInput[] = [];
+  public readonly skillCalls: SkillVerifyInput[] = [];
 
   constructor(private opts: MockRunnerOptions = {}) {}
 
@@ -29,5 +31,9 @@ export class MockRunner implements Runner {
   async reflect(input: ReflectInput): Promise<string> {
     this.reflectCalls.push(input);
     return this.opts.reflectText?.(input) ?? `reflection (${input.focus ?? "general"})`;
+  }
+  async runSkill(input: SkillVerifyInput): Promise<{ passed: boolean; detail: string }> {
+    this.skillCalls.push(input);
+    return this.opts.skill?.(input) ?? { passed: true, detail: `${input.skill}: APPROVED` };
   }
 }

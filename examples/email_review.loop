@@ -1,0 +1,11 @@
+# Skill-as-verifier with a numeric threshold: an email isn't "done" until a review
+# skill scores it 8 or more out of 10.
+loop "draft the launch announcement email":
+  goal: a launch email that is clear, on-brand, and ready to send
+  use skills: write-email
+  remember in "launch-email.memory.md"
+  each cycle: plan, then act, then observe
+  done when the skill "email-review" scores 8 or more
+  when it fails: reflect on the lowest-scoring dimension, then plan again
+  a human reviews before stopping
+  after 5 tries: stop and warn "review won't reach 8 — needs a human"

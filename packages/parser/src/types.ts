@@ -67,6 +67,10 @@ export interface Loop {
   cycle: CycleStep[];
   /** Extra finishing passes run after the goal is met (e.g. "polish", "run a security check"). */
   also?: string[];
+  /** Named execution skills the loop may invoke during plan/act (e.g. ["check-weather"]). */
+  skills?: string[];
+  /** A markdown file the loop reads on start and appends to on stop — cross-run memory. */
+  memory?: LoopMemory;
   planSource?: PlanSource;
   humanPlan?: boolean;
   humanReviewBeforeStop?: boolean;
@@ -88,6 +92,11 @@ export interface Policy {
   confirm?: string[];
 }
 
+export interface LoopMemory {
+  /** Markdown file, resolved relative to the loop file. */
+  file: string;
+}
+
 /**
  * Where a loop's `plan` step gets its plan. Omitted = the agent writes the plan.
  * `plan from "<path>"` reads the plan from a file instead (e.g. a hand-written
@@ -102,7 +111,8 @@ export interface PlanSource {
 export type Predicate =
   | { type: "test"; target: string }
   | { type: "command"; command: string; expect?: "exit-zero" | "empty" }
-  | { type: "human"; description: string };
+  | { type: "human"; description: string }
+  | { type: "skill"; skill: string; expect: "approve"; minScore?: number };
 
 export interface Transition {
   on: "pass" | "fail" | "blocked" | "attempts";

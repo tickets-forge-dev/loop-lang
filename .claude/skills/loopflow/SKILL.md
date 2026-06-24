@@ -40,6 +40,8 @@ look at: <files>, and the last failure   context to read before acting
 allow edits automatically, but ask me before <classes>   action policy
 each cycle: plan, then act, then observe   the repeated steps (any subset, in order)
 also: <pass>, <pass>      extra finishing passes after the goal is met
+use skills: <a>, <b>      named skills the loop may invoke during plan/act
+remember in "<file.md>"   cross-run memory: read lessons on start, append an outcome on stop
 when it fails: reflect on <focus>, then plan again
 when it passes and the goal is met: stop
 when blocked: ask a human
@@ -63,6 +65,8 @@ done when the test "file.spec.ts::name" passes
 done when "pnpm test" passes              # shell command, exit 0
 done when "semgrep --severity=high" finds nothing   # empty output
 done when a human confirms "looks right"
+done when the skill "email-review" approves         # a review skill: approved / not
+done when the skill "email-review" scores 8 or more # a review skill: numeric threshold
 ```
 
 Rules: indentation is structural (two spaces); `loop`/`pipeline` at column 0; comments
@@ -183,10 +187,19 @@ the user explicitly asks for the headless runner.)
 1. **Read the file.** (Or, if the `loop` CLI is installed: `loop parse <file> --json` to
    get the structured spec.)
 2. **Execute the loop's semantics, narrating each step:**
+   - **memory** — if the loop has `remember in "<file>"`, read that file first (skip if it
+     doesn't exist yet) and let its lessons inform your first plan. When the loop stops,
+     append a dated entry: `## <date> — <outcome>` with the goal, attempts, and the run's
+     lesson (your last reflection). This is how the loop improves across runs.
    - **plan** — inspect the `look at:` files; decide the smallest change toward the goal.
+     If the loop declares `use skills:`, you may invoke those named skills (via the Skill
+     tool) to do the work — coordinate them rather than re-deriving everything inline.
    - **act** — make the edits. Honor the policy: for `ask me before <X>`, ask the user
      before doing X (migrations, pushes, etc.); auto classes you may do directly.
-   - **observe** — run the `done when` command (or named test) and read pass/fail.
+   - **observe** — run the `done when` check and read pass/fail. For a command or named test,
+     run it. For `the skill "<name>" approves` / `scores N or more`, invoke that review skill
+     on the work and read back its verdict (approved/rejected, or a score vs. the threshold) —
+     this is how an abstract goal gets a verifiable check.
    - on **fail** → **reflect** on why (use the failure output), then **plan again** (the
      back-edge). Repeat.
    - **stop** when `done when` passes, or after the thrash guard's N tries (state the

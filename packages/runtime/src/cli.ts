@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync, writeFileSync, readdirSync } from "node:fs";
+import { appendFileSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { dirname, resolve, relative } from "node:path";
 import { createInterface } from "node:readline";
 import { parse } from "@loop-lang/parser";
@@ -48,6 +48,12 @@ function render(e: LoopEvent): string {
       return `    ↺ back to ${e.to}`;
     case "also":
       return `    + also: ${e.action} → ${e.ok ? "done" : "skipped"}`;
+    case "memory-read":
+      return `↻ memory: read ${e.file} (${e.bytes}b)`;
+    case "memory-write":
+      return `    ▎ memory: wrote ${e.file}`;
+    case "skill-verify":
+      return `    = skill "${e.skill}" → ${e.passed ? "APPROVED" : "rejected"}${e.detail ? ` — ${e.detail.split("\n").pop()!.slice(0, 80)}` : ""}`;
     case "human":
       return `    ? human ${e.kind}: ${e.prompt}`;
     case "stop":
@@ -133,6 +139,8 @@ async function main() {
     Promise.resolve(parse(readFileSync(resolve(dir, ref), "utf8")));
   const readText = (ref: string, dir: string) =>
     Promise.resolve(readFileSync(resolve(dir, ref), "utf8"));
+  const writeText = (ref: string, content: string, dir: string) =>
+    Promise.resolve(appendFileSync(resolve(dir, ref), content, "utf8"));
   const src = readFileSync(path, "utf8");
   let file = parse(src);
 
@@ -187,6 +195,7 @@ async function main() {
       baseDir: target,
       loadFile,
       readText,
+      writeText,
       flowStack: [path],
       modelPolicy: file.config?.models,
       cliModel: model,
@@ -207,6 +216,7 @@ async function main() {
     baseDir: target,
     loadFile,
     readText,
+    writeText,
     flowStack: [path],
     modelPolicy: file.config?.models,
     cliModel: model,

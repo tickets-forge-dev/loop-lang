@@ -14,6 +14,9 @@ export type LoopEvent =
   | { type: "reflect"; focus?: string; text: string }
   | { type: "loop-back"; to: string }
   | { type: "also"; action: string; ok: boolean; detail?: string }
+  | { type: "memory-read"; file: string; bytes: number }
+  | { type: "memory-write"; file: string; bytes: number }
+  | { type: "skill-verify"; skill: string; passed: boolean; detail: string }
   | { type: "human"; kind: "plan" | "review" | "gate" | "confirm" | "ask"; prompt: string; answer?: string }
   | { type: "stop"; reason: StopReason; warn?: string }
   | { type: "loop-end"; name: string | null; satisfied: boolean }
@@ -39,6 +42,10 @@ export interface PlanInput {
   reflection: string | null;
   /** Text summary handed from the previous step of a flow (set by executeFlow). */
   upstream?: string;
+  /** Named execution skills the loop may use (the loop's `use skills:` list). */
+  skills?: string[];
+  /** Lessons from past runs, read from the loop's memory file. */
+  memory?: string;
   baseDir: string;
   /** Model alias/id for this call; set by the engine from the model policy. */
   model?: string;
@@ -48,9 +55,24 @@ export interface ActInput {
   goal: string;
   plan: string;
   allowedClasses: string[];
+  /** Named execution skills the loop may use while acting. */
+  skills?: string[];
   baseDir: string;
   /** Model alias/id for this call; set by the engine from the model policy. */
   model?: string;
+}
+
+export interface SkillVerifyInput {
+  /** The review skill to invoke. */
+  skill: string;
+  goal: string;
+  /** The work to judge — typically the last act summary. */
+  context: string;
+  /** "approve" requires an approving verdict. */
+  expect: "approve";
+  /** When set, the verdict passes only if the skill's numeric score is at least this. */
+  minScore?: number;
+  baseDir: string;
 }
 
 export interface ActResult {
@@ -72,6 +94,8 @@ export interface Runner {
   plan(input: PlanInput): Promise<string>;
   act(input: ActInput): Promise<ActResult>;
   reflect(input: ReflectInput): Promise<string>;
+  /** Invoke a review skill to judge the goal — the `done when the skill "X" approves` predicate. */
+  runSkill?(input: SkillVerifyInput): Promise<{ passed: boolean; detail: string }>;
 }
 
 export interface VerifyResult {
@@ -108,8 +132,10 @@ export interface RunOptions {
   hardCap?: number;
   /** Loads + parses a referenced .loop file. Required only when a `flow` runs. */
   loadFile?(path: string, baseDir: string): Promise<import("@loop-lang/parser").LoopFile>;
-  /** Reads the raw text of a `for each` source data file. Required only when a flow uses `for each`. */
+  /** Reads the raw text of a `for each` source data file, or a loop's memory file. */
   readText?(path: string, baseDir: string): Promise<string>;
+  /** Appends to a loop's memory file. Required only when a loop declares `remember in`. */
+  writeText?(path: string, content: string, baseDir: string): Promise<void>;
   /** Upstream handoff text injected into each plan step (set by executeFlow). */
   upstream?: string;
   /** Resolved file paths currently executing — for flow cycle detection. */
