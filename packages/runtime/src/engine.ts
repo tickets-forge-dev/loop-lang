@@ -66,7 +66,44 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
   let reflection: string | null = null;
   let lastPlan = "";
   let lastOutput = "";
+  let lastActSummary = "";
   let attempts = 0;
+  // Reflections gathered this run — the last one becomes the memory "lesson".
+  const reflections: string[] = [];
+
+  // Cross-run memory: read the markdown file (if any) so past lessons feed the first plan.
+  const memoryFile = loop.memory?.file;
+  let memoryIn: string | undefined;
+  if (memoryFile && opts.readText) {
+    try {
+      memoryIn = await opts.readText(memoryFile, opts.baseDir);
+      emit(opts, { type: "memory-read", file: memoryFile, bytes: memoryIn.length });
+    } catch {
+      memoryIn = undefined; // first run: the memory file doesn't exist yet
+    }
+  }
+
+  const writeMemory = async (satisfied: boolean, reason: StopReason): Promise<void> => {
+    if (!memoryFile || !opts.writeText) return;
+    const lesson = reflections.length
+      ? reflections[reflections.length - 1]
+      : satisfied
+        ? "Goal met cleanly; no correction needed."
+        : "No reflection was recorded.";
+    const date = new Date().toISOString().slice(0, 10);
+    const tries = `${attempts} ${attempts === 1 ? "try" : "tries"}`;
+    const entry =
+      [
+        "",
+        `## ${date} — ${reason}`,
+        `- goal: ${loop.goal}`,
+        `- outcome: ${satisfied ? "satisfied" : "not satisfied"} after ${tries}`,
+        `- lesson: ${lesson}`,
+        "",
+      ].join("\n");
+    await opts.writeText(memoryFile, entry, opts.baseDir);
+    emit(opts, { type: "memory-write", file: memoryFile, bytes: entry.length });
+  };
   // Confirm-class grants are asked once and remembered for the loop's lifetime.
   const grantedConfirm = new Set<string>();
   let confirmAsked = false;
@@ -81,7 +118,8 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
       ? ["plan", ...(loop.cycle as CycleNode[])]
       : (loop.cycle as CycleNode[]);
 
-  const finish = (satisfied: boolean, reason: StopReason, warn?: string): LoopOutcome => {
+  const finish = async (satisfied: boolean, reason: StopReason, warn?: string): Promise<LoopOutcome> => {
+    await writeMemory(satisfied, reason);
     emit(opts, { type: "stop", reason, ...(warn ? { warn } : {}) });
     emit(opts, { type: "loop-end", name: loop.name, satisfied });
     return { satisfied, reason, attempts, summary: lastOutput };
@@ -113,6 +151,8 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
             includeLastFailure,
             reflection,
             upstream: opts.upstream,
+            skills: loop.skills,
+            memory: memoryIn,
             baseDir: opts.baseDir,
             model: pick("plan"),
           });
@@ -147,14 +187,37 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
           goal: loop.goal,
           plan: lastPlan,
           allowedClasses,
+          skills: loop.skills,
           baseDir: opts.baseDir,
           model: pick("act"),
         });
+        lastActSummary = res.summary;
         if (res.blocked) blocked = true;
         emit(opts, { type: "node-exit", node: step, attempt: attempts, ok: !res.blocked, detail: res.summary });
       } else {
         // observe
-        const v = await opts.verifier.verify(loop.doneWhen, opts.baseDir);
+        let v: { passed: boolean; output: string };
+        if (loop.doneWhen?.type === "skill") {
+          // Skill predicate: a review skill judges the goal (approved / score) — the
+          // "bridge the abstract to the verifiable" path, routed to the runner not the shell.
+          if (!opts.runner.runSkill) {
+            throw new Error(
+              `loop "${loop.name ?? ""}" verifies with the skill "${loop.doneWhen.skill}" but the runner has no runSkill`
+            );
+          }
+          const r = await opts.runner.runSkill({
+            skill: loop.doneWhen.skill,
+            goal: loop.goal,
+            context: lastActSummary,
+            expect: loop.doneWhen.expect,
+            minScore: loop.doneWhen.minScore,
+            baseDir: opts.baseDir,
+          });
+          emit(opts, { type: "skill-verify", skill: loop.doneWhen.skill, passed: r.passed, detail: r.detail });
+          v = { passed: r.passed, output: r.detail };
+        } else {
+          v = await opts.verifier.verify(loop.doneWhen, opts.baseDir);
+        }
         observed = true;
         passed = v.passed;
         observeOutput = v.output;
@@ -177,9 +240,17 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
       const stop = await applyActions(t.do, loop, opts, {
         goalMet,
         output: observeOutput,
-        setReflection: (r) => (reflection = r),
+        setReflection: (r) => {
+          reflection = r;
+          reflections.push(r);
+        },
       });
-      if (stop) return stop;
+      if (stop) {
+        // applyActions builds the terminal outcome directly (it owns the warn/veto logic),
+        // so record memory here rather than in finish().
+        await writeMemory(stop.satisfied, stop.reason);
+        return stop;
+      }
       continue; // re-enter the cycle (the back-edge)
     }
 

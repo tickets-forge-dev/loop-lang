@@ -47,6 +47,12 @@ export class ShellVerifier implements Verifier {
       return { passed: false, output: `human check required: ${predicate.description}` };
     }
 
+    if (predicate.type === "skill") {
+      // The engine routes skill predicates to the runner's runSkill before reaching here;
+      // if one arrives, the runner can't judge it, so it stays unsatisfied.
+      return { passed: false, output: `skill review required: ${predicate.skill}` };
+    }
+
     let command: string;
     let expectEmpty = false;
     if (predicate.type === "test") {

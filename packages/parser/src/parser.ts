@@ -115,6 +115,14 @@ function parsePredicate(s: string, lineNo: number): Predicate {
   m = text.match(/^a human confirms\s+"([^"]+)"$/i);
   if (m) return { type: "human", description: m[1] };
 
+  // the skill "X" scores N or more  -> skill verdict with a numeric threshold
+  m = text.match(/^the skill\s+"([^"]+)"\s+scores\s+(\d+)(?:\s+or more)?$/i);
+  if (m) return { type: "skill", skill: m[1], expect: "approve", minScore: parseInt(m[2], 10) };
+
+  // the skill "X" approves  -> skill verdict (approved / not)
+  m = text.match(/^the skill\s+"([^"]+)"\s+approves$/i);
+  if (m) return { type: "skill", skill: m[1], expect: "approve" };
+
   throw new ParseError(`could not understand "done when ${text}"`, lineNo);
 }
 
@@ -323,6 +331,17 @@ function interpretLoopBody(name: string | null, body: Line[]): LoopBodyResult {
         .split(",")
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
+      i++; continue;
+    }
+    if ((m = t.match(/^use skills?:\s*(.+)$/i))) {
+      loop.skills = m[1]
+        .split(/,|\band\b/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      i++; continue;
+    }
+    if ((m = t.match(/^(?:remember|keep a memory)\s+in\s+"([^"]+)"$/i))) {
+      loop.memory = { file: m[1].trim() };
       i++; continue;
     }
     if ((m = t.match(/^plan from "([^"]+)"$/i))) {

@@ -6,7 +6,7 @@ export { CliHumanIO, ScriptedHumanIO } from "./human.js";
 export type { ScriptedAnswers } from "./human.js";
 export { MockRunner } from "./runners/mock.js";
 export type { MockRunnerOptions } from "./runners/mock.js";
-export { ClaudeCodeRunner, interpretStreamLine, buildPlanPrompt, claudeArgs } from "./runners/claudeCode.js";
+export { ClaudeCodeRunner, interpretStreamLine, buildPlanPrompt, claudeArgs, parseSkillVerdict } from "./runners/claudeCode.js";
 export type { ClaudeCodeRunnerOptions, AgentNode } from "./runners/claudeCode.js";
 export { IpcHumanIO } from "./ipc.js";
 export type { HumanRequest } from "./ipc.js";

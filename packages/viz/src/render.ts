@@ -118,7 +118,7 @@ function chip(x,y,text,color){var w=7.2*text.length+14;
   return [V("rect",{x:x,y:y,width:w,height:17,rx:8.5,fill:"none",stroke:color,"stroke-width":1})
    +E("text",{x:x+w/2,y:y+12,"text-anchor":"middle",class:"chip",fill:color},esc(text)),w];
 }
-function doneLabel(dw){if(!dw)return "awaiting human";if(dw.type==="test")return "test "+dw.target;if(dw.type==="command")return (dw.expect==="empty"?"empty: ":"")+dw.command;return "human: "+(dw.description||"");}
+function doneLabel(dw){if(!dw)return "awaiting human";if(dw.type==="test")return "test "+dw.target;if(dw.type==="command")return (dw.expect==="empty"?"empty: ":"")+dw.command;if(dw.type==="skill")return "skill "+dw.skill+(dw.minScore!==undefined?" ≥"+dw.minScore:"");return "human: "+(dw.description||"");}
 function loopRow(loop,ox,oy){
   var s="",cyc=loop.cycle&&loop.cycle.length?loop.cycle:["plan","act","observe"],xs=[],i;
   for(i=0;i<cyc.length;i++)xs.push(ox+i*(NW+GAP));

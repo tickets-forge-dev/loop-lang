@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import type { ActInput, ActResult, PlanInput, ReflectInput, Runner } from "../types.js";
+import type { ActInput, ActResult, PlanInput, ReflectInput, Runner, SkillVerifyInput } from "../types.js";
 
 /** Maps loop action-classes to Claude Code tool grants. Read tools are always allowed. */
 const READ_TOOLS = ["Read", "Grep", "Glob"];
@@ -58,6 +58,8 @@ export function buildPlanPrompt(input: PlanInput): string {
   const ctx: string[] = [];
   if (input.files.length) ctx.push(`Relevant context (each item is a file or a description of one — locate the actual file(s) first): ${input.files.join(", ")}.`);
   if (input.includeLastFailure) ctx.push("Account for the most recent failure.");
+  if (input.skills?.length) ctx.push(`You may use these skills to do the work: ${input.skills.join(", ")}.`);
+  if (input.memory) ctx.push(`Lessons from past runs (do not repeat these mistakes):\n${input.memory}`);
   if (input.reflection) ctx.push(`From the last attempt: ${input.reflection}`);
   if (input.upstream) ctx.push(`From the previous step in the flow:\n${input.upstream}`);
   return [
@@ -194,11 +196,14 @@ export class ClaudeCodeRunner implements Runner {
       for (const t of CLASS_TOOLS[cls] ?? []) tools.add(t);
       if (cls === "edit") canEdit = true;
     }
+    // Grant the Skill tool so the agent can actually invoke the loop's `use skills:` skills.
+    if (input.skills?.length) tools.add("Skill");
     const mode = canEdit ? "acceptEdits" : "default";
     const prompt = [
       `Goal: ${input.goal}.`,
       `Execute this plan, making the smallest coherent change:`,
       input.plan,
+      ...(input.skills?.length ? [`You may use these skills: ${input.skills.join(", ")}.`] : []),
       `Only use the capabilities you have been granted.`,
     ].join("\n");
     const summary = await this.run(
@@ -221,6 +226,45 @@ export class ClaudeCodeRunner implements Runner {
     ].join("\n");
     return this.run(prompt, ["--permission-mode", "plan", "--allowedTools", ...READ_TOOLS], input.baseDir, "reflect", input.model);
   }
+
+  async runSkill(input: SkillVerifyInput): Promise<{ passed: boolean; detail: string }> {
+    const verdictLine =
+      input.minScore !== undefined
+        ? `End with a line exactly "SCORE: N" where N is 0-10. It passes when N >= ${input.minScore}.`
+        : `End with a line exactly "VERDICT: APPROVED" or "VERDICT: REJECTED".`;
+    const prompt = [
+      `Use the "${input.skill}" skill to review this against the goal.`,
+      `Goal: ${input.goal}.`,
+      `What to review:`,
+      input.context || "(no output captured)",
+      verdictLine,
+    ].join("\n");
+    const out = await this.run(
+      prompt,
+      // Grant the Skill tool so the named review skill can actually run.
+      ["--permission-mode", "plan", "--allowedTools", ...READ_TOOLS, "Skill"],
+      input.baseDir,
+      "reflect"
+    );
+    return parseSkillVerdict(out, input.minScore);
+  }
+}
+
+/** Parse a review skill's reply into a pass/fail verdict. Pure + exported for tests. */
+export function parseSkillVerdict(out: string, minScore?: number): { passed: boolean; detail: string } {
+  const detail = out.trim();
+  if (minScore !== undefined) {
+    const m = detail.match(/SCORE:\s*(\d+(?:\.\d+)?)/i);
+    const score = m ? parseFloat(m[1]) : NaN;
+    return { passed: Number.isFinite(score) && score >= minScore, detail };
+  }
+  // Prefer the explicit verdict line we ask for; fall back to a negation-aware heuristic so a
+  // reply like "not approved" isn't misread as an approval.
+  if (/VERDICT:\s*APPROVED/i.test(detail)) return { passed: true, detail };
+  if (/VERDICT:\s*REJECTED/i.test(detail)) return { passed: false, detail };
+  const negated = /\b(not|never|reject\w*|disapprov\w*|denied|deny)\b/i.test(detail);
+  const affirmed = /\bapprove[ds]?\b/i.test(detail) || /\blgtm\b/i.test(detail) || /looks good/i.test(detail);
+  return { passed: affirmed && !negated, detail };
 }
 
 function extractResult(stdout: string): string {

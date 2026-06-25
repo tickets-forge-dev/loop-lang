@@ -27,11 +27,11 @@
       "name": "keyword.control.structure.loop"
     },
     "sections": {
-      "match": "(?i)\\b(goal|done when|look at|each cycle|plan from)\\b",
+      "match": "(?i)\\b(goal|done when|look at|each cycle|plan from|use skills?|remember in|keep a memory in|also)\\b",
       "name": "keyword.other.section.loop"
     },
     "flow": {
-      "match": "(?i)\\b(when|after|reflect|stop|warn|plan|act|observe|tries|run|then|each|in)\\b",
+      "match": "(?i)\\b(when|after|reflect|stop|warn|plan|act|observe|tries|run|then|each|in|the skill|approves|scores|or more)\\b",
       "name": "keyword.control.flow.loop"
     },
     "human": {

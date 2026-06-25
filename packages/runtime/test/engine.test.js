@@ -477,3 +477,165 @@ test("models: flow sub-file's own models: block is honored (not silently dropped
   assert.equal(runner.actCalls[0].model, "opus", "act should use the sub-file's strong model");
   assert.equal(runner.planCalls[0].model, "haiku", "plan should use the sub-file's fast model");
 });
+
+// ---- skills + memory ----
+
+/** In-memory text store for memory read/write without touching disk. */
+function memStore(initial = {}) {
+  const files = { ...initial };
+  return {
+    files,
+    readText: async (ref) => {
+      if (!(ref in files)) throw new Error("no such file " + ref);
+      return files[ref];
+    },
+    writeText: async (ref, content) => {
+      files[ref] = (files[ref] ?? "") + content;
+    },
+  };
+}
+
+test("memory: lessons are read into the first plan and an entry is appended on stop", async () => {
+  const def = parse(read("skills_memory.loop")).definitions[0];
+  const runner = new MockRunner();
+  const store = memStore({ "morning-run.memory.md": "lesson: light drizzle is fine" });
+  const { events, onEvent } = collect();
+  const outcome = await runDefinition(def, {
+    runner,
+    verifier: new SeqVerifier([true]), // unused; skill predicate routes to runner
+    human: new ScriptedHumanIO(),
+    baseDir: process.cwd(),
+    readText: store.readText,
+    writeText: store.writeText,
+    onEvent,
+  });
+  assert.equal(outcome.satisfied, true);
+  // memory threaded into the first plan
+  assert.match(runner.planCalls[0].memory, /light drizzle is fine/);
+  assert.ok(events.some((e) => e.type === "memory-read"));
+  // an entry was appended on stop
+  assert.ok(events.some((e) => e.type === "memory-write"));
+  assert.match(store.files["morning-run.memory.md"], /## \d{4}-\d{2}-\d{2} — done/);
+  assert.match(store.files["morning-run.memory.md"], /outcome: satisfied/);
+});
+
+test("memory: first run with no file still records an entry on stop", async () => {
+  const def = parse(read("skills_memory.loop")).definitions[0];
+  const runner = new MockRunner();
+  const store = memStore(); // no memory file yet
+  await runDefinition(def, {
+    runner,
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO(),
+    baseDir: process.cwd(),
+    readText: store.readText,
+    writeText: store.writeText,
+  });
+  assert.equal(runner.planCalls[0].memory, undefined, "no memory to thread on a first run");
+  assert.match(store.files["morning-run.memory.md"], /outcome: satisfied/, "memory created on stop");
+});
+
+test("memory: a thrash run records the last reflection as the lesson", async () => {
+  const def = parse(read("skills_memory.loop")).definitions[0];
+  // skill always rejects -> the loop reflects + replans until the thrash guard fires.
+  const runner = new MockRunner({
+    reflectText: () => "the review wanted a firmer reason",
+    skill: (input) => ({ passed: false, detail: `${input.skill}: REJECTED` }),
+  });
+  const store = memStore();
+  const outcome = await runDefinition(def, {
+    runner,
+    verifier: new SeqVerifier([false]),
+    human: new ScriptedHumanIO(),
+    baseDir: process.cwd(),
+    readText: store.readText,
+    writeText: store.writeText,
+  });
+  assert.equal(outcome.satisfied, false);
+  assert.equal(outcome.reason, "thrash");
+  assert.match(store.files["morning-run.memory.md"], /lesson: the review wanted a firmer reason/);
+  assert.match(store.files["morning-run.memory.md"], /## \d{4}-\d{2}-\d{2} — thrash/);
+});
+
+test("skill predicate: routes to runSkill and its verdict drives the loop", async () => {
+  const def = parse(read("skills_memory.loop")).definitions[0];
+  // reject twice, then approve
+  const seq = [false, false, true];
+  let i = 0;
+  const runner = new MockRunner({ skill: (input) => {
+    const passed = seq[Math.min(i++, seq.length - 1)];
+    return { passed, detail: `${input.skill}: ${passed ? "APPROVED" : "REJECTED"}` };
+  }});
+  const store = memStore();
+  const { events, onEvent } = collect();
+  const outcome = await runDefinition(def, {
+    runner,
+    verifier: new SeqVerifier([false]), // would fail if the skill path were bypassed
+    human: new ScriptedHumanIO(),
+    baseDir: process.cwd(),
+    readText: store.readText,
+    writeText: store.writeText,
+    onEvent,
+  });
+  assert.equal(outcome.satisfied, true);
+  assert.equal(outcome.reason, "done");
+  assert.equal(runner.skillCalls.length, 3, "the review skill was invoked each cycle");
+  assert.equal(runner.skillCalls[0].skill, "workout-review");
+  assert.ok(events.some((e) => e.type === "skill-verify" && e.passed === true));
+  // the act summary was handed to the review as context
+  assert.match(runner.skillCalls.at(-1).context, /acted on/);
+});
+
+test("skill predicate: a missing runSkill throws a clear error", async () => {
+  const def = parse(read("skills_memory.loop")).definitions[0];
+  const runner = new MockRunner();
+  // remove runSkill to simulate a runner that doesn't support it
+  runner.runSkill = undefined;
+  await assert.rejects(
+    () => runDefinition(def, {
+      runner,
+      verifier: new SeqVerifier([true]),
+      human: new ScriptedHumanIO(),
+      baseDir: process.cwd(),
+    }),
+    /has no runSkill/
+  );
+});
+
+test("skill predicate: minScore threshold passes via parseSkillVerdict", async () => {
+  const def = parse(read("email_review.loop")).definitions[0];
+  const runner = new MockRunner({ skill: (input) => ({
+    passed: input.minScore !== undefined,
+    detail: `SCORE: 9 (min ${input.minScore})`,
+  })});
+  const outcome = await runDefinition(def, {
+    runner,
+    verifier: new SeqVerifier([false]),
+    human: new ScriptedHumanIO({ defaults: { review: true } }),
+    baseDir: process.cwd(),
+    readText: async () => { throw new Error("none"); },
+    writeText: async () => {},
+  });
+  assert.equal(runner.skillCalls[0].minScore, 8, "minScore threaded from the predicate");
+  assert.equal(outcome.satisfied, true);
+});
+
+test("regression: a loop with no skills/memory behaves exactly as before", async () => {
+  const def = parse(read("fix_test.loop")).definitions[0];
+  const runner = new MockRunner();
+  const store = memStore();
+  const { events, onEvent } = collect();
+  const outcome = await runDefinition(def, {
+    runner,
+    verifier: new SeqVerifier([false, false, true]),
+    human: new ScriptedHumanIO(),
+    baseDir: process.cwd(),
+    writeText: store.writeText,
+    onEvent,
+  });
+  assert.equal(outcome.satisfied, true);
+  assert.equal(runner.skillCalls.length, 0, "no skill calls without a skill predicate");
+  assert.equal(runner.planCalls[0].memory, undefined, "no memory threaded");
+  assert.ok(!events.some((e) => e.type === "memory-read" || e.type === "memory-write"));
+  assert.deepEqual(store.files, {}, "no memory file written");
+});

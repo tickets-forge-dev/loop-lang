@@ -1,0 +1,10 @@
+# Skills + memory: a non-technical loop that coordinates skills, verifies with a
+# review skill, and remembers what it learns across runs.
+loop "decide whether to cancel the morning run":
+  goal: a clear go / no-go call the runner trusts, with a one-line reason
+  use skills: check-weather, analyze-workout   # battle-tested skills the loop coordinates
+  remember in "morning-run.memory.md"          # cross-run history + lessons learned
+  each cycle: plan, then act, then observe
+  done when the skill "workout-review" approves  # bridge the abstract to the verifiable
+  when it fails: reflect on what the review flagged, then plan again
+  after 4 tries: stop and warn "no call the review would approve"
