@@ -17,7 +17,7 @@ usage:
 
 init options:
   --dir <path>     install into <path> (default: current directory)
-  --global         install the /loopflow skill into ~/.claude/skills (not the repo)
+  --global         install the /loopflow skill into ~/.claude/skills (done automatically on \`npm install -g\`)
   --no-skill       don't install the Claude Code /loopflow skill
   --no-example     don't write examples/fix_test.loop
   --no-claude-md   don't write the CLAUDE.md pointer (written by default)

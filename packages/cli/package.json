@@ -1,6 +1,6 @@
 {
   "name": "@loop-lang/loop",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Install LoopFlow (.loop) into any repo so Claude Code — or any agent — can author and run self-correcting, human-gated coding loops.",
   "license": "Apache-2.0",
   "publishConfig": { "access": "public" },
@@ -13,6 +13,7 @@
   "scripts": {
     "sync-assets": "node scripts/sync-assets.mjs",
     "prepack": "node scripts/sync-assets.mjs",
+    "postinstall": "node src/postinstall.mjs",
     "test": "node scripts/sync-assets.mjs && node --test test/*.test.mjs"
   }
 }
