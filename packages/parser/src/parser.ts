@@ -183,8 +183,8 @@ function parseWhenCondition(cond: string, lineNo: number): Pick<Transition, "on"
   const c = cond.trim().toLowerCase();
   if (/^it passes and (the )?goal is met$/.test(c)) return { on: "pass", requireGoalMet: true };
   if (/^it passes$/.test(c)) return { on: "pass" };
-  if (/^it fails$/.test(c)) return { on: "fail" };
-  if (/^(it is )?blocked$/.test(c)) return { on: "blocked" };
+  if (/^it (fails|breaks)$/.test(c)) return { on: "fail" };
+  if (/^(it is |it gets )?(blocked|stuck)$/.test(c)) return { on: "blocked" };
   throw new ParseError(`unknown condition "when ${cond}"`, lineNo);
 }
 
@@ -330,8 +330,20 @@ function interpretLoopBody(name: string | null, body: Line[], defaultCycle?: Cyc
       (loop.doneWhen ??= []).push(pred);
       i++; continue;
     }
-    if ((m = t.match(/^look at:\s*(.+)$/i))) {
+    // `look at:` and its friendly synonyms (`in:`, `look in:`, `files:`, `context:`).
+    if ((m = t.match(/^(?:look at|look in|files|context|in):\s*(.+)$/i))) {
       loop.context = parseContext(m[1]);
+      i++; continue;
+    }
+    // Friendly `check:` / `verify:` — sugar for a `done when` check. A bare value is a shell
+    // command (`check: npm test`); a predicate phrase (`check: the skill "x" approves`) is parsed as-is.
+    if ((m = t.match(/^(?:check|verify):\s*(.+)$/i))) {
+      const val = m[1].trim();
+      const isPhrase = /^(the test|the skill|a human)\b/i.test(val) || /^".*"\s+(passes|succeeds|finds nothing)$/i.test(val);
+      const pred: Predicate = isPhrase
+        ? parsePredicate(val, ln.lineNo)
+        : { type: "command", command: val.replace(/^"|"$/g, ""), expect: "exit-zero" };
+      (loop.doneWhen ??= []).push(pred);
       i++; continue;
     }
     if (/^allow\b/i.test(t) || /^ask me before\b/i.test(t)) {

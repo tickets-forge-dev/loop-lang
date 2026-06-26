@@ -155,6 +155,13 @@ async function main() {
     console.log(renderFile(loadLoopFile(resolve(process.cwd(), fileArg))));
     return;
   }
+  // `loop explain <file>` — describe the loop in plain English (the friendly view).
+  if (cmd === "explain") {
+    if (!fileArg) { console.error("usage: loop-run explain <file.loop>"); process.exit(2); }
+    const { explainFile } = await import("./show.js");
+    console.log(explainFile(loadLoopFile(resolve(process.cwd(), fileArg))));
+    return;
+  }
   // `loop ls` — list every .loop under the current dir with its one-line shape.
   if (cmd === "ls") {
     const { oneLine } = await import("./show.js");
@@ -175,7 +182,7 @@ async function main() {
   }
 
   if (!cmd || (cmd !== "run" && cmd !== "parse" && cmd !== "viz") || !fileArg) {
-    console.error("usage: loop-run <run|parse|viz|show|ls> <file.loop>  [--model <alias>] [--out <path>]");
+    console.error("usage: loop-run <run|parse|viz|show|explain|ls> <file.loop>  [--model <alias>] [--out <path>]");
     process.exit(2);
   }
 

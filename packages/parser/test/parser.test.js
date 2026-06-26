@@ -313,3 +313,19 @@ test("evals: 'the bar:' on a non-skill predicate is a parse error", () => {
     /the bar:/i
   );
 });
+
+test("friendly sugar: check:/verify:, in:/files:, when it breaks", () => {
+  const loop = parse(
+    'loop "x":\n  goal: g\n  in: src/cart, src/tax\n  check: pnpm test cart\n  when it breaks: reflect, then plan again'
+  ).definitions[0];
+  assert.deepEqual(loop.context.files, ["src/cart", "src/tax"]);
+  assert.deepEqual(loop.doneWhen, [{ type: "command", command: "pnpm test cart", expect: "exit-zero" }]);
+  assert.equal(loop.transitions[0].on, "fail");
+});
+
+test("friendly sugar: check: also accepts a predicate phrase", () => {
+  const a = parse('loop "x":\n  goal: g\n  check: the skill "review" approves on the trajectory').definitions[0];
+  assert.deepEqual(a.doneWhen, [{ type: "skill", skill: "review", expect: "approve", subject: "trajectory" }]);
+  const b = parse('loop "x":\n  goal: g\n  files: a.ts, b.ts').definitions[0];
+  assert.deepEqual(b.context.files, ["a.ts", "b.ts"]);
+});

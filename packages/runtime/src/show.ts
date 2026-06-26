@@ -100,3 +100,66 @@ export function oneLine(d: Definition): string {
   ].filter(Boolean);
   return `loop "${d.name ?? "?"}" · ${bits.join(", ")}`;
 }
+
+// ---- explain: read a loop back in plain English (the friendly, non-expert view) ----
+
+const CYCLE_PROSE: Record<string, string> = {
+  plan: "plans the change",
+  act: "makes the change",
+  observe: "checks the result",
+};
+
+/** Join items into prose: "a", "a then b", "a, b, then c". */
+function joinList(items: string[], conj = "then"): string {
+  if (items.length <= 1) return items[0] ?? "";
+  if (items.length === 2) return `${items[0]} ${conj} ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")}, ${conj} ${items[items.length - 1]}`;
+}
+
+function predicateProse(p: Predicate): string {
+  if (p.type === "test") return `the test "${p.target}" passes`;
+  if (p.type === "command") return p.expect === "empty" ? `running \`${p.command}\` reports nothing` : `running \`${p.command}\` succeeds`;
+  if (p.type === "human") return `you confirm "${p.description}"`;
+  // skill = an eval
+  const verdict = p.minScore !== undefined ? `the "${p.skill}" review scores ${p.minScore} or more` : `the "${p.skill}" review approves`;
+  return verdict + (p.subject === "trajectory" ? " (judging how it got there, not just the result)" : "");
+}
+
+/** A plain-English description of a single loop. */
+export function explainLoop(loop: Loop): string {
+  const L: string[] = [];
+  L.push(`${loop.name ? `Loop "${loop.name}"` : "This loop"} works toward: ${loop.goal || "(no goal set)"}.`);
+  const cyc = (loop.cycle?.length ? loop.cycle : ["plan", "act", "observe"]).map((s) => CYCLE_PROSE[s] ?? s);
+  L.push(`Each round it ${joinList(cyc)}.`);
+  const preds = loop.doneWhen ?? [];
+  if (preds.length) L.push(`It's done when ${joinList(preds.map(predicateProse), "and")}.`);
+  else L.push(`It has no automatic check, so it relies on a human to decide when to stop.`);
+  if (failsToReflect(loop.transitions)) L.push(`If a check fails, it reflects on why and tries again.`);
+  if (loop.humanPlan) L.push(`It pauses for you to approve the plan before changing anything.`);
+  if (loop.humanReviewBeforeStop) L.push(`It pauses for you to review the result before finishing.`);
+  if (asksWhenBlocked(loop.transitions)) L.push(`If it gets stuck, it stops and asks you.`);
+  const g = guard(loop.transitions);
+  if (g) L.push(`It gives up after ${g.n ?? "a few"} tries${g.warn ? ` (warning "${g.warn}")` : ""}.`);
+  if (loop.also?.length) L.push(`Once the goal is met it also: ${loop.also.join(", ")}.`);
+  return L.join(" ");
+}
+
+export function explainDef(d: Definition): string {
+  if (d.kind === "loop") return explainLoop(d);
+  if (d.kind === "pipeline") {
+    const n = d.stages.length;
+    const L = [`Pipeline "${d.name}" runs ${n} ${n === 1 ? "story" : "stories"} in order, stopping if one fails:`];
+    d.stages.forEach((s, i) => L.push(`  ${i + 1}. ${s.name}${s.gate ? " (pauses for your OK first)" : ""} — ${explainLoop(s.loop)}`));
+    return L.join("\n");
+  }
+  const L = [`Flow "${d.name}" runs these loop files in sequence, handing each result to the next:`];
+  d.steps.forEach((s, i) =>
+    L.push(`  ${i + 1}. ${s.forEach ? `for each item in "${s.forEach.source}", run ${s.ref}` : s.ref}${s.gate ? " (pauses for your OK first)" : ""}`)
+  );
+  return L.join("\n");
+}
+
+/** Plain-English description of a whole .loop file — the `loop-run explain` view. */
+export function explainFile(file: LoopFile): string {
+  return (file.definitions ?? []).map(explainDef).join("\n\n") || "(empty .loop)";
+}
