@@ -115,13 +115,17 @@ function parsePredicate(s: string, lineNo: number): Predicate {
   m = text.match(/^a human confirms\s+"([^"]+)"$/i);
   if (m) return { type: "human", description: m[1] };
 
-  // the skill "X" scores N or more  -> skill verdict with a numeric threshold
-  m = text.match(/^the skill\s+"([^"]+)"\s+scores\s+(\d+)(?:\s+or more)?$/i);
-  if (m) return { type: "skill", skill: m[1], expect: "approve", minScore: parseInt(m[2], 10) };
+  // An eval predicate may name its subject: `on the output` (default) or `on the trajectory`.
+  const subj = (s: string | undefined): { subject?: "output" | "trajectory" } =>
+    s ? { subject: s.toLowerCase() as "output" | "trajectory" } : {};
 
-  // the skill "X" approves  -> skill verdict (approved / not)
-  m = text.match(/^the skill\s+"([^"]+)"\s+approves$/i);
-  if (m) return { type: "skill", skill: m[1], expect: "approve" };
+  // the skill "X" scores N or more [on the output|trajectory]  -> eval with a numeric threshold
+  m = text.match(/^the skill\s+"([^"]+)"\s+scores\s+(\d+)(?:\s+or more)?(?:\s+on the (output|trajectory))?$/i);
+  if (m) return { type: "skill", skill: m[1], expect: "approve", minScore: parseInt(m[2], 10), ...subj(m[3]) };
+
+  // the skill "X" approves [on the output|trajectory]  -> eval (approved / not)
+  m = text.match(/^the skill\s+"([^"]+)"\s+approves(?:\s+on the (output|trajectory))?$/i);
+  if (m) return { type: "skill", skill: m[1], expect: "approve", ...subj(m[2]) };
 
   throw new ParseError(`could not understand "done when ${text}"`, lineNo);
 }
@@ -310,7 +314,20 @@ function interpretLoopBody(name: string | null, body: Line[], defaultCycle?: Cyc
       i++; continue;
     }
     if ((m = t.match(/^done when\s+(.+)$/i))) {
-      loop.doneWhen = parsePredicate(m[1], ln.lineNo);
+      const pred = parsePredicate(m[1], ln.lineNo);
+      // An optional indented `the bar:` rubric line attaches to a skill eval.
+      const childBar = body[i + 1];
+      if (childBar && childBar.indent > ln.indent) {
+        const bm = childBar.text.match(/^the bar:\s*(.+)$/i);
+        if (bm) {
+          if (pred.type !== "skill") {
+            throw new ParseError(`'the bar:' applies to a skill eval, not "${m[1].trim()}"`, childBar.lineNo);
+          }
+          pred.bar = bm[1].trim();
+          i++; // consume the bar line
+        }
+      }
+      (loop.doneWhen ??= []).push(pred);
       i++; continue;
     }
     if ((m = t.match(/^look at:\s*(.+)$/i))) {

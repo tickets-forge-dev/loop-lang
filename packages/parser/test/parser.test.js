@@ -17,7 +17,7 @@ test("fix_test: minimal loop", () => {
   const loop = file.definitions[0];
   assert.equal(loop.kind, "loop");
   assert.equal(loop.name, "fix test");
-  assert.deepEqual(loop.doneWhen, { type: "test", target: "checkout.spec.ts::tax" });
+  assert.deepEqual(loop.doneWhen, [{ type: "test", target: "checkout.spec.ts::tax" }]);
   assert.deepEqual(loop.cycle, ["plan", "act", "observe"]);
   assert.equal(loop.transitions.length, 1);
   assert.equal(loop.transitions[0].on, "fail");
@@ -58,11 +58,11 @@ test("ship_feature: pipeline with human nodes + gate", () => {
   assert.deepEqual(pipe.stages.map((s) => s.name), ["security", "build", "ui", "deploy"]);
 
   const security = pipe.stages[0];
-  assert.deepEqual(security.loop.doneWhen, { type: "command", command: "semgrep --severity=high", expect: "empty" });
+  assert.deepEqual(security.loop.doneWhen, [{ type: "command", command: "semgrep --severity=high", expect: "empty" }]);
 
   const build = pipe.stages[1];
   assert.equal(build.loop.humanPlan, true);
-  assert.deepEqual(build.loop.doneWhen, { type: "command", command: "pnpm test", expect: "exit-zero" });
+  assert.deepEqual(build.loop.doneWhen, [{ type: "command", command: "pnpm test", expect: "exit-zero" }]);
 
   const ui = pipe.stages[2];
   assert.equal(ui.loop.humanReviewBeforeStop, true);
@@ -197,7 +197,7 @@ test("skills + memory: use skills, remember, and a skill predicate", () => {
   assert.equal(loop.name, "decide whether to cancel the morning run");
   assert.deepEqual(loop.skills, ["check-weather", "analyze-workout"]);
   assert.deepEqual(loop.memory, { file: "morning-run.memory.md" });
-  assert.deepEqual(loop.doneWhen, { type: "skill", skill: "workout-review", expect: "approve" });
+  assert.deepEqual(loop.doneWhen, [{ type: "skill", skill: "workout-review", expect: "approve" }]);
 });
 
 test("skill predicate: scores N or more carries a minScore", () => {
@@ -205,7 +205,7 @@ test("skill predicate: scores N or more carries a minScore", () => {
   const loop = file.definitions[0];
   assert.deepEqual(loop.skills, ["write-email"]);
   assert.deepEqual(loop.memory, { file: "launch-email.memory.md" });
-  assert.deepEqual(loop.doneWhen, { type: "skill", skill: "email-review", expect: "approve", minScore: 8 });
+  assert.deepEqual(loop.doneWhen, [{ type: "skill", skill: "email-review", expect: "approve", minScore: 8 }]);
 });
 
 test("use skills: also accepts 'and' as a separator", () => {
@@ -275,4 +275,41 @@ test("parse(opts.defaultCycle): external default seeds the cascade", () => {
     defaultCycle: ["act", "observe"],
   }).definitions[0];
   assert.deepEqual(fileWins.cycle, ["plan", "observe"]);
+});
+
+test("evals: multiple done-when lines form a conjunction", () => {
+  const loop = parse(
+    'loop "x":\n  goal: g\n' +
+      '  done when "pnpm test" passes\n' +
+      '  done when the skill "review" scores 8 or more on the output'
+  ).definitions[0];
+  assert.equal(loop.doneWhen.length, 2);
+  assert.deepEqual(loop.doneWhen[0], { type: "command", command: "pnpm test", expect: "exit-zero" });
+  assert.deepEqual(loop.doneWhen[1], { type: "skill", skill: "review", expect: "approve", minScore: 8, subject: "output" });
+});
+
+test("evals: 'on the trajectory' selects the subject; default omits it", () => {
+  const traj = parse('loop "x":\n  goal: g\n  done when the skill "path" approves on the trajectory').definitions[0];
+  assert.deepEqual(traj.doneWhen[0], { type: "skill", skill: "path", expect: "approve", subject: "trajectory" });
+  const def = parse('loop "x":\n  goal: g\n  done when the skill "out" approves').definitions[0];
+  assert.deepEqual(def.doneWhen[0], { type: "skill", skill: "out", expect: "approve" }); // no subject = output
+});
+
+test("evals: an indented 'the bar:' attaches a rubric to a skill eval", () => {
+  const loop = parse(
+    'loop "x":\n  goal: g\n' +
+      '  done when the skill "path" approves on the trajectory\n' +
+      '    the bar: did not weaken a test to go green'
+  ).definitions[0];
+  assert.deepEqual(loop.doneWhen[0], {
+    type: "skill", skill: "path", expect: "approve", subject: "trajectory",
+    bar: "did not weaken a test to go green",
+  });
+});
+
+test("evals: 'the bar:' on a non-skill predicate is a parse error", () => {
+  assert.throws(
+    () => parse('loop "x":\n  goal: g\n  done when "pnpm test" passes\n    the bar: nope'),
+    /the bar:/i
+  );
 });

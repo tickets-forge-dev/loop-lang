@@ -85,12 +85,31 @@ done when the test "billing.spec.ts::apostrophe" passes   # a named test
 done when "pnpm test" passes                               # a shell command, exit 0
 done when "semgrep --severity=high" finds nothing          # a shell command, empty output
 done when a human confirms "looks right at 375px"          # a human check
-done when the skill "email-review" approves                # a review skill: approved / not
-done when the skill "email-review" scores 8 or more        # a review skill: numeric threshold
+done when the skill "email-review" approves                # an eval: approved / not
+done when the skill "email-review" scores 8 or more        # an eval: numeric threshold
+done when the skill "api-review" scores 8 or more on the output       # an eval of WHAT was produced
+done when the skill "path-review" approves on the trajectory          # an eval of HOW the agent got there
+  the bar: didn't weaken a test to go green; no writes outside api/   # the rubric the judge scores against
 ```
 
 The command in a predicate runs in the user's shell with their privileges (like an npm
 script). It IS meant to be a real command. Prefer a fast, deterministic check.
+
+### Tests vs evals — list as many `done when` as you need
+
+A loop may have **multiple `done when` lines, and ALL must pass** (a conjunction). Use this to
+combine the two kinds of verification:
+
+- **TESTS** — a `test` / command predicate. Deterministic, checked by code (`"pnpm test" passes`,
+  `"semgrep …" finds nothing`).
+- **EVALS** — a `skill` predicate. A rubric / LM judge for the non-deterministic parts. An eval
+  names its **subject**: `on the output` (the default — judges *what* was produced) or
+  `on the trajectory` (judges *how* the agent got there — the path and tool calls it took). An
+  indented `the bar:` line states the conditions the judge scores against.
+
+A trajectory eval is what catches the failures a green test can't — e.g. an agent that made a test
+pass by weakening it. Pair a test with an eval when "done" means both "it works" and "it was built
+the right way."
 
 The **skill** predicate bridges an abstract goal to a verifiable one: when "done" isn't a
 test or a command (a good email, a sound design), have a review skill return an

@@ -201,7 +201,7 @@ export const VOCABULARY = Object.keys(HOVERS);
 interface LintLoop {
   kind: "loop";
   name: string | null;
-  doneWhen?: unknown;
+  doneWhen?: unknown[];
   humanReviewBeforeStop?: boolean;
   transitions?: Array<{ on: string; threshold?: number; do?: Array<{ action: string }> }>;
 }
@@ -228,7 +228,7 @@ function headerLine(lines: string[], kind: "loop" | "stage", name: string | null
 
 function checkLoop(loop: LintLoop, line: number, out: LintWarning[]) {
   // Unverifiable: nothing decides "done" — only a thrash guard or the hard cap can stop it.
-  if (!loop.doneWhen && !loop.humanReviewBeforeStop) {
+  if (!(Array.isArray(loop.doneWhen) && loop.doneWhen.length) && !loop.humanReviewBeforeStop) {
     out.push({ line, message: "This loop has no way to verify it's done — add a `done when …` check or `a human reviews before stopping`." });
   }
   // Self-correcting but unbounded: re-plans on failure with no attempt ceiling.

@@ -195,35 +195,42 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
         if (res.blocked) blocked = true;
         emit(opts, { type: "node-exit", node: step, attempt: attempts, ok: !res.blocked, detail: res.summary });
       } else {
-        // observe
-        let v: { passed: boolean; output: string };
-        if (loop.doneWhen?.type === "skill") {
-          // Skill predicate: a review skill judges the goal (approved / score) — the
-          // "bridge the abstract to the verifiable" path, routed to the runner not the shell.
-          if (!opts.runner.runSkill) {
-            throw new Error(
-              `loop "${loop.name ?? ""}" verifies with the skill "${loop.doneWhen.skill}" but the runner has no runSkill`
-            );
+        // observe — every `done when` predicate must pass (a conjunction of TESTS and EVALS).
+        const preds = loop.doneWhen ?? [];
+        let allPassed = preds.length > 0; // no predicate → not satisfiable by a machine check
+        const outputs: string[] = [];
+        for (const pred of preds) {
+          let r: { passed: boolean; output: string };
+          if (pred.type === "skill") {
+            // An eval: a review skill judges the goal (approved / score) — the
+            // "bridge the abstract to the verifiable" path, routed to the runner not the shell.
+            if (!opts.runner.runSkill) {
+              throw new Error(
+                `loop "${loop.name ?? ""}" verifies with the skill "${pred.skill}" but the runner has no runSkill`
+              );
+            }
+            const sr = await opts.runner.runSkill({
+              skill: pred.skill,
+              goal: loop.goal,
+              context: lastActSummary,
+              expect: pred.expect,
+              minScore: pred.minScore,
+              baseDir: opts.baseDir,
+            });
+            emit(opts, { type: "skill-verify", skill: pred.skill, passed: sr.passed, detail: sr.detail });
+            r = { passed: sr.passed, output: sr.detail };
+          } else {
+            r = await opts.verifier.verify(pred, opts.baseDir);
           }
-          const r = await opts.runner.runSkill({
-            skill: loop.doneWhen.skill,
-            goal: loop.goal,
-            context: lastActSummary,
-            expect: loop.doneWhen.expect,
-            minScore: loop.doneWhen.minScore,
-            baseDir: opts.baseDir,
-          });
-          emit(opts, { type: "skill-verify", skill: loop.doneWhen.skill, passed: r.passed, detail: r.detail });
-          v = { passed: r.passed, output: r.detail };
-        } else {
-          v = await opts.verifier.verify(loop.doneWhen, opts.baseDir);
+          if (r.output) outputs.push(r.output);
+          if (!r.passed) { allPassed = false; break; } // short-circuit: a conjunction fails on the first miss
         }
         observed = true;
-        passed = v.passed;
-        observeOutput = v.output;
-        lastOutput = v.output;
-        emit(opts, { type: "observe", passed: v.passed, output: v.output });
-        emit(opts, { type: "node-exit", node: step, attempt: attempts, ok: v.passed });
+        passed = allPassed;
+        observeOutput = outputs.join("\n");
+        lastOutput = observeOutput;
+        emit(opts, { type: "observe", passed: allPassed, output: observeOutput });
+        emit(opts, { type: "node-exit", node: step, attempt: attempts, ok: allPassed });
       }
     }
 
@@ -231,7 +238,7 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
       await gitCommit(opts, `loop: ${loop.name ?? "cycle"} — cycle ${attempts}`);
     }
 
-    const goalMet = loop.doneWhen ? passed : false;
+    const goalMet = loop.doneWhen?.length ? passed : false;
 
     const t = pickTransition(loop.transitions, { blocked, attempts, passed: observed && passed, goalMet });
 
@@ -263,7 +270,7 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
       // rejected: keep iterating
       continue;
     }
-    if (!loop.doneWhen && loop.humanPlan && humanPlanApproved) {
+    if (!loop.doneWhen?.length && loop.humanPlan && humanPlanApproved) {
       // plan-only human loop: one approved pass is the deliverable.
       return finish(true, "human-approved");
     }

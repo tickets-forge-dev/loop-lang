@@ -11,7 +11,14 @@ function predicateStr(p?: Predicate | null): string | null {
   if (p.type === "test") return `test "${p.target}"`;
   if (p.type === "command") return p.expect === "empty" ? `"${p.command}" finds nothing` : `"${p.command}" passes`;
   if (p.type === "human") return `a human confirms "${p.description}"`;
-  return null;
+  // skill = an eval: name the verdict and, when not the default, the subject it judges.
+  const verdict = p.minScore !== undefined ? `scores ${p.minScore}+` : "approves";
+  const on = p.subject && p.subject !== "output" ? ` on the ${p.subject}` : "";
+  return `eval: skill "${p.skill}" ${verdict}${on}`;
+}
+/** Render every `done when` predicate (a conjunction) as labelled strings. */
+function predicateStrs(dw?: Predicate[] | null): string[] {
+  return (dw ?? []).map(predicateStr).filter((s): s is string => s != null);
 }
 const failsToReflect = (t?: Transition[]) =>
   (t ?? []).some((x) => x.on === "fail" && (x.do ?? []).some((d) => d.action === "reflect" || d.action === "plan"));
@@ -28,8 +35,9 @@ export function renderLoop(loop: Loop): string {
   const cyc = (loop.cycle?.length ? loop.cycle : ["plan", "act", "observe"]).join(" → ");
   L.push(`   ↻  ${cyc}            (each cycle)`);
   if (failsToReflect(loop.transitions)) L.push(`   ↺  on fail: reflect → plan      (the back-edge)`);
-  const pred = predicateStr(loop.doneWhen);
-  L.push(pred ? `   ✓  done when: ${pred}` : `   ⚠  no done-when — can only stop via a human path or the guard`);
+  const preds = predicateStrs(loop.doneWhen);
+  if (preds.length) preds.forEach((p) => L.push(`   ✓  done when: ${p}`));
+  else L.push(`   ⚠  no done-when — can only stop via a human path or the guard`);
   const g = guard(loop.transitions);
   if (g) L.push(`   ⛔ guard: after ${g.n ?? "N"} tries → stop${g.warn ? ` & warn "${g.warn}"` : ""}`);
   if (loop.humanPlan) L.push(`   👤 a human approves the plan first`);
@@ -48,7 +56,8 @@ function gateMark(loop: Loop): string {
 export function renderPipeline(p: Pipeline): string {
   const L = [`pipeline "${p.name}"   (stages in order · fail-fast)`];
   p.stages.forEach((s, i) => {
-    const pred = predicateStr(s.loop.doneWhen);
+    const preds = predicateStrs(s.loop.doneWhen);
+    const pred = preds.length ? `${preds[0]}${preds.length > 1 ? ` (+${preds.length - 1})` : ""}` : null;
     const tail = [s.gate ? "👤 gate" : null, pred ? `✓ ${pred}` : null].filter(Boolean).join(" · ");
     L.push(`   ${i + 1}. ${s.name}${gateMark(s.loop)}${tail ? `   ${tail}` : ""}`);
   });
@@ -87,7 +96,7 @@ export function oneLine(d: Definition): string {
     d.cycle?.length ? d.cycle.join("→") : "plan→act→observe",
     failsToReflect(d.transitions) ? "reflect" : null,
     guard(d.transitions) ? "guard" : null,
-    predicateStr(d.doneWhen) ? "done-when" : "⚠ no done-when",
+    d.doneWhen?.length ? "done-when" : "⚠ no done-when",
   ].filter(Boolean);
   return `loop "${d.name ?? "?"}" · ${bits.join(", ")}`;
 }

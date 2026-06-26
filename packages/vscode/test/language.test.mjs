@@ -87,14 +87,14 @@ test("lint warns on an unverifiable loop (no done when, no human review)", () =>
 
 test("lint warns on a self-correcting loop with no thrash guard", () => {
   const src = 'loop "y":\n  goal: g\n  done when "npm test" passes\n  when it fails: reflect, then plan again';
-  const file = { definitions: [{ kind: "loop", name: "y", doneWhen: { type: "command" }, transitions: [{ on: "fail", do: [{ action: "reflect" }, { action: "plan" }] }] }] };
+  const file = { definitions: [{ kind: "loop", name: "y", doneWhen: [{ type: "command" }], transitions: [{ on: "fail", do: [{ action: "reflect" }, { action: "plan" }] }] }] };
   const w = lint(file, lines(src));
   assert.equal(w.length, 1);
   assert.match(w[0].message, /thrash guard/);
 });
 
 test("lint stays silent on a complete loop", () => {
-  const file = { definitions: [{ kind: "loop", name: "z", doneWhen: { type: "command" }, transitions: [{ on: "fail", do: [{ action: "reflect" }] }, { on: "attempts", threshold: 6, do: [{ action: "stop" }] }] }] };
+  const file = { definitions: [{ kind: "loop", name: "z", doneWhen: [{ type: "command" }], transitions: [{ on: "fail", do: [{ action: "reflect" }] }, { on: "attempts", threshold: 6, do: [{ action: "stop" }] }] }] };
   assert.deepEqual(lint(file, lines('loop "z":')), []);
 });
 

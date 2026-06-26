@@ -135,11 +135,9 @@
           "description": "The objective in plain language."
         },
         "doneWhen": {
-          "description": "The predicate the runtime checks to declare the goal met. Null means the loop relies on a human review to stop.",
-          "oneOf": [
-            { "$ref": "#/$defs/predicate" },
-            { "type": "null" }
-          ]
+          "description": "Verification conditions — ALL must pass (a conjunction of predicates). A test/command predicate is a deterministic check (TESTS); a skill predicate is an eval (EVALS). Empty/absent means the loop relies on a human review to stop.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/predicate" }
         },
         "context": {
           "description": "What the agent may look at before acting (the `look at:` block).",
@@ -252,6 +250,15 @@
         "minScore": {
           "type": "integer",
           "description": "For type=skill: when present (\"scores N or more\"), the verdict passes only when the skill's numeric score is at least this. Absent means a plain approve/reject."
+        },
+        "subject": {
+          "type": "string",
+          "enum": ["output", "trajectory"],
+          "description": "For type=skill (an eval): what the judge inspects — the produced \"output\" (default) or the \"trajectory\" (the path and tool calls the agent took). Set by `on the output` / `on the trajectory`."
+        },
+        "bar": {
+          "type": "string",
+          "description": "For type=skill (an eval): an inline rubric (`the bar:`) naming the conditions the judge scores against."
         },
         "command": {
           "type": "string",

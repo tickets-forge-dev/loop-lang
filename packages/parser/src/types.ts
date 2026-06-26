@@ -67,7 +67,12 @@ export interface Loop {
   kind: "loop";
   name: string | null;
   goal: string;
-  doneWhen?: Predicate | null;
+  /**
+   * Verification conditions — ALL must pass (a conjunction). A test/command predicate is a
+   * deterministic check (the deck's TESTS); a skill predicate is an eval (the deck's EVALS).
+   * Each `done when …` line appends one. Empty/absent = no machine check (stop via a human path).
+   */
+  doneWhen?: Predicate[];
   context?: LoopContext;
   policy?: Policy;
   cycle: CycleStep[];
@@ -118,7 +123,13 @@ export type Predicate =
   | { type: "test"; target: string }
   | { type: "command"; command: string; expect?: "exit-zero" | "empty" }
   | { type: "human"; description: string }
-  | { type: "skill"; skill: string; expect: "approve"; minScore?: number };
+  /**
+   * An eval: a review skill judges the goal (approve / score). `subject` selects what it
+   * inspects — the produced `output` (default) or the `trajectory` (the path and tool calls
+   * the agent took to get there). `bar` is an optional inline rubric (`the bar:`) naming the
+   * conditions the judge scores against.
+   */
+  | { type: "skill"; skill: string; expect: "approve"; minScore?: number; subject?: "output" | "trajectory"; bar?: string };
 
 export interface Transition {
   on: "pass" | "fail" | "blocked" | "attempts";
