@@ -1,5 +1,4 @@
-# Tests verify the deterministic parts; evals verify the non-deterministic parts.
-# "Without both, it is always vibe coding."
+# Tests verify the deterministic parts; evals verify the non-deterministic parts — use both.
 loop "add the refund endpoint":
   goal: POST /refunds reverses a charge and is safe to ship
   in: api/refunds.ts, api/charges.ts

@@ -1,19 +1,17 @@
 # Plan — Agentic Engineering constructs for Loop
 
-> Bringing *"The New SDLC with Vibe Coding"* into Loop, in the deck's own vocabulary.
+> Bringing agentic-engineering discipline into Loop.
 > Branch: `claude/loop-lang-concepts-3p5tz1`. Companion pipeline: [`agentic-engineering.loop`](../agentic-engineering.loop).
 
 ## Context
 
-The deck *"The New SDLC with Vibe Coding: From ad-hoc prompting to agentic engineering"* argues
-that the move from vibe coding to **agentic engineering** is about *"how much structure,
-verification and judgment surround the output."* Loop already embodies the disciplined end — its
-`plan → act → observe` + reflect back-edge **is** the deck's agent loop, and `goal:` + `done when`
-**is** the factory model (*"success criteria, not step-by-step instructions"*). This epic closes the
-gaps the deck exposes and **names** what Loop already is, using the deck's exact terms.
+Agentic engineering is about how much structure, verification and judgment surround the output.
+Loop already embodies the disciplined end — its `plan → act → observe` + reflect back-edge **is**
+the agent loop, and `goal:` + `done when` **is** "success criteria, not step-by-step instructions".
+This epic closes the remaining gaps and **names** what Loop already is.
 
-The headline gap, ranked #1 by every analysis lens: **evals**. The deck's load-bearing claim is
-*"Without both [TESTS and EVALS], it is always vibe coding."* Loop has TESTS (deterministic,
+The headline gap: **evals**. The load-bearing principle is that without both TESTS and EVALS,
+verification is incomplete. Loop has TESTS (deterministic,
 checked by code) and a proto-eval fused into `done when the skill … scores N` — but it is unnamed,
 its rubric is invisible, and it can only judge the **output**, never the **trajectory** (*"not just
 what was produced but HOW the agent got there"*). Trajectory is exactly what catches the 80%-problem
@@ -42,7 +40,7 @@ changes, run isolation, real concurrency) carry a human gate.
 | 10 | `knowledge:` + `examples:` context | 4 · Niche | — | `npm test --workspace packages/parser` |
 | 11 | Parallel stages | 4 · Niche | approve plan | `npm test --workspace packages/runtime` |
 | 12 | Standards & identity (MCP / A2A / `runs as:`) | 4 · Niche | — | `npm test --workspaces` |
-| 13 | Reframe docs in deck vocabulary | cross-cutting | review before stop | a human confirms |
+| 13 | Reframe the docs | cross-cutting | review before stop | a human confirms |
 
 ---
 
@@ -79,7 +77,7 @@ Keep a stochastic judge from self-thrashing, and let reflection see the path.
 - Thread the trajectory into `ReflectInput` so `reflect on the path it took` fixes the path, not the artifact.
 
 ### Story 4 — The "without both" lint
-Turn the deck's slogan into a check. For **code loops** only (loops with an `edit` allowance):
+Turn this principle into a check. For **code loops** only (loops with an `edit` allowance):
 warn when a loop has a TEST but no EVAL (or vice-versa). Severity is wired to `rigor:` in Story 5
 (warn by default; error under `rigor: agentic engineering`). Lives in the parser/validator so
 `loop-run parse` surfaces it.
@@ -95,7 +93,7 @@ expands to bundled defaults over existing knobs, reusing the `use the <method>` 
 ### Story 6 — Conductor / Orchestrator `mode:`
 Config-tier `mode: conductor | orchestrator` — names what `/loopflow` (in-session, gates inline)
 and `loop-run` (async, opens a PR) already do. Orthogonal to `rigor:`; warn on the incoherent
-combo `rigor: vibe coding` + `mode: orchestrator` (the deck's *"token burn from unverified loops"*
+combo `rigor: vibe coding` + `mode: orchestrator` (the "token burn from unverified loops" anti-pattern
 running unattended).
 
 ## Wave 3 — Harness completeness
@@ -137,7 +135,7 @@ anatomy part, *Deployment*).
 
 ## Cross-cutting
 
-### Story 13 — Reframe docs in deck vocabulary
+### Story 13 — Reframe the docs
 Zero-grammar framing wins, written into `AGENTS.md` + `README.md`: *"intent is the new interface"*
 as Loop's one-liner; the Conductor/Orchestrator and editor/terminal/background maps
 (`/loopflow` · `loop-run run` · `schedule:`+PR); the five-knobs ↔ harness table (*Agent = Model +

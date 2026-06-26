@@ -283,7 +283,7 @@ and deterministic.
 #### Tests vs evals
 
 A loop can list **several `done when` lines, and all must pass.** Use this to combine the
-two kinds of verification (the distinction is from *The New SDLC with Vibe Coding*):
+two kinds of verification:
 
 - **Tests** — `test` / command predicates. Deterministic, checked by code.
 - **Evals** — `skill` predicates. A rubric / LM judge for the non-deterministic parts. An
@@ -333,7 +333,7 @@ git:
 
 ### Agentic-engineering features
 
-These bring *The New SDLC with Vibe Coding* into Loop. All are optional; a simple loop ignores them.
+These add agentic-engineering discipline to Loop. All are optional; a simple loop ignores them.
 
 | Construct | Where | What it does |
 |---|---|---|

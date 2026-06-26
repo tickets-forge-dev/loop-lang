@@ -239,7 +239,7 @@ function checkLoop(loop: LintLoop, line: number, out: LintWarning[], rigor?: str
     const hasTest = preds.some((p) => !isEval(p));
     const hasEval = preds.some((p) => isEval(p));
     if (hasTest && !hasEval) {
-      out.push({ line, message: "Tests but no eval — without both, it is vibe coding. Add `done when the skill \"…\" approves` (an eval) for the non-deterministic parts." });
+      out.push({ line, message: "Tests but no eval — add `done when the skill \"…\" approves` (an eval) for the non-deterministic parts." });
     } else if (hasEval && !hasTest) {
       out.push({ line, message: "An eval but no test — add a deterministic `done when \"…\" passes` for the parts code can check." });
     }

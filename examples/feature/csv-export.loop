@@ -20,7 +20,7 @@ pipeline "feature: export table to CSV":
     allow edits automatically, but ask me before migrations or pushes    # auto-edit, human-gate the scary stuff
     each cycle: plan, then act, then observe                             # the inner reasoning loop
     done when the test "export/csv.spec.ts::downloads a csv" passes      # a TEST (deterministic)
-    done when the skill "code-review" approves on the trajectory          # an EVAL — without both it's vibe coding
+    done when the skill "code-review" approves on the trajectory          # an EVAL — pair a deterministic test with a judged eval
       the bar: did not weaken the acceptance test; reused the existing export module
     when it fails: reflect on which layer broke, then plan again         # learn from each red run
     after 6 tries: stop and warn "csv export is thrashing"              # give up before burning cycles

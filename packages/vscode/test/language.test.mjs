@@ -134,7 +134,7 @@ test("lint nudges 'without both' under structured/agentic rigor", () => {
       transitions: [{ on: "fail", do: [{ action: "reflect" }] }, { on: "attempts", threshold: 6, do: [{ action: "stop" }] }] }] };
   const w = lint(file, lines('loop "x":'));
   assert.equal(w.length, 1);
-  assert.match(w[0].message, /without both/i);
+  assert.match(w[0].message, /Tests but no eval/);
 });
 
 test("lint stays silent on 'without both' when no rigor is set", () => {

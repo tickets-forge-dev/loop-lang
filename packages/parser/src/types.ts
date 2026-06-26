@@ -117,7 +117,7 @@ export interface Loop {
   goal: string;
   /**
    * Verification conditions — ALL must pass (a conjunction). A test/command predicate is a
-   * deterministic check (the deck's TESTS); a skill predicate is an eval (the deck's EVALS).
+   * deterministic check (a TEST); a skill predicate is an eval (an EVAL).
    * Each `done when …` line appends one. Empty/absent = no machine check (stop via a human path).
    */
   doneWhen?: Predicate[];

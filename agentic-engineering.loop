@@ -15,7 +15,7 @@ git:
 
 pipeline "epic: agentic engineering for Loop":
 
-  # ── Wave 1 · Eval core (the headline: "without both, it is always vibe coding") ──
+  # ── Wave 1 · Eval core (tests and evals together) ──
 
   stage "story: eval targets in the IR":
     goal: doneWhen becomes a conjunction of predicates and the skill predicate gains a target (output or trajectory, default output) plus an inline `the bar:` rubric
@@ -40,7 +40,7 @@ pipeline "epic: agentic engineering for Loop":
     after 6 tries: stop and warn "eval gate still flaky"
 
   stage "story: the without-both lint":
-    goal: a code loop with a test but no eval (or vice-versa) warns — without both, it is vibe coding
+    goal: a code loop with a test but no eval (or vice-versa) warns to add the missing kind
     look at: packages/parser/src/parser.ts, packages/parser/src/types.ts, and the last failure
     done when "npm test --workspace packages/parser" passes
     when it fails: reflect, then plan again
@@ -113,10 +113,10 @@ pipeline "epic: agentic engineering for Loop":
 
   # ── Cross-cutting · Framing ──
 
-  stage "story: reframe docs in deck vocabulary":
-    goal: AGENTS.md and README name what Loop already is in the deck's words (intent is the new interface, conductor and orchestrator, editor terminal background, Agent equals Model plus Harness, CapEx and OpEx) with the new constructs documented and their flows printed
+  stage "story: reframe the docs":
+    goal: AGENTS.md and README name what Loop already is (intent is the new interface, conductor and orchestrator, editor terminal background, Agent equals Model plus Harness, CapEx and OpEx) with the new constructs documented and their flows printed
     look at: AGENTS.md, README.md, docs/MANUAL.md, and the last failure
     a human reviews before stopping
-    done when a human confirms "the docs read in the deck's vocabulary and the new constructs are covered"
+    done when a human confirms "the docs read clearly and the new constructs are covered"
     when it fails: reflect, then plan again
     after 4 tries: stop and warn "docs need a human pass"
