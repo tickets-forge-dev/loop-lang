@@ -47,6 +47,9 @@ export function renderLoop(loop: Loop): string {
     const what = h.predicate.type === "command" ? `"${h.predicate.command}" ${h.predicate.expect === "empty" ? "finds nothing" : "passes"}` : h.predicate.type === "test" ? `test "${h.predicate.target}"` : "";
     L.push(`   ⊘  hook ${h.at.replace(/-/g, " ")}: ${what}`);
   }
+  if (loop.context?.knowledge?.length) L.push(`   📖 knowledge: ${loop.context.knowledge.join(", ")}`);
+  if (loop.context?.examples?.length) L.push(`   ✎  examples: ${loop.context.examples.join(", ")}`);
+  if (loop.tools?.length) L.push(`   🔌 tools from: ${loop.tools.join(", ")}`);
   if (loop.also?.length) L.push(`   +  also: ${loop.also.join(", ")}`);
   if (loop.goal) L.push(`   ·  goal: ${loop.goal}`);
   return L.join("\n");
@@ -62,8 +65,9 @@ export function renderPipeline(p: Pipeline): string {
   p.stages.forEach((s, i) => {
     const preds = predicateStrs(s.loop.doneWhen);
     const pred = preds.length ? `${preds[0]}${preds.length > 1 ? ` (+${preds.length - 1})` : ""}` : null;
+    const par = s.parallelGroup != null ? "⇉ " : "";
     const tail = [s.gate ? "👤 gate" : null, pred ? `✓ ${pred}` : null].filter(Boolean).join(" · ");
-    L.push(`   ${i + 1}. ${s.name}${gateMark(s.loop)}${tail ? `   ${tail}` : ""}`);
+    L.push(`   ${i + 1}. ${par}${s.name}${gateMark(s.loop)}${tail ? `   ${tail}` : ""}`);
   });
   return L.join("\n");
 }
@@ -95,6 +99,11 @@ export function renderFile(file: LoopFile): string {
     const o = file.config.observe;
     parts.push(`observe: ${[o.trace ? "trace" : null, o.meter ? "meter" : null, o.costCap ? `cap ${o.costCap}` : null].filter(Boolean).join(" · ")}`);
   }
+  if (file.config?.sandbox) {
+    const s = file.config.sandbox;
+    parts.push(`sandbox: ${[s.network === "none" ? "no network" : s.network === "allowlist" ? `egress ${(s.egress ?? []).join(",")}` : null, s.cpu ? `cpu ${s.cpu}` : null, s.memory ? `mem ${s.memory}` : null, s.time ? `time ${s.time}` : null].filter(Boolean).join(" · ")}`);
+  }
+  if (file.config?.runsAs) parts.push(`runs as: ${file.config.runsAs}`);
   for (const d of file.definitions) parts.push(renderDef(d));
   return parts.join("\n\n") || "(empty .loop)";
 }

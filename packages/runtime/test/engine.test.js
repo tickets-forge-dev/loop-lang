@@ -708,3 +708,17 @@ test("hooks: a passing before-cycle hook lets the loop proceed to done", async (
   });
   assert.equal(outcome.satisfied, true);
 });
+
+// ---- parallel stages (Story 11) ----
+
+test("parallel stages run concurrently and all must satisfy", async () => {
+  const def = parse(
+    'pipeline "p":\n  stages in parallel:\n    stage "a":\n      goal: g\n      check: t\n    stage "b":\n      goal: g\n      check: t'
+  ).definitions[0];
+  const order = [];
+  const runner = new MockRunner({ act: (i) => { order.push(i.goal); return { summary: "ok" }; } });
+  const outcome = await runDefinition(def, {
+    runner, verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: "/p",
+  });
+  assert.equal(outcome.satisfied, true);
+});

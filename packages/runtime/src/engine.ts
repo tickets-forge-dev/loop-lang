@@ -1,5 +1,5 @@
 import { resolve, dirname, basename } from "node:path";
-import type { Loop, Pipeline, Flow, FlowStep, Definition, Transition, Action, LoopFile, HookPoint } from "@loop-lang/parser";
+import type { Loop, Pipeline, Stage, Flow, FlowStep, Definition, Transition, Action, LoopFile, HookPoint } from "@loop-lang/parser";
 import type { CycleNode, LoopEvent, LoopOutcome, RunOptions, StopReason } from "./types.js";
 import { enumerateItems } from "./iterate.js";
 import { resolveGit, isProtected } from "./git.js";
@@ -58,7 +58,12 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
   const eff = resolveModels(opts.modelPolicy, loop.models);
   const pick = (phase: "plan" | "act" | "reflect" | "also") => modelForPhase(eff, phase, opts.cliModel);
 
-  const files = loop.context?.files ?? [];
+  // The agent reads files it may edit plus read-only knowledge and reference examples.
+  const files = [
+    ...(loop.context?.files ?? []),
+    ...(loop.context?.knowledge ?? []).map((k) => `${k} (read-only reference)`),
+    ...(loop.context?.examples ?? []).map((e) => `${e} (a pattern to imitate)`),
+  ];
   const includeLastFailure = loop.context?.includeLastFailure ?? false;
   const autoClasses = loop.policy?.auto ?? [];
   const confirmClasses = loop.policy?.confirm ?? [];
@@ -362,30 +367,53 @@ async function applyActions(
   return null;
 }
 
+/** Run one stage: its gate, its loop, and a story-commit on success. */
+async function runStage(stage: Stage, opts: RunOptions): Promise<LoopOutcome> {
+  emit(opts, { type: "stage-start", name: stage.name });
+  if (stage.gate) {
+    emit(opts, { type: "human", kind: "gate", prompt: stage.gate.message });
+    const ok = await opts.human.gate(stage.gate.message);
+    if (!ok) {
+      emit(opts, { type: "stage-end", name: stage.name, satisfied: false });
+      return { satisfied: false, reason: "blocked", attempts: 0 };
+    }
+  }
+  const outcome = await executeLoopFull(stage.loop, opts);
+  emit(opts, { type: "stage-end", name: stage.name, satisfied: outcome.satisfied });
+  if (outcome.satisfied && opts.git && resolveGit(opts.gitPolicy).commit === "story") {
+    await gitCommit(opts, `loop: story "${stage.name}" satisfied`);
+  }
+  return outcome;
+}
+
 async function executePipeline(pipeline: Pipeline, opts: RunOptions): Promise<LoopOutcome> {
   emit(opts, { type: "pipeline-start", name: pipeline.name });
   let lastAttempts = 0;
-  for (const stage of pipeline.stages) {
-    emit(opts, { type: "stage-start", name: stage.name });
-    if (stage.gate) {
-      emit(opts, { type: "human", kind: "gate", prompt: stage.gate.message });
-      const ok = await opts.human.gate(stage.gate.message);
-      if (!ok) {
-        emit(opts, { type: "stage-end", name: stage.name, satisfied: false });
+  const stages = pipeline.stages;
+  let i = 0;
+  while (i < stages.length) {
+    const grp = stages[i].parallelGroup;
+    // A parallel group (`stages in parallel:`) runs its stages concurrently and barrier-joins.
+    // NOTE: real file-safe parallelism needs a worktree per branch; concurrent edits to one
+    // working tree can collide. The orchestration is here; isolation is the operator's setup.
+    if (grp != null) {
+      const group: Stage[] = [];
+      while (i < stages.length && stages[i].parallelGroup === grp) group.push(stages[i++]);
+      const outcomes = await Promise.all(group.map((s) => runStage(s, opts)));
+      lastAttempts = outcomes[outcomes.length - 1]?.attempts ?? lastAttempts;
+      const failed = outcomes.find((o) => !o.satisfied);
+      if (failed) {
         emit(opts, { type: "pipeline-end", name: pipeline.name, satisfied: false });
-        return { satisfied: false, reason: "blocked", attempts: lastAttempts };
+        return { satisfied: false, reason: failed.reason, attempts: lastAttempts };
       }
-    }
-    const outcome = await executeLoopFull(stage.loop, opts);
-    lastAttempts = outcome.attempts;
-    emit(opts, { type: "stage-end", name: stage.name, satisfied: outcome.satisfied });
-    if (!outcome.satisfied) {
-      // A failing stage halts the rest of the pipeline.
-      emit(opts, { type: "pipeline-end", name: pipeline.name, satisfied: false });
-      return { satisfied: false, reason: outcome.reason, attempts: lastAttempts };
-    }
-    if (opts.git && resolveGit(opts.gitPolicy).commit === "story") {
-      await gitCommit(opts, `loop: story "${stage.name}" satisfied`);
+    } else {
+      const outcome = await runStage(stages[i++], opts);
+      lastAttempts = outcome.attempts;
+      if (!outcome.satisfied) {
+        // A failing stage halts the rest of the pipeline.
+        emit(opts, { type: "pipeline-end", name: pipeline.name, satisfied: false });
+        return { satisfied: false, reason: outcome.reason, attempts: lastAttempts };
+      }
     }
   }
   emit(opts, { type: "pipeline-end", name: pipeline.name, satisfied: true });

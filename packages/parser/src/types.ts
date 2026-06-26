@@ -29,6 +29,18 @@ export interface GitPolicy {
  */
 export type Rigor = "vibe coding" | "structured ai-assisted" | "agentic engineering";
 
+/** Run-isolation policy (`sandbox:` block): where code runs and what it cannot reach. */
+export interface SandboxPolicy {
+  /** Network posture: "none" (no egress) or "allowlist" (only `egress` hosts). */
+  network?: "none" | "allowlist";
+  /** Allowed egress hosts when network is "allowlist". */
+  egress?: string[];
+  /** Resource caps, as written (e.g. cpu "2 cores", memory "4g", time "10m"). */
+  cpu?: string;
+  memory?: string;
+  time?: string;
+}
+
 /** Observability policy (`observe:` block): trace, cost metering, and an optional spend cap. */
 export interface ObservePolicy {
   /** Emit a per-cycle trace and a stop-time OpEx report. */
@@ -73,6 +85,10 @@ export interface Config {
   mode?: "conductor" | "orchestrator";
   /** Observability (`observe:` block): trace + cost metering + an optional spend cap. */
   observe?: ObservePolicy;
+  /** Run isolation (`sandbox:` block): where code runs and what it cannot reach. */
+  sandbox?: SandboxPolicy;
+  /** Identity the run executes as (`runs as: …`) — an auditable principal for unattended runs. */
+  runsAs?: string;
 }
 
 export interface OverrideEntry {
@@ -91,6 +107,8 @@ export interface Stage {
   name: string;
   gate?: { message: string } | null;
   loop: Loop;
+  /** Stages sharing a parallel-group id run concurrently (`stages in parallel:`). */
+  parallelGroup?: number;
 }
 
 export interface Loop {
@@ -110,6 +128,8 @@ export interface Loop {
   also?: string[];
   /** Named execution skills the loop may invoke during plan/act (e.g. ["check-weather"]). */
   skills?: string[];
+  /** MCP servers whose tools the loop may use (`use tools from the "github" server`). */
+  tools?: string[];
   /** A markdown file the loop reads on start and appends to on stop — cross-run memory. */
   memory?: LoopMemory;
   planSource?: PlanSource;
@@ -137,6 +157,10 @@ export interface LoopContext {
   files?: string[];
   docs?: string[];
   includeLastFailure?: boolean;
+  /** Read-only reference material (`knowledge:`) — docs/diagrams the agent reads but must not edit. */
+  knowledge?: string[];
+  /** Reference patterns to imitate (`examples:`) — "build it like these". */
+  examples?: string[];
 }
 
 export interface Policy {

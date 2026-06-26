@@ -409,6 +409,21 @@ function interpretLoopBody(name: string | null, body: Line[], defaults?: ParseDe
         .filter((s) => s.length > 0);
       i++; continue;
     }
+    // MCP: name servers whose tools the loop may use (`use tools from the "github" server`).
+    if ((m = t.match(/^use tools from (?:the\s+)?"([^"]+)"(?:\s+server)?$/i))) {
+      (loop.tools ??= []).push(m[1].trim());
+      i++; continue;
+    }
+    // The 6th context part — reference patterns to imitate.
+    if ((m = t.match(/^examples?:\s*(.+)$/i))) {
+      (loop.context ??= {}).examples = splitItems(m[1]);
+      i++; continue;
+    }
+    // Read-only reference material the agent must not edit.
+    if ((m = t.match(/^knowledge:\s*(.+)$/i))) {
+      (loop.context ??= {}).knowledge = splitItems(m[1]);
+      i++; continue;
+    }
     if ((m = t.match(/^(?:remember|keep a memory)\s+in\s+"([^"]+)"$/i))) {
       loop.memory = { file: m[1].trim() };
       i++; continue;
@@ -464,6 +479,11 @@ function interpretLoopBody(name: string | null, body: Line[], defaults?: ParseDe
   return { loop, gate };
 }
 
+/** Split a comma/"and"-separated list into trimmed items (shared by examples:/knowledge:). */
+function splitItems(s: string): string[] {
+  return s.split(",").map((x) => x.replace(/^and\s+/i, "").trim()).filter(Boolean);
+}
+
 function parseContext(s: string): LoopContext {
   const ctx: LoopContext = {};
   const items = s.split(",").map((p) => p.trim()).filter(Boolean);
@@ -516,8 +536,26 @@ function parsePipeline(lines: Line[], start: number, defaults?: ParseDefaults): 
   const { body, next } = childrenOf(lines, start + 1, header.indent);
   const stages: Stage[] = [];
   let i = 0;
+  let group = 0;
   // body is a slice; re-walk by indentation relative to the stage headers
   while (i < body.length) {
+    // `stages in parallel:` — the indented stages beneath it share a parallel-group id.
+    if (/^stages in parallel:?$/i.test(body[i].text)) {
+      group++;
+      const groupIndent = body[i].indent;
+      let j = i + 1;
+      while (j < body.length && body[j].indent > groupIndent) {
+        if (!/^stage\b/i.test(body[j].text)) {
+          throw new ParseError(`expected a "stage" inside the parallel group in pipeline "${name}"`, body[j].lineNo);
+        }
+        const { stage, next: sn } = parseStage(body, j, defaults);
+        stage.parallelGroup = group;
+        stages.push(stage);
+        j = sn;
+      }
+      i = j;
+      continue;
+    }
     if (!/^stage\b/i.test(body[i].text)) {
       throw new ParseError(`expected a "stage" inside pipeline "${name}"`, body[i].lineNo);
     }
@@ -640,6 +678,10 @@ function parseConfigLine(config: Config, ln: Line): boolean {
     config.mode = m[1].trim().toLowerCase() as "conductor" | "orchestrator";
     return true;
   }
+  if ((m = t.match(/^runs as:\s*(.+)$/i))) {
+    config.runsAs = m[1].trim();
+    return true;
+  }
   return false;
 }
 
@@ -700,6 +742,23 @@ export function parse(src: string, opts?: { defaultCycle?: CycleStep[]; defaultR
         j++;
       }
       config.observe = obs;
+      i = j;
+    } else if (/^sandbox:?$/i.test(ln.text)) {
+      const sb: import("./types.js").SandboxPolicy = {};
+      let j = i + 1;
+      while (j < lines.length && lines[j].indent > ln.indent) {
+        const o = lines[j].text;
+        if (/^no network( access)?$/i.test(o)) sb.network = "none";
+        else if ((m = o.match(/^allow egress to\s+"([^"]+)"(?:\s+only)?$/i))) { sb.network = "allowlist"; (sb.egress ??= []).push(m[1]); }
+        else if (/^cap\b/i.test(o)) {
+          const cpu = o.match(/cpu (?:at )?([\w. ]+?)(?:,|$| cores)/i); if (cpu) sb.cpu = cpu[1].trim();
+          const mem = o.match(/memory (?:at )?([\w.]+)/i); if (mem) sb.memory = mem[1].trim();
+          const time = o.match(/time (?:at )?([\w.]+)/i); if (time) sb.time = time[1].trim();
+        } else if (/^cannot reach\b/i.test(o)) { /* informational — accepted */ }
+        else throw new ParseError(`unrecognized sandbox line "${o}"`, lines[j].lineNo);
+        j++;
+      }
+      config.sandbox = sb;
       i = j;
     } else if ((m = ln.text.match(/^each cycle:\s*(.+)$/i))) {
       // Config-tier default cycle — applies to every loop without its own `each cycle:`.

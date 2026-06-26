@@ -73,6 +73,22 @@
             "meter": { "type": "boolean", "description": "Meter tokens and cost per cycle (needs a provider that reports usage)." },
             "costCap": { "type": "string", "description": "Stop and warn if spend exceeds this (e.g. \"$5\")." }
           }
+        },
+        "sandbox": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Run isolation: where code runs and what it cannot reach.",
+          "properties": {
+            "network": { "type": "string", "enum": ["none", "allowlist"] },
+            "egress": { "type": "array", "items": { "type": "string" } },
+            "cpu": { "type": "string" },
+            "memory": { "type": "string" },
+            "time": { "type": "string" }
+          }
+        },
+        "runsAs": {
+          "type": "string",
+          "description": "Identity the run executes as (`runs as: …`) — an auditable principal for unattended runs."
         }
       }
     },
@@ -137,7 +153,11 @@
             "message": { "type": "string" }
           }
         },
-        "loop": { "$ref": "#/$defs/loop" }
+        "loop": { "$ref": "#/$defs/loop" },
+        "parallelGroup": {
+          "type": "integer",
+          "description": "Stages sharing a parallel-group id run concurrently (`stages in parallel:`)."
+        }
       }
     },
     "loop": {
@@ -170,6 +190,16 @@
               "type": "boolean",
               "description": "Whether \"and the last failure\" was present.",
               "default": false
+            },
+            "knowledge": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Read-only reference material (`knowledge:`) the agent reads but must not edit."
+            },
+            "examples": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Reference patterns to imitate (`examples:`)."
             }
           }
         },
@@ -212,6 +242,11 @@
         "skills": {
           "type": "array",
           "description": "Named execution skills the loop may invoke during plan/act (e.g. [\"check-weather\", \"analyze-workout\"]). The runner surfaces them as available capabilities to coordinate, instead of one mega-prompt.",
+          "items": { "type": "string" }
+        },
+        "tools": {
+          "type": "array",
+          "description": "MCP servers whose tools the loop may use (`use tools from the \"github\" server`).",
           "items": { "type": "string" }
         },
         "memory": {

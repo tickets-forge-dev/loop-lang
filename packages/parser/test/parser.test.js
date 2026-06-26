@@ -372,3 +372,33 @@ test("observe: a config-tier observe block parses trace/meter/cost cap", () => {
   const file = parse('observe:\n  trace every cycle\n  meter tokens and cost\n  stop and warn if cost exceeds "$5"\n\nloop "x":\n  goal: g\n  check: npm test');
   assert.deepEqual(file.config.observe, { trace: true, meter: true, costCap: "$5" });
 });
+
+test("sandbox + runs as: config-tier isolation and identity", () => {
+  const file = parse(
+    'sandbox:\n  no network access\n  allow egress to "registry.npmjs.org" only\n  cap cpu at 2 cores, memory at 4g, time at 10m\n  cannot reach the host filesystem\nruns as: ci-bot\n\nloop "x":\n  goal: g\n  check: npm test'
+  );
+  assert.equal(file.config.sandbox.network, "allowlist");
+  assert.deepEqual(file.config.sandbox.egress, ["registry.npmjs.org"]);
+  assert.equal(file.config.sandbox.memory, "4g");
+  assert.equal(file.config.sandbox.time, "10m");
+  assert.equal(file.config.runsAs, "ci-bot");
+});
+
+test("knowledge/examples/tools: context + MCP keywords", () => {
+  const loop = parse(
+    'loop "x":\n  goal: g\n  knowledge: docs/api.md, the architecture diagram\n  examples: routes/payments.ts\n  use tools from the "github" server\n  check: npm test'
+  ).definitions[0];
+  assert.deepEqual(loop.context.knowledge, ["docs/api.md", "the architecture diagram"]);
+  assert.deepEqual(loop.context.examples, ["routes/payments.ts"]);
+  assert.deepEqual(loop.tools, ["github"]);
+});
+
+test("parallel stages: 'stages in parallel:' assigns a shared group id", () => {
+  const pipe = parse(
+    'pipeline "p":\n  stage "a":\n    goal: g\n    check: t\n  stages in parallel:\n    stage "b":\n      goal: g\n      check: t\n    stage "c":\n      goal: g\n      check: t'
+  ).definitions[0];
+  assert.equal(pipe.stages.length, 3);
+  assert.equal(pipe.stages[0].parallelGroup, undefined);
+  assert.equal(pipe.stages[1].parallelGroup, 1);
+  assert.equal(pipe.stages[2].parallelGroup, 1);
+});
