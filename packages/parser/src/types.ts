@@ -37,6 +37,12 @@ export interface Config {
   notify?: string;
   git?: GitPolicy;
   models?: ModelPolicy;
+  /**
+   * File-level default cycle (`each cycle: …` at the config tier). Applies to every
+   * loop that doesn't declare its own `each cycle:`. A per-loop `each cycle:` overrides
+   * it; with neither, the built-in default is plan → act → observe. Lowest wins, like git.
+   */
+  cycle?: CycleStep[];
 }
 
 export interface OverrideEntry {

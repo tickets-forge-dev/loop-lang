@@ -44,7 +44,16 @@
           "description": "Notification destination (e.g. \"slack\"). Deferred past v1."
         },
         "git": { "$ref": "#/$defs/gitPolicy" },
-        "models": { "$ref": "#/$defs/modelPolicy" }
+        "models": { "$ref": "#/$defs/modelPolicy" },
+        "cycle": {
+          "type": "array",
+          "description": "File-level default cycle (`each cycle: …` at the config tier). Applies to every loop without its own `each cycle:`; a per-loop cycle overrides it. Lowest wins, like git.",
+          "items": {
+            "type": "string",
+            "enum": ["plan", "act", "observe"]
+          },
+          "minItems": 1
+        }
       }
     },
     "definitions": {

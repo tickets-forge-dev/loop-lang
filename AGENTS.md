@@ -75,6 +75,7 @@ plan from "<file>"        (read the plan from a file you control instead of gene
 
 use the <method> method   schedule: <when>   runner: <agent>   target: <dir>   (config tier)
 models: fast <model>, strong <model>   model tiering: plan/reflect/also→fast, act→strong (cascades; override e.g. `act fast`, `all strong`)
+each cycle: plan, then act, then observe   (config tier: the default cycle for every loop in the file; a loop's own `each cycle:` overrides it)
 ```
 
 ### Predicates (`done when …`)
@@ -278,6 +279,45 @@ loop "add a healthcheck endpoint":
   when it fails: reflect, then plan again
   after 6 tries: stop and warn "healthcheck stuck"
 ```
+
+## Config defaults & the project config file
+
+Anything in the **config tier** (the top of the file, before any definition) sets a default for
+every loop in that file — so you write it once instead of repeating it per loop. The most common
+repeater is the cycle:
+
+```loop
+each cycle: plan, then act, then observe   # the default for every loop below
+models: fast haiku, strong opus
+
+pipeline "epic: ship it":
+  stage "story: build":
+    goal: it builds
+    done when "pnpm build" passes            # no `each cycle:` — inherits the default
+  stage "story: verify":
+    goal: tests pass
+    each cycle: act, then observe            # overrides just this stage
+    done when "pnpm test" passes
+```
+
+### `loop.config` — defaults for the whole repo
+
+To avoid repeating config across *files*, drop a **`loop.config`** (or `.looprc`) at your project
+root. It is written in the same config-tier syntax — `each cycle:`, `models:`, a `git:` block — and
+the runner reads it before every run, walking up from the `.loop` file to find it. It is the
+**lowest** tier of the cascade, so a file's own config (and a per-loop directive) overrides it.
+
+```loop
+# loop.config — applies to every .loop in the repo
+each cycle: plan, then act, then observe
+models: fast haiku, strong opus
+git:
+  work on a branch
+  commit when the goal is met
+```
+
+**Cascade (lowest wins):** `loop.config` → a file's config tier → a per-loop directive.
+The same rule already governs `git:` and `models:`.
 
 ## Show the flow — every time it changes
 

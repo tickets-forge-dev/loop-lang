@@ -281,7 +281,7 @@ interface LoopBodyResult {
   gate: { message: string } | null;
 }
 
-function interpretLoopBody(name: string | null, body: Line[]): LoopBodyResult {
+function interpretLoopBody(name: string | null, body: Line[], defaultCycle?: CycleStep[]): LoopBodyResult {
   const loop: Loop = { kind: "loop", name, goal: "", cycle: [] };
   let gate: { message: string } | null = null;
   let sawGoal = false;
@@ -376,7 +376,8 @@ function interpretLoopBody(name: string | null, body: Line[]): LoopBodyResult {
   }
 
   if (!sawGoal) throw new ParseError(`loop "${name ?? "(anonymous)"}" is missing a goal`, body[0]?.lineNo ?? 0);
-  if (!sawCycle) loop.cycle = ["plan", "act", "observe"]; // sensible default
+  // Cascade (lowest wins): per-loop `each cycle:` > config-tier default > built-in plan/act/observe.
+  if (!sawCycle) loop.cycle = defaultCycle?.length ? [...defaultCycle] : ["plan", "act", "observe"];
   return { loop, gate };
 }
 
@@ -413,7 +414,7 @@ function mergePolicy(loop: Loop, line: string) {
 
 // ---------- pipeline / stage ----------
 
-function parseStage(lines: Line[], start: number): { stage: Stage; next: number } {
+function parseStage(lines: Line[], start: number, defaultCycle?: CycleStep[]): { stage: Stage; next: number } {
   const header = lines[start];
   const m = header.text.match(/^stage\s+(.+?):\s*$/i);
   if (!m) throw new ParseError(`expected "stage <name>:"`, header.lineNo);
@@ -422,11 +423,11 @@ function parseStage(lines: Line[], start: number): { stage: Stage; next: number 
   const name = quoted(raw) ?? raw;
   const { body, next } = childrenOf(lines, start + 1, header.indent);
   if (body.length === 0) throw new ParseError(`stage "${name}" has no body`, header.lineNo);
-  const { loop, gate } = interpretLoopBody(null, body);
+  const { loop, gate } = interpretLoopBody(null, body, defaultCycle);
   return { stage: { name, gate, loop }, next };
 }
 
-function parsePipeline(lines: Line[], start: number): { pipeline: Pipeline; next: number } {
+function parsePipeline(lines: Line[], start: number, defaultCycle?: CycleStep[]): { pipeline: Pipeline; next: number } {
   const header = lines[start];
   const name = quoted(header.text) ?? header.text.replace(/^pipeline\s+/i, "").replace(/:$/, "").trim();
   const { body, next } = childrenOf(lines, start + 1, header.indent);
@@ -437,7 +438,7 @@ function parsePipeline(lines: Line[], start: number): { pipeline: Pipeline; next
     if (!/^stage\b/i.test(body[i].text)) {
       throw new ParseError(`expected a "stage" inside pipeline "${name}"`, body[i].lineNo);
     }
-    const { stage, next: sn } = parseStage(body, i);
+    const { stage, next: sn } = parseStage(body, i, defaultCycle);
     stages.push(stage);
     i = sn;
   }
@@ -445,11 +446,11 @@ function parsePipeline(lines: Line[], start: number): { pipeline: Pipeline; next
   return { pipeline: { kind: "pipeline", name, stages }, next };
 }
 
-function parseLoopDef(lines: Line[], start: number): { loop: Loop; next: number } {
+function parseLoopDef(lines: Line[], start: number, defaultCycle?: CycleStep[]): { loop: Loop; next: number } {
   const header = lines[start];
   const name = quoted(header.text);
   const { body, next } = childrenOf(lines, start + 1, header.indent);
-  const { loop } = interpretLoopBody(name, body);
+  const { loop } = interpretLoopBody(name, body, defaultCycle);
   return { loop, next };
 }
 
@@ -549,7 +550,14 @@ function parseConfigLine(config: Config, ln: Line): boolean {
 
 // ---------- entry ----------
 
-export function parse(src: string): LoopFile {
+/**
+ * Parse a `.loop` source into a LoopFile.
+ *
+ * `opts.defaultCycle` seeds the cycle cascade from outside the file — e.g. a
+ * project-level `loop.config`. Precedence (lowest wins): a per-loop `each cycle:`
+ * > the file's config-tier `each cycle:` > `opts.defaultCycle` > built-in plan/act/observe.
+ */
+export function parse(src: string, opts?: { defaultCycle?: CycleStep[] }): LoopFile {
   const lines = tokenizeLines(src);
   const config: Config = {};
   const definitions: Definition[] = [];
@@ -557,15 +565,16 @@ export function parse(src: string): LoopFile {
 
   while (i < lines.length) {
     const ln = lines[i];
+    let m: RegExpMatchArray | null;
     if (ln.indent !== 0) {
       throw new ParseError(`unexpected indentation at top level: "${ln.text}"`, ln.lineNo);
     }
     if (/^loop\b/i.test(ln.text)) {
-      const { loop, next } = parseLoopDef(lines, i);
+      const { loop, next } = parseLoopDef(lines, i, config.cycle ?? opts?.defaultCycle);
       definitions.push(loop);
       i = next;
     } else if (/^pipeline\b/i.test(ln.text)) {
-      const { pipeline, next } = parsePipeline(lines, i);
+      const { pipeline, next } = parsePipeline(lines, i, config.cycle ?? opts?.defaultCycle);
       definitions.push(pipeline);
       i = next;
     } else if (/^flow\b/i.test(ln.text)) {
@@ -578,6 +587,10 @@ export function parse(src: string): LoopFile {
       i = next;
     } else if (/^models:\s*.+$/i.test(ln.text)) {
       config.models = parseModelsLine(ln.text.replace(/^models:\s*/i, ""), ln.lineNo);
+      i++;
+    } else if ((m = ln.text.match(/^each cycle:\s*(.+)$/i))) {
+      // Config-tier default cycle — applies to every loop without its own `each cycle:`.
+      config.cycle = parseCycle(m[1], ln.lineNo);
       i++;
     } else if (parseConfigLine(config, ln)) {
       i++;

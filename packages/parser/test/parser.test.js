@@ -217,3 +217,62 @@ test("memory: 'keep a memory in' is an accepted alias", () => {
   const loop = parse('loop "x":\n  goal: g\n  keep a memory in "notes.md"').definitions[0];
   assert.deepEqual(loop.memory, { file: "notes.md" });
 });
+
+test("config-tier 'each cycle:' sets the default for loops without their own", () => {
+  const file = parse(
+    'each cycle: act, then observe\n\nloop "x":\n  goal: g\n  done when "t" passes'
+  );
+  assert.deepEqual(file.config.cycle, ["act", "observe"]);
+  // the loop inherits the config-tier default
+  assert.deepEqual(file.definitions[0].cycle, ["act", "observe"]);
+});
+
+test("per-loop 'each cycle:' overrides the config-tier default", () => {
+  const file = parse(
+    'each cycle: act, then observe\n\n' +
+      'loop "inherits":\n  goal: g\n  done when "t" passes\n\n' +
+      'loop "overrides":\n  goal: g\n  each cycle: plan, then act, then observe\n  done when "t" passes'
+  );
+  assert.deepEqual(file.definitions[0].cycle, ["act", "observe"]);            // inherits
+  assert.deepEqual(file.definitions[1].cycle, ["plan", "act", "observe"]);    // overrides
+});
+
+test("config-tier default cycle applies to pipeline stages too", () => {
+  const file = parse(
+    'each cycle: act, then observe\n\n' +
+      'pipeline "p":\n  stage "a":\n    goal: g\n    done when "t" passes\n' +
+      '  stage "b":\n    goal: g\n    each cycle: plan, then observe\n    done when "t" passes'
+  );
+  const [a, b] = file.definitions[0].stages;
+  assert.deepEqual(a.loop.cycle, ["act", "observe"]);        // inherits config default
+  assert.deepEqual(b.loop.cycle, ["plan", "observe"]);       // stage override wins
+});
+
+test("no config default → built-in plan/act/observe is preserved", () => {
+  const loop = parse('loop "x":\n  goal: g\n  done when "t" passes').definitions[0];
+  assert.deepEqual(loop.cycle, ["plan", "act", "observe"]);
+});
+
+test("config-tier default cycle is independent per loop (no shared reference)", () => {
+  const file = parse(
+    'each cycle: act, then observe\n\n' +
+      'loop "a":\n  goal: g\n  done when "t" passes\n\n' +
+      'loop "b":\n  goal: g\n  done when "t" passes'
+  );
+  assert.notEqual(file.definitions[0].cycle, file.definitions[1].cycle); // distinct arrays
+  assert.deepEqual(file.definitions[0].cycle, file.definitions[1].cycle); // same contents
+});
+
+test("parse(opts.defaultCycle): external default seeds the cascade", () => {
+  // project-level default, file has no config cycle, loop has no cycle → inherits external default
+  const inherits = parse('loop "x":\n  goal: g\n  done when "t" passes', {
+    defaultCycle: ["act", "observe"],
+  }).definitions[0];
+  assert.deepEqual(inherits.cycle, ["act", "observe"]);
+
+  // the file's own config-tier cycle still wins over the external default
+  const fileWins = parse('each cycle: plan, then observe\n\nloop "x":\n  goal: g\n  done when "t" passes', {
+    defaultCycle: ["act", "observe"],
+  }).definitions[0];
+  assert.deepEqual(fileWins.cycle, ["plan", "observe"]);
+});

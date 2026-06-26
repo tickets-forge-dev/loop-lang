@@ -74,6 +74,7 @@ export function renderFile(file: LoopFile): string {
   const m = file.config?.models;
   if (m) parts.push(`models: fast=${m.tiers?.fast ?? "default"} · strong=${m.tiers?.strong ?? "default"}`);
   if (file.config?.git) parts.push(`git: ${file.config.git.isolation ?? "branch"}${file.config.git.openPr ? " + PR" : ""}${file.config.git.push ? "" : " · no push to main"}`);
+  if (file.config?.cycle?.length) parts.push(`each cycle: ${file.config.cycle.join(" → ")}   (default)`);
   for (const d of file.definitions) parts.push(renderDef(d));
   return parts.join("\n\n") || "(empty .loop)";
 }
