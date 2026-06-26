@@ -329,3 +329,27 @@ test("friendly sugar: check: also accepts a predicate phrase", () => {
   const b = parse('loop "x":\n  goal: g\n  files: a.ts, b.ts').definitions[0];
   assert.deepEqual(b.context.files, ["a.ts", "b.ts"]);
 });
+
+test("rigor: agentic engineering injects a back-edge + thrash guard when omitted", () => {
+  const loop = parse('rigor: agentic engineering\n\nloop "x":\n  goal: g\n  check: npm test').definitions[0];
+  assert.equal(parse('rigor: agentic engineering\n\nloop "x":\n  goal: g\n  check: npm test').config.rigor, "agentic engineering");
+  const fail = loop.transitions.find((t) => t.on === "fail");
+  const guard = loop.transitions.find((t) => t.on === "attempts");
+  assert.ok(fail, "injected a reflect-on-fail back-edge");
+  assert.deepEqual(fail.do, [{ action: "reflect" }, { action: "plan" }]);
+  assert.ok(guard && guard.threshold === 8, "injected a default thrash guard");
+});
+
+test("rigor: vibe coding injects nothing; author transitions are not double-added", () => {
+  const vibe = parse('rigor: vibe coding\n\nloop "x":\n  goal: g\n  check: npm test').definitions[0];
+  assert.deepEqual(vibe.transitions ?? [], []);
+  const own = parse('rigor: agentic engineering\n\nloop "x":\n  goal: g\n  check: npm test\n  after 3 tries: stop and warn "mine"').definitions[0];
+  const guards = (own.transitions ?? []).filter((t) => t.on === "attempts");
+  assert.equal(guards.length, 1, "did not add a second guard");
+  assert.equal(guards[0].threshold, 3, "kept the author's guard");
+});
+
+test("rigor: an unknown level is a parse error; mode: parses", () => {
+  assert.throws(() => parse('rigor: yolo\n\nloop "x":\n  goal: g'), /unknown rigor/i);
+  assert.equal(parse('mode: orchestrator\n\nloop "x":\n  goal: g').config.mode, "orchestrator");
+});

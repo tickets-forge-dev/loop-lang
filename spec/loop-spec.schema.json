@@ -53,6 +53,16 @@
             "enum": ["plan", "act", "observe"]
           },
           "minItems": 1
+        },
+        "rigor": {
+          "type": "string",
+          "enum": ["vibe coding", "structured ai-assisted", "agentic engineering"],
+          "description": "The spectrum dial — bundles best-practice defaults (a back-edge + thrash guard) over every loop in the file. structured/agentic inject them when a loop omits its own; vibe coding injects nothing."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["conductor", "orchestrator"],
+          "description": "Supervision posture: conductor = in-session/synchronous (gates answered inline); orchestrator = async/reviews-outcomes (opens a PR)."
         }
       }
     },

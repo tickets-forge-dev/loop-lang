@@ -127,3 +127,25 @@ test("lint stays silent on a trajectory eval that has `the bar:`", () => {
     transitions: [{ on: "attempts", threshold: 5, do: [{ action: "stop" }] }] }] };
   assert.deepEqual(lint(file, lines('loop "t":')), []);
 });
+
+test("lint nudges 'without both' under structured/agentic rigor", () => {
+  const file = { config: { rigor: "agentic engineering" },
+    definitions: [{ kind: "loop", name: "x", doneWhen: [{ type: "command" }],
+      transitions: [{ on: "fail", do: [{ action: "reflect" }] }, { on: "attempts", threshold: 6, do: [{ action: "stop" }] }] }] };
+  const w = lint(file, lines('loop "x":'));
+  assert.equal(w.length, 1);
+  assert.match(w[0].message, /without both/i);
+});
+
+test("lint stays silent on 'without both' when no rigor is set", () => {
+  const file = { definitions: [{ kind: "loop", name: "x", doneWhen: [{ type: "command" }],
+    transitions: [{ on: "fail", do: [{ action: "reflect" }] }, { on: "attempts", threshold: 6, do: [{ action: "stop" }] }] }] };
+  assert.deepEqual(lint(file, lines('loop "x":')), []);
+});
+
+test("lint warns on the vibe+orchestrator quadrant", () => {
+  const file = { config: { rigor: "vibe coding", mode: "orchestrator" }, definitions: [] };
+  const w = lint(file, lines(""));
+  assert.equal(w.length, 1);
+  assert.match(w[0].message, /costliest combo/);
+});

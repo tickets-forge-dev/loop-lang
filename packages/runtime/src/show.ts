@@ -84,6 +84,9 @@ export function renderFile(file: LoopFile): string {
   if (m) parts.push(`models: fast=${m.tiers?.fast ?? "default"} · strong=${m.tiers?.strong ?? "default"}`);
   if (file.config?.git) parts.push(`git: ${file.config.git.isolation ?? "branch"}${file.config.git.openPr ? " + PR" : ""}${file.config.git.push ? "" : " · no push to main"}`);
   if (file.config?.cycle?.length) parts.push(`each cycle: ${file.config.cycle.join(" → ")}   (default)`);
+  if (file.config?.rigor || file.config?.mode) {
+    parts.push([file.config.rigor ? `rigor: ${file.config.rigor}` : null, file.config.mode ? `mode: ${file.config.mode}` : null].filter(Boolean).join(" · "));
+  }
   for (const d of file.definitions) parts.push(renderDef(d));
   return parts.join("\n\n") || "(empty .loop)";
 }

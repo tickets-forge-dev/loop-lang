@@ -127,7 +127,10 @@ function withProjectDefaults(fileConfig: Config | null, project: Config): Config
  */
 function loadLoopFile(absPath: string): LoopFile {
   const project = findProjectConfig(dirname(absPath));
-  const file = parse(readFileSync(absPath, "utf8"), { defaultCycle: project?.config.cycle });
+  const file = parse(readFileSync(absPath, "utf8"), {
+    defaultCycle: project?.config.cycle,
+    defaultRigor: project?.config.rigor,
+  });
   return project ? { ...file, config: withProjectDefaults(file.config, project.config) } : file;
 }
 

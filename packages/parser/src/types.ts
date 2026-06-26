@@ -21,6 +21,20 @@ export interface GitPolicy {
   openPr?: boolean;
 }
 
+/**
+ * Where a loop sits on the vibe-coding → agentic-engineering spectrum. A config-tier dial
+ * that expands to bundled defaults (reflect-on-fail, a thrash guard) over every loop in the
+ * file. `vibe coding` = no injected defaults (fast/disposable); `structured ai-assisted` and
+ * `agentic engineering` = born with a back-edge + a guard unless the loop sets its own.
+ */
+export type Rigor = "vibe coding" | "structured ai-assisted" | "agentic engineering";
+
+/** External defaults threaded into loop parsing (from the config tier or a project loop.config). */
+export interface ParseDefaults {
+  cycle?: CycleStep[];
+  rigor?: Rigor;
+}
+
 export type ModelTier = "fast" | "strong";
 export type ModelPhase = "plan" | "act" | "reflect" | "also";
 export interface ModelPolicy {
@@ -43,6 +57,10 @@ export interface Config {
    * it; with neither, the built-in default is plan → act → observe. Lowest wins, like git.
    */
   cycle?: CycleStep[];
+  /** The spectrum dial (`rigor: …`) — bundles best-practice defaults over every loop in the file. */
+  rigor?: Rigor;
+  /** Supervision posture (`mode: …`): conductor = in-session/synchronous; orchestrator = async/reviews-outcomes. */
+  mode?: "conductor" | "orchestrator";
 }
 
 export interface OverrideEntry {

@@ -11,13 +11,17 @@ import {
   LoopFile,
   LOOP_VERSION,
   ModelPolicy,
+  ParseDefaults,
   ParseError,
   Pipeline,
   Policy,
   Predicate,
+  Rigor,
   Stage,
   Transition,
 } from "./types.js";
+
+const RIGOR_LEVELS: Rigor[] = ["vibe coding", "structured ai-assisted", "agentic engineering"];
 
 interface Line {
   indent: number;
@@ -285,7 +289,7 @@ interface LoopBodyResult {
   gate: { message: string } | null;
 }
 
-function interpretLoopBody(name: string | null, body: Line[], defaultCycle?: CycleStep[]): LoopBodyResult {
+function interpretLoopBody(name: string | null, body: Line[], defaults?: ParseDefaults): LoopBodyResult {
   const loop: Loop = { kind: "loop", name, goal: "", cycle: [] };
   let gate: { message: string } | null = null;
   let sawGoal = false;
@@ -406,7 +410,21 @@ function interpretLoopBody(name: string | null, body: Line[], defaultCycle?: Cyc
 
   if (!sawGoal) throw new ParseError(`loop "${name ?? "(anonymous)"}" is missing a goal`, body[0]?.lineNo ?? 0);
   // Cascade (lowest wins): per-loop `each cycle:` > config-tier default > built-in plan/act/observe.
-  if (!sawCycle) loop.cycle = defaultCycle?.length ? [...defaultCycle] : ["plan", "act", "observe"];
+  if (!sawCycle) loop.cycle = defaults?.cycle?.length ? [...defaults.cycle] : ["plan", "act", "observe"];
+
+  // rigor: structured/agentic loops are born with a back-edge and a thrash guard unless the
+  // author set their own — the "sensible defaults" that keep a loop safe without boilerplate.
+  // `vibe coding` (and no rigor at all) injects nothing, so existing files are unchanged.
+  if (defaults?.rigor === "structured ai-assisted" || defaults?.rigor === "agentic engineering") {
+    const has = (on: Transition["on"]) => (loop.transitions ?? []).some((t) => t.on === on);
+    if (loop.doneWhen?.length && !has("fail")) {
+      (loop.transitions ??= []).push({ on: "fail", do: [{ action: "reflect" }, { action: "plan" }] });
+    }
+    if (has("fail") && !has("attempts")) {
+      (loop.transitions ??= []).push({ on: "attempts", threshold: 8, do: [{ action: "stop", warn: "thrashing" }] });
+    }
+  }
+
   return { loop, gate };
 }
 
@@ -443,7 +461,7 @@ function mergePolicy(loop: Loop, line: string) {
 
 // ---------- pipeline / stage ----------
 
-function parseStage(lines: Line[], start: number, defaultCycle?: CycleStep[]): { stage: Stage; next: number } {
+function parseStage(lines: Line[], start: number, defaults?: ParseDefaults): { stage: Stage; next: number } {
   const header = lines[start];
   const m = header.text.match(/^stage\s+(.+?):\s*$/i);
   if (!m) throw new ParseError(`expected "stage <name>:"`, header.lineNo);
@@ -452,11 +470,11 @@ function parseStage(lines: Line[], start: number, defaultCycle?: CycleStep[]): {
   const name = quoted(raw) ?? raw;
   const { body, next } = childrenOf(lines, start + 1, header.indent);
   if (body.length === 0) throw new ParseError(`stage "${name}" has no body`, header.lineNo);
-  const { loop, gate } = interpretLoopBody(null, body, defaultCycle);
+  const { loop, gate } = interpretLoopBody(null, body, defaults);
   return { stage: { name, gate, loop }, next };
 }
 
-function parsePipeline(lines: Line[], start: number, defaultCycle?: CycleStep[]): { pipeline: Pipeline; next: number } {
+function parsePipeline(lines: Line[], start: number, defaults?: ParseDefaults): { pipeline: Pipeline; next: number } {
   const header = lines[start];
   const name = quoted(header.text) ?? header.text.replace(/^pipeline\s+/i, "").replace(/:$/, "").trim();
   const { body, next } = childrenOf(lines, start + 1, header.indent);
@@ -467,7 +485,7 @@ function parsePipeline(lines: Line[], start: number, defaultCycle?: CycleStep[])
     if (!/^stage\b/i.test(body[i].text)) {
       throw new ParseError(`expected a "stage" inside pipeline "${name}"`, body[i].lineNo);
     }
-    const { stage, next: sn } = parseStage(body, i, defaultCycle);
+    const { stage, next: sn } = parseStage(body, i, defaults);
     stages.push(stage);
     i = sn;
   }
@@ -475,11 +493,11 @@ function parsePipeline(lines: Line[], start: number, defaultCycle?: CycleStep[])
   return { pipeline: { kind: "pipeline", name, stages }, next };
 }
 
-function parseLoopDef(lines: Line[], start: number, defaultCycle?: CycleStep[]): { loop: Loop; next: number } {
+function parseLoopDef(lines: Line[], start: number, defaults?: ParseDefaults): { loop: Loop; next: number } {
   const header = lines[start];
   const name = quoted(header.text);
   const { body, next } = childrenOf(lines, start + 1, header.indent);
-  const { loop } = interpretLoopBody(name, body, defaultCycle);
+  const { loop } = interpretLoopBody(name, body, defaults);
   return { loop, next };
 }
 
@@ -574,6 +592,18 @@ function parseConfigLine(config: Config, ln: Line): boolean {
     config.notify = m[1].trim();
     return true;
   }
+  if ((m = t.match(/^rigor:\s*(.+)$/i))) {
+    const level = m[1].trim().toLowerCase();
+    if (!RIGOR_LEVELS.includes(level as Rigor)) {
+      throw new ParseError(`unknown rigor "${m[1].trim()}" (expected: ${RIGOR_LEVELS.join(", ")})`, ln.lineNo);
+    }
+    config.rigor = level as Rigor;
+    return true;
+  }
+  if ((m = t.match(/^mode:\s*(conductor|orchestrator)$/i))) {
+    config.mode = m[1].trim().toLowerCase() as "conductor" | "orchestrator";
+    return true;
+  }
   return false;
 }
 
@@ -586,11 +616,16 @@ function parseConfigLine(config: Config, ln: Line): boolean {
  * project-level `loop.config`. Precedence (lowest wins): a per-loop `each cycle:`
  * > the file's config-tier `each cycle:` > `opts.defaultCycle` > built-in plan/act/observe.
  */
-export function parse(src: string, opts?: { defaultCycle?: CycleStep[] }): LoopFile {
+export function parse(src: string, opts?: { defaultCycle?: CycleStep[]; defaultRigor?: Rigor }): LoopFile {
   const lines = tokenizeLines(src);
   const config: Config = {};
   const definitions: Definition[] = [];
   let i = 0;
+  // Defaults threaded into every definition (config tier wins over the external project defaults).
+  const defaults = (): ParseDefaults => ({
+    cycle: config.cycle ?? opts?.defaultCycle,
+    rigor: config.rigor ?? opts?.defaultRigor,
+  });
 
   while (i < lines.length) {
     const ln = lines[i];
@@ -599,11 +634,11 @@ export function parse(src: string, opts?: { defaultCycle?: CycleStep[] }): LoopF
       throw new ParseError(`unexpected indentation at top level: "${ln.text}"`, ln.lineNo);
     }
     if (/^loop\b/i.test(ln.text)) {
-      const { loop, next } = parseLoopDef(lines, i, config.cycle ?? opts?.defaultCycle);
+      const { loop, next } = parseLoopDef(lines, i, defaults());
       definitions.push(loop);
       i = next;
     } else if (/^pipeline\b/i.test(ln.text)) {
-      const { pipeline, next } = parsePipeline(lines, i, config.cycle ?? opts?.defaultCycle);
+      const { pipeline, next } = parsePipeline(lines, i, defaults());
       definitions.push(pipeline);
       i = next;
     } else if (/^flow\b/i.test(ln.text)) {
