@@ -1,0 +1,10 @@
+# Context engineering's six parts, in one loop.
+loop "add the webhooks endpoint":
+  goal: POST /webhooks matches the house style
+  look at: routes/
+  knowledge: docs/webhooks-spec.md, the architecture diagram
+  examples: routes/payments.ts, routes/users.ts
+  use tools from the "github" server
+  check: pnpm test webhooks
+  when it breaks: reflect, then plan again
+  after 6 tries: stop and warn "stuck"

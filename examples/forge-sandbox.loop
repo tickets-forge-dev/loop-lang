@@ -1,6 +1,16 @@
 # examples/forge-sandbox.loop — how Forge's sandbox runner was built with LoopFlow.
 # Forge is a ticket-driven implementation platform; this module runs agent-written
 # code in isolation. Built one provable stage at a time — a failing stage halts the rest.
+
+# The isolation this module enforces is also declared here as config (not just prose),
+# so the loop that builds it runs under the same constraints, as an auditable identity.
+sandbox:
+  no network access
+  allow egress to "registry.npmjs.org" only
+  cap cpu at 2 cores, memory at 4g, time at 10m
+  cannot reach the host filesystem or cloud metadata
+runs as: forge-sandbox-bot
+
 pipeline "forge sandbox runner":
   stage isolate:
     goal: every run gets a fresh, network-less container with CPU and memory caps

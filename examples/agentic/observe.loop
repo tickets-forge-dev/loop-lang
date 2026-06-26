@@ -1,0 +1,13 @@
+# Observability — make "token burn from unverified loops" visible.
+observe:
+  trace every cycle
+  meter tokens and cost
+  stop and warn if cost exceeds "$5"
+
+loop "port the reports module":
+  goal: reports render identically under the v2 API
+  in: src/reports
+  models: fast haiku, strong opus
+  check: pnpm test reports
+  when it breaks: reflect, then plan again
+  after 8 tries: stop and warn "stuck"

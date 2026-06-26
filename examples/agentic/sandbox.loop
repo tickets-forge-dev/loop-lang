@@ -1,0 +1,12 @@
+# Run isolation — where code runs and what it cannot reach.
+sandbox:
+  no network access
+  allow egress to "registry.npmjs.org" only
+  cap cpu at 2 cores, memory at 4g, time at 10m
+  cannot reach the host filesystem or cloud metadata
+runs as: ci-bot
+
+loop "run the agent-written migration":
+  goal: the generated migration applies cleanly against a scratch db
+  check: pnpm test:migration
+  each cycle: act, then observe

@@ -1,0 +1,11 @@
+# `rigor: agentic engineering` gives every loop a reflect-on-fail back-edge and a
+# thrash guard for free — sensible defaults you don't have to write.
+rigor: agentic engineering
+models: fast haiku, strong opus
+
+loop "harden the auth module":
+  goal: auth handles malformed tokens safely
+  in: src/auth
+  done when "pnpm test auth" passes
+  done when the skill "security-review" approves on the trajectory
+    the bar: no secrets logged; rejects malformed tokens without crashing
