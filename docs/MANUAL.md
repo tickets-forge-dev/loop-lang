@@ -331,6 +331,25 @@ git:
 
 **Cascade (lowest wins):** `loop.config` → a file's config tier → a per-loop directive.
 
+### Agentic-engineering features
+
+These bring *The New SDLC with Vibe Coding* into Loop. All are optional; a simple loop ignores them.
+
+| Construct | Where | What it does |
+|---|---|---|
+| `rigor: vibe coding \| structured ai-assisted \| agentic engineering` | config tier | The spectrum dial. Under structured/agentic, every loop is **born with** a reflect-on-fail back-edge and a thrash guard unless it sets its own — sensible defaults, no boilerplate. Also enables the "without both [tests and evals]" lint. |
+| `mode: conductor \| orchestrator` | config tier | Supervision posture — conductor (in-session, gates inline) vs orchestrator (async, opens a PR). |
+| `hooks:` block | loop body | Deterministic checks at lifecycle points — `before each cycle` / `after act` / `on commit` / `on push` / `on stop`: `"<cmd>" passes` or `finds nothing`. **A failing hook blocks.** |
+| `observe:` block | config tier | `trace every cycle` / `meter tokens and cost` / `stop and warn if cost exceeds "$N"`. The CLI prints a stop-time **OpEx report** (cycles, reflects, first-pass success). |
+| `sandbox:` block | config tier | Run isolation: `no network access` / `allow egress to "host" only` / `cap cpu at … memory at … time at …`. |
+| `runs as: <identity>` | config tier | An auditable principal for unattended runs. |
+| `examples:` / `knowledge:` | loop body | `examples:` = reference patterns to imitate; `knowledge:` = read-only reference the agent must not edit. With `look at:`/`remember in:`/`use skills:`/`allow…ask`, a loop can declare all six context-engineering parts. |
+| `use tools from the "<server>" server` | loop body | Name MCP servers whose tools the loop may use. |
+| `stages in parallel:` | inside a pipeline | The indented stages run **concurrently** (barrier-join, fail-fast). File-safe parallel edits need a worktree per branch. |
+
+See [`examples/agentic/`](../examples/agentic/) for one file per feature; run `loop-run explain
+<file>` on any of them to read it back in plain English.
+
 ### Git strategy
 
 A `git:` block sets the version-control strategy for the run. It can appear at the top of

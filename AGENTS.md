@@ -76,6 +76,16 @@ plan from "<file>"        (read the plan from a file you control instead of gene
 use the <method> method   schedule: <when>   runner: <agent>   target: <dir>   (config tier)
 models: fast <model>, strong <model>   model tiering: plan/reflect/also→fast, act→strong (cascades; override e.g. `act fast`, `all strong`)
 each cycle: plan, then act, then observe   (config tier: the default cycle for every loop in the file; a loop's own `each cycle:` overrides it)
+rigor: vibe coding | structured ai-assisted | agentic engineering   (the spectrum dial; structured/agentic give every loop a back-edge + thrash guard for free)
+mode: conductor | orchestrator   (supervision posture: in-session/sync vs async/opens-a-PR)
+runs as: <identity>   (an auditable principal for unattended runs)
+observe:   (block) trace every cycle / meter tokens and cost / stop and warn if cost exceeds "$N"
+sandbox:   (block) no network access / allow egress to "host" only / cap cpu at … memory at … time at …
+hooks:     (loop body block) before each cycle | after act | on commit | on stop : "<cmd>" passes|finds nothing   (a failing hook blocks)
+examples: <files>      (reference patterns to imitate — context engineering's 6th part)
+knowledge: <files>     (read-only reference the agent must not edit)
+use tools from the "<server>" server   (MCP: name servers whose tools the loop may use)
+stages in parallel:    (inside a pipeline: the indented stages run concurrently)
 ```
 
 ### Predicates (`done when …`)
