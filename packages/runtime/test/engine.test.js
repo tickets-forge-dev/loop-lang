@@ -689,3 +689,22 @@ test("reflect sees the trajectory of the failing cycle (Story 3)", async () => {
   assert.equal(runner.reflectCalls.length, 1, "reflected on the one failure");
   assert.match(runner.reflectCalls[0].trajectory, /Edit a\.ts/, "reflect received the cycle's trajectory");
 });
+
+// ---- hooks (Story 7) ----
+
+test("hooks: a failing before-cycle hook blocks the loop", async () => {
+  const def = parse('loop "x":\n  goal: g\n  check: npm test\n  hooks:\n    before each cycle: "tsc" passes').definitions[0];
+  const outcome = await runDefinition(def, {
+    runner: new MockRunner(), verifier: new SeqVerifier([false]), human: new ScriptedHumanIO(), baseDir: "/p",
+  });
+  assert.equal(outcome.satisfied, false);
+  assert.equal(outcome.reason, "blocked");
+});
+
+test("hooks: a passing before-cycle hook lets the loop proceed to done", async () => {
+  const def = parse('loop "x":\n  goal: g\n  check: npm test\n  hooks:\n    before each cycle: "tsc" passes\n  after 2 tries: stop and warn "x"').definitions[0];
+  const outcome = await runDefinition(def, {
+    runner: new MockRunner(), verifier: new SeqVerifier([true, true]), human: new ScriptedHumanIO(), baseDir: "/p",
+  });
+  assert.equal(outcome.satisfied, true);
+});

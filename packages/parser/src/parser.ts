@@ -6,6 +6,8 @@ import {
   Flow,
   FlowStep,
   GitPolicy,
+  Hook,
+  HookPoint,
   Loop,
   LoopContext,
   LoopFile,
@@ -22,6 +24,16 @@ import {
 } from "./types.js";
 
 const RIGOR_LEVELS: Rigor[] = ["vibe coding", "structured ai-assisted", "agentic engineering"];
+
+const HOOK_POINTS: Record<string, HookPoint> = {
+  "before each cycle": "before-cycle",
+  "after plan": "after-plan",
+  "after act": "after-act",
+  "after observe": "after-observe",
+  "on commit": "on-commit",
+  "on push": "on-push",
+  "on stop": "on-stop",
+};
 
 interface Line {
   indent: number;
@@ -192,6 +204,18 @@ function parseWhenCondition(cond: string, lineNo: number): Pick<Transition, "on"
   throw new ParseError(`unknown condition "when ${cond}"`, lineNo);
 }
 
+// ---------- hooks (`hooks:` block — deterministic checks at lifecycle points) ----------
+
+function parseHook(text: string, lineNo: number): Hook {
+  const m = text.match(/^(before each cycle|after plan|after act|after observe|on commit|on push|on stop):\s*(.+)$/i);
+  if (!m) throw new ParseError(`unrecognized hook "${text}" (expected e.g. \`on commit: "cmd" finds nothing\`)`, lineNo);
+  const pred = parsePredicate(m[2], lineNo);
+  if (pred.type !== "command" && pred.type !== "test") {
+    throw new ParseError(`a hook must be a deterministic check (a command or test), not "${m[2]}"`, lineNo);
+  }
+  return { at: HOOK_POINTS[m[1].toLowerCase()], predicate: pred };
+}
+
 // ---------- cycle (`each cycle: plan, then act, then observe`) ----------
 
 function parseCycle(s: string, lineNo: number): CycleStep[] {
@@ -306,6 +330,18 @@ function interpretLoopBody(name: string | null, body: Line[], defaults?: ParseDe
       const { git, next } = parseGitBlock(body, i);
       loop.git = git;
       i = next;
+      continue;
+    }
+    if (/^hooks:?$/i.test(t)) {
+      const hooks: Hook[] = [];
+      let j = i + 1;
+      while (j < body.length && body[j].indent > ln.indent) {
+        hooks.push(parseHook(body[j].text, body[j].lineNo));
+        j++;
+      }
+      if (hooks.length === 0) throw new ParseError(`'hooks:' block is empty`, ln.lineNo);
+      loop.hooks = hooks;
+      i = j;
       continue;
     }
     if ((m = t.match(/^models:\s*(.+)$/i))) {
@@ -652,6 +688,19 @@ export function parse(src: string, opts?: { defaultCycle?: CycleStep[]; defaultR
     } else if (/^models:\s*.+$/i.test(ln.text)) {
       config.models = parseModelsLine(ln.text.replace(/^models:\s*/i, ""), ln.lineNo);
       i++;
+    } else if (/^observe:?$/i.test(ln.text)) {
+      const obs: import("./types.js").ObservePolicy = {};
+      let j = i + 1;
+      while (j < lines.length && lines[j].indent > ln.indent) {
+        const o = lines[j].text;
+        if (/^trace( every cycle)?$/i.test(o)) obs.trace = true;
+        else if (/^meter (tokens and cost|cost|tokens)$/i.test(o)) obs.meter = true;
+        else if ((m = o.match(/^stop and warn if cost exceeds\s+"?([^"]+)"?$/i))) obs.costCap = m[1].trim();
+        else throw new ParseError(`unrecognized observe line "${o}"`, lines[j].lineNo);
+        j++;
+      }
+      config.observe = obs;
+      i = j;
     } else if ((m = ln.text.match(/^each cycle:\s*(.+)$/i))) {
       // Config-tier default cycle — applies to every loop without its own `each cycle:`.
       config.cycle = parseCycle(m[1], ln.lineNo);

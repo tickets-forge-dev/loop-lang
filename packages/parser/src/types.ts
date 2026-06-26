@@ -29,6 +29,16 @@ export interface GitPolicy {
  */
 export type Rigor = "vibe coding" | "structured ai-assisted" | "agentic engineering";
 
+/** Observability policy (`observe:` block): trace, cost metering, and an optional spend cap. */
+export interface ObservePolicy {
+  /** Emit a per-cycle trace and a stop-time OpEx report. */
+  trace?: boolean;
+  /** Meter tokens and cost per cycle (requires a provider that reports usage). */
+  meter?: boolean;
+  /** Stop and warn if spend exceeds this (e.g. "$5"). Enforced when the runner reports cost. */
+  costCap?: string;
+}
+
 /** External defaults threaded into loop parsing (from the config tier or a project loop.config). */
 export interface ParseDefaults {
   cycle?: CycleStep[];
@@ -61,6 +71,8 @@ export interface Config {
   rigor?: Rigor;
   /** Supervision posture (`mode: …`): conductor = in-session/synchronous; orchestrator = async/reviews-outcomes. */
   mode?: "conductor" | "orchestrator";
+  /** Observability (`observe:` block): trace + cost metering + an optional spend cap. */
+  observe?: ObservePolicy;
 }
 
 export interface OverrideEntry {
@@ -101,6 +113,8 @@ export interface Loop {
   /** A markdown file the loop reads on start and appends to on stop — cross-run memory. */
   memory?: LoopMemory;
   planSource?: PlanSource;
+  /** Deterministic checks bound to lifecycle points (`hooks:`). A failing hook blocks. */
+  hooks?: Hook[];
   humanPlan?: boolean;
   humanReviewBeforeStop?: boolean;
   transitions?: Transition[];
@@ -109,6 +123,15 @@ export interface Loop {
 }
 
 export type CycleStep = "plan" | "act" | "observe";
+
+/** A lifecycle point a `hooks:` check binds to. */
+export type HookPoint = "before-cycle" | "after-plan" | "after-act" | "after-observe" | "on-commit" | "on-push" | "on-stop";
+
+/** A deterministic check bound to a lifecycle point — a failing hook blocks. */
+export interface Hook {
+  at: HookPoint;
+  predicate: Predicate;
+}
 
 export interface LoopContext {
   files?: string[];

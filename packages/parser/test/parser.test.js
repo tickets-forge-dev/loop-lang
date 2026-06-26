@@ -353,3 +353,22 @@ test("rigor: an unknown level is a parse error; mode: parses", () => {
   assert.throws(() => parse('rigor: yolo\n\nloop "x":\n  goal: g'), /unknown rigor/i);
   assert.equal(parse('mode: orchestrator\n\nloop "x":\n  goal: g').config.mode, "orchestrator");
 });
+
+test("hooks: a hooks block parses into lifecycle-bound checks", () => {
+  const loop = parse(
+    'loop "x":\n  goal: g\n  check: npm test\n  hooks:\n    before each cycle: "tsc" passes\n    on commit: "semgrep" finds nothing'
+  ).definitions[0];
+  assert.deepEqual(loop.hooks, [
+    { at: "before-cycle", predicate: { type: "command", command: "tsc", expect: "exit-zero" } },
+    { at: "on-commit", predicate: { type: "command", command: "semgrep", expect: "empty" } },
+  ]);
+});
+
+test("hooks: a non-deterministic hook predicate is rejected", () => {
+  assert.throws(() => parse('loop "x":\n  goal: g\n  hooks:\n    on commit: the skill "x" approves'), /deterministic/i);
+});
+
+test("observe: a config-tier observe block parses trace/meter/cost cap", () => {
+  const file = parse('observe:\n  trace every cycle\n  meter tokens and cost\n  stop and warn if cost exceeds "$5"\n\nloop "x":\n  goal: g\n  check: npm test');
+  assert.deepEqual(file.config.observe, { trace: true, meter: true, costCap: "$5" });
+});

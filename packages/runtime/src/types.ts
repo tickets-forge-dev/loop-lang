@@ -17,6 +17,7 @@ export type LoopEvent =
   | { type: "memory-read"; file: string; bytes: number }
   | { type: "memory-write"; file: string; bytes: number }
   | { type: "skill-verify"; skill: string; passed: boolean; detail: string }
+  | { type: "hook"; at: string; detail: string; passed: boolean }
   | { type: "human"; kind: "plan" | "review" | "gate" | "confirm" | "ask"; prompt: string; answer?: string }
   | { type: "stop"; reason: StopReason; warn?: string }
   | { type: "loop-end"; name: string | null; satisfied: boolean }

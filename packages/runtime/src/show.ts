@@ -43,6 +43,10 @@ export function renderLoop(loop: Loop): string {
   if (loop.humanPlan) L.push(`   👤 a human approves the plan first`);
   if (loop.humanReviewBeforeStop) L.push(`   👤 a human reviews before stopping`);
   if (asksWhenBlocked(loop.transitions)) L.push(`   👤 when blocked: ask a human`);
+  for (const h of loop.hooks ?? []) {
+    const what = h.predicate.type === "command" ? `"${h.predicate.command}" ${h.predicate.expect === "empty" ? "finds nothing" : "passes"}` : h.predicate.type === "test" ? `test "${h.predicate.target}"` : "";
+    L.push(`   ⊘  hook ${h.at.replace(/-/g, " ")}: ${what}`);
+  }
   if (loop.also?.length) L.push(`   +  also: ${loop.also.join(", ")}`);
   if (loop.goal) L.push(`   ·  goal: ${loop.goal}`);
   return L.join("\n");
@@ -86,6 +90,10 @@ export function renderFile(file: LoopFile): string {
   if (file.config?.cycle?.length) parts.push(`each cycle: ${file.config.cycle.join(" → ")}   (default)`);
   if (file.config?.rigor || file.config?.mode) {
     parts.push([file.config.rigor ? `rigor: ${file.config.rigor}` : null, file.config.mode ? `mode: ${file.config.mode}` : null].filter(Boolean).join(" · "));
+  }
+  if (file.config?.observe) {
+    const o = file.config.observe;
+    parts.push(`observe: ${[o.trace ? "trace" : null, o.meter ? "meter" : null, o.costCap ? `cap ${o.costCap}` : null].filter(Boolean).join(" · ")}`);
   }
   for (const d of file.definitions) parts.push(renderDef(d));
   return parts.join("\n\n") || "(empty .loop)";

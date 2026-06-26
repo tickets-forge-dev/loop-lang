@@ -1,5 +1,5 @@
 import { resolve, dirname, basename } from "node:path";
-import type { Loop, Pipeline, Flow, FlowStep, Definition, Transition, Action, LoopFile } from "@loop-lang/parser";
+import type { Loop, Pipeline, Flow, FlowStep, Definition, Transition, Action, LoopFile, HookPoint } from "@loop-lang/parser";
 import type { CycleNode, LoopEvent, LoopOutcome, RunOptions, StopReason } from "./types.js";
 import { enumerateItems } from "./iterate.js";
 import { resolveGit, isProtected } from "./git.js";
@@ -120,11 +120,25 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
       ? ["plan", ...(loop.cycle as CycleNode[])]
       : (loop.cycle as CycleNode[]);
 
+  // Run every hook bound to a lifecycle point. Returns false if any fails (a hook blocks).
+  const runHooks = async (at: HookPoint): Promise<boolean> => {
+    let ok = true;
+    for (const h of loop.hooks ?? []) {
+      if (h.at !== at) continue;
+      const r = await opts.verifier.verify(h.predicate, opts.baseDir);
+      const label = h.predicate.type === "command" ? h.predicate.command : h.predicate.type === "test" ? h.predicate.target : h.predicate.type;
+      emit(opts, { type: "hook", at, detail: label, passed: r.passed });
+      if (!r.passed) ok = false;
+    }
+    return ok;
+  };
+
   const finish = async (satisfied: boolean, reason: StopReason, warn?: string): Promise<LoopOutcome> => {
-    await writeMemory(satisfied, reason);
+    const ok = (await runHooks("on-stop")) && satisfied; // an on-stop hook can veto a clean stop
+    await writeMemory(ok, reason);
     emit(opts, { type: "stop", reason, ...(warn ? { warn } : {}) });
-    emit(opts, { type: "loop-end", name: loop.name, satisfied });
-    return { satisfied, reason, attempts, summary: lastOutput };
+    emit(opts, { type: "loop-end", name: loop.name, satisfied: ok });
+    return { satisfied: ok, reason, attempts, summary: lastOutput };
   };
 
   while (true) {
@@ -132,11 +146,14 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
     if (attempts > hardCap) {
       return finish(false, "hard-cap");
     }
+    // Lifecycle hook: a failing pre-cycle check blocks before any work this round.
+    if (!(await runHooks("before-cycle"))) return finish(false, "blocked", "a before-cycle hook failed");
 
     let blocked = false;
     let passed = false;
     let observeOutput = "";
     let observed = false;
+    let hookBlocked = false;
 
     for (const step of cycleSteps) {
       emit(opts, { type: "node-enter", node: step, attempt: attempts });
@@ -240,9 +257,14 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
         emit(opts, { type: "observe", passed: allPassed, output: observeOutput });
         emit(opts, { type: "node-exit", node: step, attempt: attempts, ok: allPassed });
       }
+      // Lifecycle hook: a deterministic check bound to this step. A failure blocks the loop.
+      const afterPoint: HookPoint = step === "plan" ? "after-plan" : step === "act" ? "after-act" : "after-observe";
+      if (!(await runHooks(afterPoint))) { hookBlocked = true; break; }
     }
+    if (hookBlocked) return finish(false, "blocked", `a ${"after"}-step hook failed`);
 
     if (opts.git && resolveGit(opts.gitPolicy, loop.git).commit === "cycle") {
+      if (!(await runHooks("on-commit"))) return finish(false, "blocked", "an on-commit hook failed");
       await gitCommit(opts, `loop: ${loop.name ?? "cycle"} — cycle ${attempts}`);
     }
 

@@ -63,6 +63,16 @@
           "type": "string",
           "enum": ["conductor", "orchestrator"],
           "description": "Supervision posture: conductor = in-session/synchronous (gates answered inline); orchestrator = async/reviews-outcomes (opens a PR)."
+        },
+        "observe": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Observability: a per-cycle trace, cost metering, and an optional spend cap.",
+          "properties": {
+            "trace": { "type": "boolean", "description": "Emit a per-cycle trace and a stop-time OpEx report." },
+            "meter": { "type": "boolean", "description": "Meter tokens and cost per cycle (needs a provider that reports usage)." },
+            "costCap": { "type": "string", "description": "Stop and warn if spend exceeds this (e.g. \"$5\")." }
+          }
         }
       }
     },
@@ -189,6 +199,11 @@
           },
           "minItems": 1
         },
+        "hooks": {
+          "type": "array",
+          "description": "Deterministic checks bound to lifecycle points (`hooks:`). A failing hook blocks.",
+          "items": { "$ref": "#/$defs/hook" }
+        },
         "also": {
           "type": "array",
           "description": "Extra finishing passes run in order after the goal is met (e.g. \"polish\", \"run a security check\", \"update the docs\"). Lightweight agent passes; promote to a stage when one needs its own verification.",
@@ -238,6 +253,19 @@
         },
         "git": { "$ref": "#/$defs/gitPolicy" },
         "models": { "$ref": "#/$defs/modelPolicy" }
+      }
+    },
+    "hook": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["at", "predicate"],
+      "properties": {
+        "at": {
+          "type": "string",
+          "enum": ["before-cycle", "after-plan", "after-act", "after-observe", "on-commit", "on-push", "on-stop"],
+          "description": "The lifecycle point this check runs at."
+        },
+        "predicate": { "$ref": "#/$defs/predicate" }
       }
     },
     "predicate": {

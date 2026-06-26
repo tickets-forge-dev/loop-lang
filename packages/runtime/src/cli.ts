@@ -12,7 +12,7 @@ import { ClaudeCodeRunner } from "./runners/claudeCode.js";
 import { IpcHumanIO } from "./ipc.js";
 import { ShellGitIO } from "./runners/shellGit.js";
 import type { LoopEvent } from "./types.js";
-import { summarizeModels, formatModelSummary } from "./summary.js";
+import { summarizeModels, formatModelSummary, summarizeOpex, formatOpexSummary } from "./summary.js";
 
 const GLYPH: Partial<Record<LoopEvent["type"], string>> = {
   "pipeline-start": "▶ pipeline",
@@ -284,6 +284,10 @@ async function main() {
 
   const summary = formatModelSummary(summarizeModels(traceEvents));
   if (summary) console.error(summary);
+  // Observability: when `observe:` is on, print the OpEx report (token burn made visible).
+  if (file.config?.observe?.trace || file.config?.observe?.meter) {
+    console.error(formatOpexSummary(summarizeOpex(traceEvents)));
+  }
 
   const ok = outcomes.every((o) => o.satisfied);
   process.exit(ok ? 0 : 1);
