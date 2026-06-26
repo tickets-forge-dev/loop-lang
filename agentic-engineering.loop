@@ -1,0 +1,131 @@
+# Agentic Engineering for Loop — the epic, as a pipeline.
+# Written in TODAY'S Loop grammar to build TOMORROW'S constructs (evals, rigor, hooks, …).
+# Detailed spec per story: docs/agentic-engineering-plan.md
+# Each stage is one story; stories run in order and a failing story halts the rest.
+
+models: fast haiku, strong opus
+
+git:
+  work on a branch
+  commit each story
+
+pipeline "epic: agentic engineering for Loop":
+
+  # ── Wave 1 · Eval core (the headline: "without both, it is always vibe coding") ──
+
+  stage "story: eval targets in the IR":
+    goal: doneWhen becomes a conjunction of predicates and the skill predicate gains a target (output or trajectory, default output) plus an inline `the bar:` rubric
+    look at: spec/loop-spec.schema.json, packages/parser/src/types.ts, packages/parser/src/parser.ts, and the last failure
+    a human approves the plan first
+    done when "npm test --workspace packages/parser" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect on whether the schema and types and parser stayed in sync, then plan again
+    after 6 tries: stop and warn "IR change is rippling — needs a human"
+
+  stage "story: capture the trajectory":
+    goal: the runtime retains a per-cycle trajectory and hands trajectory evals the cycle log instead of only the output summary
+    look at: packages/runtime/src/engine.ts, packages/runtime/src/runners/claudeCode.ts, packages/runtime/src/types.ts, and the last failure
+    done when "npm test --workspace packages/runtime" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect on what the verifier actually receives, then plan again
+    after 6 tries: stop and warn "trajectory capture stuck"
+
+  stage "story: anti-thrash and feedback wiring":
+    goal: a blocking trajectory eval requires `the bar:`, borderline verdicts escalate to a human, eval-flaps feed the thrash guard, and reflect sees the trajectory
+    look at: packages/runtime/src/engine.ts, packages/runtime/src/runners/claudeCode.ts, and the last failure
+    done when "npm test --workspace packages/runtime" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect on whether the stochastic judge can still self-thrash, then plan again
+    after 6 tries: stop and warn "eval gate still flaky"
+
+  stage "story: the without-both lint":
+    goal: a code loop with a test but no eval (or vice-versa) warns — without both, it is vibe coding
+    look at: packages/parser/src/parser.ts, packages/parser/src/types.ts, and the last failure
+    done when "npm test --workspace packages/parser" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect, then plan again
+    after 5 tries: stop and warn "lint stuck"
+
+  # ── Wave 2 · The dials (the spectrum, and who's in the loop) ──
+
+  stage "story: the rigor dial":
+    goal: rigor (vibe coding, structured ai-assisted, agentic engineering) expands to bundled defaults via the preset cascade and sets the without-both lint severity
+    look at: packages/parser/src/parser.ts, packages/parser/src/types.ts, packages/stdlib, and the last failure
+    a human approves the plan first
+    done when "npm test --workspace packages/parser" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect on the lowest-wins cascade, then plan again
+    after 6 tries: stop and warn "rigor cascade stuck"
+
+  stage "story: conductor and orchestrator mode":
+    goal: mode (conductor or orchestrator) names the in-session vs async postures and warns on the incoherent vibe-plus-orchestrator combo
+    look at: packages/parser/src/parser.ts, packages/parser/src/types.ts, and the last failure
+    done when "npm test --workspace packages/parser" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect, then plan again
+    after 5 tries: stop and warn "mode stuck"
+
+  # ── Wave 3 · Harness completeness ──
+
+  stage "story: hooks at lifecycle points":
+    goal: a hooks block runs deterministic checks at named points (before each cycle, after act, on commit, on push, on stop) and a failing hook blocks
+    look at: packages/parser/src/parser.ts, packages/runtime/src/engine.ts, packages/runtime/src/git.ts, and the last failure
+    done when "npm test --workspaces" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect on the hooks-vs-also-vs-doneWhen carve, then plan again
+    after 6 tries: stop and warn "hooks stuck"
+
+  stage "story: observe and the OpEx report":
+    goal: a per-cycle trace plus token-and-cost metering, a stop-time OpEx report, and an optional cost ceiling that stops and warns
+    look at: packages/runtime/src/engine.ts, packages/runtime/src/summary.ts, packages/runtime/src/show.ts, and the last failure
+    done when "npm test --workspace packages/runtime" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect, then plan again
+    after 6 tries: stop and warn "observe stuck"
+
+  # ── Wave 4 · Niche / standards ──
+
+  stage "story: sandbox run isolation":
+    goal: a sandbox block declares no-network, an egress allowlist, and cpu-memory-time caps as config instead of prose
+    look at: packages/parser/src/parser.ts, packages/runtime/src/engine.ts, examples/forge-sandbox.loop, and the last failure
+    a human approves the plan first
+    done when "npm test --workspaces" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect, then plan again
+    after 6 tries: stop and warn "sandbox stuck"
+
+  stage "story: knowledge and examples context":
+    goal: examples (imitate) and knowledge (read, never edit) complete the six context-engineering parts
+    look at: packages/parser/src/parser.ts, packages/parser/src/types.ts, packages/runtime/src/runners/claudeCode.ts, and the last failure
+    done when "npm test --workspace packages/parser" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect, then plan again
+    after 5 tries: stop and warn "context keywords stuck"
+
+  stage "story: parallel stages":
+    goal: stages-in-parallel fans out concurrently with a worktree per branch and a merge, backing orchestrator multi-agent work
+    look at: packages/runtime/src/engine.ts, packages/runtime/src/git.ts, packages/parser/src/parser.ts, and the last failure
+    a human approves the plan first
+    done when "npm test --workspace packages/runtime" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect on edit collisions and the merge, then plan again
+    after 6 tries: stop and warn "parallel stages — concurrency risk; needs a human"
+
+  stage "story: standards and identity":
+    goal: use-tools-from names MCP servers, the flow handoff is framed as an A2A contract, and runs-as gives background runs an auditable identity
+    look at: packages/parser/src/parser.ts, packages/runtime/src/engine.ts, packages/runtime/src/runners/claudeCode.ts, and the last failure
+    done when "npm test --workspaces" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect, then plan again
+    after 5 tries: stop and warn "standards stuck"
+
+  # ── Cross-cutting · Framing ──
+
+  stage "story: reframe docs in deck vocabulary":
+    goal: AGENTS.md and README name what Loop already is in the deck's words (intent is the new interface, conductor and orchestrator, editor terminal background, Agent equals Model plus Harness, CapEx and OpEx) with the new constructs documented and their flows printed
+    look at: AGENTS.md, README.md, docs/MANUAL.md, and the last failure
+    a human reviews before stopping
+    done when a human confirms "the docs read in the deck's vocabulary and the new constructs are covered"
+    each cycle: plan, then act, then observe
+    when it fails: reflect, then plan again
+    after 4 tries: stop and warn "docs need a human pass"
