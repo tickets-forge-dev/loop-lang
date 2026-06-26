@@ -255,6 +255,7 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
       const stop = await applyActions(t.do, loop, opts, {
         goalMet,
         output: observeOutput,
+        trajectory: lastTrajectory,
         setReflection: (r) => {
           reflection = r;
           reflections.push(r);
@@ -294,7 +295,7 @@ async function applyActions(
   actions: Action[],
   loop: Loop,
   opts: RunOptions,
-  ctx: { goalMet: boolean; output: string; setReflection: (r: string) => void }
+  ctx: { goalMet: boolean; output: string; trajectory?: string; setReflection: (r: string) => void }
 ): Promise<LoopOutcome | null> {
   for (const a of actions) {
     switch (a.action) {
@@ -317,6 +318,7 @@ async function applyActions(
           goal: loop.goal,
           focus: a.focus,
           output: ctx.output,
+          trajectory: ctx.trajectory,
           baseDir: opts.baseDir,
           model: modelForPhase(rEff, "reflect", opts.cliModel),
         });

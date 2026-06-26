@@ -231,6 +231,14 @@ function checkLoop(loop: LintLoop, line: number, out: LintWarning[]) {
   if (!(Array.isArray(loop.doneWhen) && loop.doneWhen.length) && !loop.humanReviewBeforeStop) {
     out.push({ line, message: "This loop has no way to verify it's done — add a `done when …` check or `a human reviews before stopping`." });
   }
+  // A trajectory eval gates "done" on an LM judging a non-deterministic path; without an explicit
+  // `the bar:` it can wobble run-to-run and cause its own thrash. Nudge toward a rubric.
+  const barlessTrajectoryEval = (Array.isArray(loop.doneWhen) ? loop.doneWhen : []).some(
+    (p): boolean => !!p && typeof p === "object" && (p as any).type === "skill" && (p as any).subject === "trajectory" && !(p as any).bar
+  );
+  if (barlessTrajectoryEval) {
+    out.push({ line, message: "This trajectory eval has no `the bar:` — an LM judging the path can wobble run-to-run; add `the bar: …` with explicit pass conditions." });
+  }
   // Self-correcting but unbounded: re-plans on failure with no attempt ceiling.
   const reflects = (loop.transitions ?? []).some((t) => t.on === "fail" && (t.do ?? []).some((d) => d.action === "reflect" || d.action === "plan"));
   const guarded = (loop.transitions ?? []).some((t) => t.on === "attempts" && typeof t.threshold === "number");

@@ -676,3 +676,16 @@ test("output eval: receives the act summary, not the trajectory", async () => {
   assert.equal(call.subject, "output");
   assert.equal(call.context, "ACTSUMMARY");
 });
+
+test("reflect sees the trajectory of the failing cycle (Story 3)", async () => {
+  const def = parse(
+    'loop "x":\n  goal: g\n  done when "cmd" passes\n' +
+      '  when it fails: reflect, then plan again\n  after 3 tries: stop and warn "stuck"'
+  ).definitions[0];
+  const runner = new MockRunner({ act: () => ({ summary: "did stuff", trajectory: "● Edit a.ts\n● Bash $ cmd" }) });
+  await runDefinition(def, {
+    runner, verifier: new SeqVerifier([false, true]), human: new ScriptedHumanIO(), baseDir: "/p",
+  });
+  assert.equal(runner.reflectCalls.length, 1, "reflected on the one failure");
+  assert.match(runner.reflectCalls[0].trajectory, /Edit a\.ts/, "reflect received the cycle's trajectory");
+});

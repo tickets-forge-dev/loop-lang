@@ -90,6 +90,8 @@ export interface ReflectInput {
   goal: string;
   focus?: string;
   output: string;
+  /** The most recent act's trajectory, so a `reflect on the path it took` can see it. */
+  trajectory?: string;
   baseDir: string;
   /** Model alias/id for this call; set by the engine from the model policy. */
   model?: string;

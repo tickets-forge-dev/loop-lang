@@ -227,6 +227,7 @@ export class ClaudeCodeRunner implements Runner {
       `Goal: ${input.goal}.`,
       `The verification did not pass. Output was:`,
       input.output || "(no output)",
+      ...(input.trajectory ? [`The path you took this cycle (tool calls):`, input.trajectory] : []),
       input.focus ? `Reflect specifically on: ${input.focus}.` : `Reflect on why it failed.`,
       `In 2-4 sentences, explain the likely cause and what to change next. Do not edit files.`,
     ].join("\n");

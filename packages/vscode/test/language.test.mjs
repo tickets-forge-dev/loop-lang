@@ -111,3 +111,19 @@ test("lint produces zero warnings for a flow definition", () => {
   const w = lint(file, lines(src));
   assert.deepEqual(w, [], "flow should produce no lint warnings");
 });
+
+test("lint nudges a trajectory eval that lacks `the bar:`", () => {
+  const file = { definitions: [{ kind: "loop", name: "t",
+    doneWhen: [{ type: "skill", skill: "path", subject: "trajectory" }],
+    transitions: [{ on: "attempts", threshold: 5, do: [{ action: "stop" }] }] }] };
+  const w = lint(file, lines('loop "t":'));
+  assert.equal(w.length, 1);
+  assert.match(w[0].message, /the bar:/);
+});
+
+test("lint stays silent on a trajectory eval that has `the bar:`", () => {
+  const file = { definitions: [{ kind: "loop", name: "t",
+    doneWhen: [{ type: "skill", skill: "path", subject: "trajectory", bar: "no test edits" }],
+    transitions: [{ on: "attempts", threshold: 5, do: [{ action: "stop" }] }] }] };
+  assert.deepEqual(lint(file, lines('loop "t":')), []);
+});
