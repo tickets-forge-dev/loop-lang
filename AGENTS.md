@@ -199,6 +199,10 @@ flow "deliver":
   irreversible. Use `ask me before …` for action policy, `a human approves before …`
   for a hard stage gate.
 - Output only valid `.loop` syntax. Comments start with `#`.
+- **Friendly shorthands** (all desugar to the lines above — use freely): `check:` / `verify:`
+  = `done when` (a bare value is a shell command; a predicate phrase parses as-is); `in:` /
+  `look in:` / `files:` / `context:` = `look at:`; `when it breaks` = `when it fails`;
+  `when it gets stuck` = `when blocked`.
 
 ## Example — a single loop
 
@@ -351,6 +355,7 @@ flow, show the file chain. `loop-run ls` lists every loop in the repo.
 - `loop-run run file.loop` — execute it on Claude Code (plan/act/observe, reflect on failure,
   verify with `done when`, pause at human gates).
 - `loop-run show file.loop` — print the loop's flow as compact ASCII (and `loop-run ls` to list them).
+- `loop-run explain file.loop` — describe the loop in plain English (a friendly check of what it will do).
 - `loop-run viz file.loop` — open a visual HTML schematic of the flow.
 
 ## Authoring checklist
