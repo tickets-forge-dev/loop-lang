@@ -639,3 +639,40 @@ test("regression: a loop with no skills/memory behaves exactly as before", async
   assert.ok(!events.some((e) => e.type === "memory-read" || e.type === "memory-write"));
   assert.deepEqual(store.files, {}, "no memory file written");
 });
+
+// ---- trajectory evals (Story 2) ----
+
+test("trajectory eval: the captured trajectory + the bar reach the verifier", async () => {
+  const def = parse(
+    'loop "x":\n  goal: g\n' +
+      '  done when the skill "path-review" approves on the trajectory\n' +
+      '    the bar: did not weaken a test to go green\n' +
+      '  after 2 tries: stop and warn "stuck"'
+  ).definitions[0];
+  const runner = new MockRunner({
+    act: (i) => ({ summary: `acted on: ${i.goal}`, trajectory: "● Edit refunds.ts\n● Bash $ pnpm test" }),
+    skill: () => ({ passed: true, detail: "APPROVED" }),
+  });
+  const outcome = await runDefinition(def, {
+    runner, verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: "/p",
+  });
+  assert.equal(outcome.satisfied, true);
+  const call = runner.skillCalls.at(-1);
+  assert.equal(call.subject, "trajectory");
+  assert.equal(call.bar, "did not weaken a test to go green");
+  assert.match(call.context, /Edit refunds\.ts/, "the eval judged the trajectory, not the act summary");
+});
+
+test("output eval: receives the act summary, not the trajectory", async () => {
+  const def = parse(
+    'loop "x":\n  goal: g\n  done when the skill "review" approves on the output\n  after 2 tries: stop and warn "x"'
+  ).definitions[0];
+  const runner = new MockRunner({
+    act: () => ({ summary: "ACTSUMMARY", trajectory: "TRAJ-should-not-be-used" }),
+    skill: () => ({ passed: true, detail: "ok" }),
+  });
+  await runDefinition(def, { runner, verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: "/p" });
+  const call = runner.skillCalls.at(-1);
+  assert.equal(call.subject, "output");
+  assert.equal(call.context, "ACTSUMMARY");
+});

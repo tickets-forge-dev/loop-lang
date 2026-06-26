@@ -67,6 +67,8 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
   let lastPlan = "";
   let lastOutput = "";
   let lastActSummary = "";
+  // The captured path of the most recent act — the steps/tool calls a trajectory eval judges.
+  let lastTrajectory = "";
   let attempts = 0;
   // Reflections gathered this run — the last one becomes the memory "lesson".
   const reflections: string[] = [];
@@ -192,6 +194,7 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
           model: pick("act"),
         });
         lastActSummary = res.summary;
+        lastTrajectory = res.trajectory ?? "";
         if (res.blocked) blocked = true;
         emit(opts, { type: "node-exit", node: step, attempt: attempts, ok: !res.blocked, detail: res.summary });
       } else {
@@ -209,12 +212,17 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
                 `loop "${loop.name ?? ""}" verifies with the skill "${pred.skill}" but the runner has no runSkill`
               );
             }
+            // A trajectory eval judges HOW the agent got there (the captured path);
+            // an output eval judges WHAT it produced (the act summary).
+            const isTrajectory = pred.subject === "trajectory";
             const sr = await opts.runner.runSkill({
               skill: pred.skill,
               goal: loop.goal,
-              context: lastActSummary,
+              context: isTrajectory ? (lastTrajectory || lastActSummary) : lastActSummary,
               expect: pred.expect,
               minScore: pred.minScore,
+              subject: pred.subject,
+              bar: pred.bar,
               baseDir: opts.baseDir,
             });
             emit(opts, { type: "skill-verify", skill: pred.skill, passed: sr.passed, detail: sr.detail });
