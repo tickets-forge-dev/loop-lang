@@ -38,6 +38,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npm run build  # build all workspaces so parser/runtime/viz types exist
       - run: npm run build -w loop-vscode
       - run: npx --yes @vscode/vsce@latest publish --no-dependencies
         working-directory: packages/vscode
