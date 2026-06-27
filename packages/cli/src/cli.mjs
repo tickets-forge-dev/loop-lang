@@ -3,8 +3,11 @@
 // agent can author + run .loop files. Running loops happens in your agent (the
 // /loopflow skill) or headless via the full @loop-lang/runtime CLI.
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { init } from "./init.mjs";
+
+const require = createRequire(import.meta.url);
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ASSETS = join(here, "..", "assets");
@@ -13,6 +16,7 @@ const HELP = `loop — install Loop into your repo so any agent can author + run
 
 usage:
   loop init [options]      scaffold Loop into the current repo
+  loop version             print installed version
   loop help                show this
 
 init options:
@@ -39,6 +43,12 @@ async function main(argv) {
 
   if (!cmd || cmd === "help" || cmd === "--help" || cmd === "-h") {
     console.log(HELP);
+    return;
+  }
+
+  if (cmd === "version" || cmd === "--version" || cmd === "-v") {
+    const { version } = require("../package.json");
+    console.log(`@loop-lang/loop v${version}`);
     return;
   }
 
