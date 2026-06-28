@@ -202,6 +202,7 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
     <li><a href="#workflows">Real workflows</a></li>
     <li><a href="#byrole">LoopFlow by role</a></li>
     <li><a href="#running">Running it</a></li>
+    <li><a href="#live">Live dashboard</a></li>
     <li><a href="#library">Your global library</a></li>
     <li class="grp">Go deeper</li>
     <li><a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md">📖 Full manual →</a></li>
@@ -676,11 +677,22 @@ loop "fix the failing checkout tax test":
   <p>You stay in the chat the whole time: you watch each step, you answer the gate, and the loop ends on a <em>real</em> green test — not the assistant saying "done". This is the only mode where a long interactive discovery works, because the human is already in the loop.</p>
   <h3>Headless CLI</h3>
   <pre class="sh"><code>loop-run run   examples/ship_feature.loop  # drive Claude Code, glyph trace
+loop-run run   examples/ship_feature.loop --live  # …plus a live browser dashboard
 loop-run show  examples/ship_feature.loop  # print the loop's flow as compact ASCII
 loop-run ls                                # list every .loop in the repo + its shape
 loop-run parse examples/ship_flow.loop     # print the parsed spec (the loop-spec IR)
 loop-run viz   examples/ship_flow.loop     # write a self-contained HTML schematic
-# flags: --model <alias>, --out <path>, --events (NDJSON for a UI host), --json</code></pre>
+# flags: --model <alias>, --live, --out <path>, --events (NDJSON for a UI host), --json</code></pre>
+
+  <h3 id="live">Watch it run — live dashboard <span class="badge b-inter">intermediate</span></h3>
+  <p>A real-time browser view of a run, showing the loop's <strong>actual structure</strong> as a turn-by-turn route (Waze-style): the real pipeline stages / flow steps / for-each items, with a "you are here" marker, the steps ahead, human gates flagged, and <code class="inl">for each</code> sprints listed <em>by item title</em> with live progress. Two ways to drive it:</p>
+  <pre class="sh"><code>loop-run run file.loop --live      # headless: the engine streams every step to the browser
+/loopflow run file.loop            # in-session: the skill opens the dashboard, then drives it</code></pre>
+  <p><strong>In a Claude Code chat (<code class="inl">/loopflow</code>)</strong> the dashboard is <strong>opt-in via <code class="inl">loop.config</code></strong>. <code class="inl">loop init</code> writes <code class="inl">loop.config</code> with <code class="inl">live=false</code> (off by default); flip it to <code class="inl">live=true</code> and the skill opens the dashboard and updates it as each step happens. The headless <code class="inl">--live</code> flag is independent of this config.</p>
+  <pre class="sh"><code># loop.config
+live=true            # /loopflow shows the live dashboard during in-session runs</code></pre>
+  <p>The page streams over Server-Sent Events (each event carries an id; the server replays on connect and dedupes on reconnect), is self-contained — no external assets — and binds to <code class="inl">127.0.0.1</code> only.</p>
+
   <h3>In VS Code</h3>
   <ul>
     <li>Syntax highlighting, hover docs, and tab-completion for every construct.</li>
