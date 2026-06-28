@@ -103,8 +103,12 @@ into a scoped loop and teaches the three top-level forms at once.
 Ask **"Do you have a spec, plan, ticket, or epic already?"**
 - **Yes** → point `look at:` at it; if it's an epic / story list, turn each story into a
   `stage` of a `pipeline` (or `for each` over the plan file).
-- **No, and it's medium/large** → begin the flow with a **discovery loop** whose
-  `done when` is "the plan file exists and validates" — it interviews them, writes the plan.
+- **No, and it's medium/large** → invoke `superpowers:brainstorming` **before** writing any `.loop`. The brainstorming skill explores project context, asks clarifying questions one at a time (offering a browser visual when a design choice benefits from it), proposes 2-3 approaches, gets user approval, and produces a spec doc at `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`. Once the spec is approved and saved:
+  - The approved goal → `goal:` in the loop
+  - The spec file → `look at: docs/superpowers/specs/<name>.md`
+  - Sub-tasks in the spec → `stage`s in a `pipeline`, or `for each <var> in "plan.yaml"`
+
+  This replaces the old "discovery loop" pattern — brainstorming handles the interview natively in-session and produces a richer, visually-validated artifact.
 - **No, and it's small** → skip planning; go straight to the loop.
 
 ### Step 2 — which quality passes? (offer the menu — don't wait to be asked)
@@ -177,6 +181,30 @@ For a **pipeline**, list the stages in order and mark 👤 gates; for a **flow**
 show the file chain (`a.loop → b.loop → …`). `loop ls` lists every loop in the repo.
 
 ---
+
+## Live browser dashboard
+
+While a loop runs you can watch a live animated schematic — the active cycle node pulses,
+flow steps highlight as they execute, and a for-each progress bar fills item by item.
+
+**From the CLI** (`loop-run`):
+```bash
+loop-run run <file.loop> --live
+```
+Opens a browser tab automatically. The terminal still shows the normal text trace; the
+browser view adds the animated SVG schematic + side panel (current step · progress bar ·
+log).
+
+**From this session** (`/loopflow`):
+When you start running a loop in this session, **always** open the schematic first:
+1. Run `loop show <file>` (or `loop-run viz <file>` for the full HTML schematic) so the
+   user sees the loop's shape.
+2. Offer: *"Want a live browser dashboard while I run this? Run
+   `loop-run run <file> --live` in a separate terminal — it'll stream every step to the
+   browser in real time. Or I can run it here and narrate progress inline."*
+3. If they want in-session: proceed with the plan/act/observe narration below. Print a
+   short progress line before each cycle step: `↻ plan (cycle N)`, `⚡ act`, `= observe`.
+4. If they prefer the CLI: give them the command and wait; don't run in-session.
 
 ## Running a .loop (in this session)
 
