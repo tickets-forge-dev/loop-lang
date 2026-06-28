@@ -245,9 +245,10 @@ function handle(e){
       setNow(e.name,fleg);logLine("\\u25b8 "+e.name,"enter");break;}
     case "flow-step-end":{
       var fleg2=q('[data-leg="step:'+cssEsc(e.name)+'"]');if(fleg2){fleg2.classList.remove("current","human","upcoming");fleg2.classList.add(e.satisfied?"done":"fail");}
-      break;}
+      clearHuman();break;}
 
     case "foreach-start":{
+      clearHuman();
       var host=q('[data-items="'+cssEsc(e["var"])+'"]');
       var legHost=q('[data-foreach="'+cssEsc(e["var"])+'"]');
       if(legHost){markCurrentLeg(legHost);var cnt=q("[data-count]",legHost);if(cnt)cnt.textContent="0/"+e.count;}
@@ -263,6 +264,7 @@ function handle(e){
       }
       logLine("for each "+e["var"]+" ("+e.count+")","enter");break;}
     case "foreach-item-start":{
+      clearHuman();
       var items=qa('[data-items="'+cssEsc(e["var"])+'"] > .item');
       items.forEach(function(x){x.classList.remove("current");});
       var it2=items[e.index];
@@ -281,6 +283,7 @@ function handle(e){
       currentItem=null;break;}
 
     case "node-enter":{
+      clearHuman();
       var scope=nowEl();if(scope){resetCyc(scope);var s=q('[data-cyc="'+e.node+'"]',scope);if(s)s.classList.add("on");}
       q("#now-step").textContent=(currentItem?legTitleText(currentItem)+" \\u2192 ":"")+e.node;
       logLine("\\u2192 "+e.node+" (try "+e.attempt+")","enter");break;}
