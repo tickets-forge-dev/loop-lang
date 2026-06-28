@@ -367,7 +367,7 @@ loop "add API rate limiting":
 <section id="start">
   <h2>Getting started <span class="badge b-basic">setup</span></h2>
   <p class="sub" style="font-size:14px;margin-top:0">That's the <em>why</em>. From here down is the <strong>deep dive</strong> — set LoopFlow up once, then learn the language line by line.</p>
-  <p><b>Prerequisites:</b> <strong>Node 18+</strong>, the <a href="https://docs.anthropic.com/en/docs/claude-code">Claude Code</a> CLI (LoopFlow drives it), and a <strong>git repo</strong> to work in. Two ways to run a loop: <strong>inside a Claude Code chat</strong> (the bundled skill — recommended), or by hand in <strong>VS Code</strong> with the extension. One command installs everything:</p>
+  <p><b>Prerequisites:</b> <strong>Node 18+</strong>, the <a href="https://docs.anthropic.com/en/docs/claude-code">Claude Code</a> CLI (LoopFlow drives it), and a <strong>git repo</strong> to work in. <strong>The primary way to use LoopFlow is a Claude Code chat</strong> — type <code class="inl">/loopflow</code> and the assistant writes and runs the loop with you, watching every step and answering gates inline. (Prefer to write <code class="inl">.loop</code> files by hand? The VS Code extension is there too — see <a href="#vscode-optional">below</a> — but the chat is the recommended path.) One command installs everything:</p>
 
   <h3>1 · Install with npm</h3>
   <p>From your repo, run the installer. In one step it writes the <code class="inl">/loopflow</code> skill <em>and</em> <code class="inl">AGENTS.md</code> (the full language reference) into the project:</p>
@@ -375,10 +375,10 @@ loop "add API rate limiting":
 npx @loop-lang/loop init --global   # or: install the /loopflow skill for every repo</code></pre>
   <p>That gives you two things at once. <code class="inl">/loopflow</code> is now available in a Claude Code chat here. And <code class="inl">AGENTS.md</code> sits at the repo root — it <em>travels with the project</em>, so any agent that opens the repo already knows the LoopFlow language; it's the project's persistent memory of how to write a <code class="inl">.loop</code>. (Methods are shared the same way: <code class="inl">use the &lt;X&gt; method</code> pulls in a <code class="inl">.loop</code> preset another repo can reuse.)</p>
 
-  <h3>2 · Run your first loop</h3>
+  <h3>2 · Run your first loop — in a Claude Code chat <span class="badge b-basic">the main way</span></h3>
   <pre class="sh"><code>/loopflow fix the failing auth test in src/auth, gate any database migration   # writes a .loop
 /loopflow run examples/fix_test.loop                                          # runs it, in the chat</code></pre>
-  <p>Describe the work and the skill writes the <code class="inl">.loop</code>; name a file and it runs the loop <strong>natively in the session</strong> — you watch every plan → act → observe → reflect step and answer human gates right in the chat. Prefer a terminal? The same files run headless via the CLI (<code class="inl">loop-run run &lt;file&gt;</code>) — see <a href="#running">Running a loop</a>.</p>
+  <p>This is how most people use LoopFlow. Describe the work and the skill writes the <code class="inl">.loop</code>; name a file and it runs the loop <strong>natively in the session</strong> — you watch every plan → act → observe → reflect step and answer human gates right in the chat, and (when <a href="#live">enabled</a>) a live browser dashboard tracks where you are. Prefer a terminal? The same files run headless via the CLI (<code class="inl">loop-run run &lt;file&gt;</code>) — see <a href="#running">Running a loop</a>.</p>
   <p>That first command writes a file like this — yours to read, edit, and re-run:</p>
   <pre><code class="loop"># /loopflow "fix the failing auth test in src/auth, gate any database migration" writes:
 loop "fix the failing auth test":
@@ -390,8 +390,8 @@ loop "fix the failing auth test":
   when it fails: reflect, then plan again
   after 6 tries: stop and warn "stuck"</code></pre>
 
-  <h3>3 · Author in VS Code <span class="badge b-basic">supported</span></h3>
-  <p>A <code class="inl">.loop</code> is just text — let the agent draft it, <em>or write one by hand</em>. Install the <strong>LoopFlow</strong> extension from the VS&nbsp;Code Marketplace — <em>Extensions ▸ search “LoopFlow” ▸ Install</em> — then open any <code class="inl">.loop</code> file:</p>
+  <h3 id="vscode-optional">Optional · author by hand in VS Code <span class="badge b-basic">if you prefer an editor</span></h3>
+  <p>The chat above is the main way to use LoopFlow. If you'd rather <em>write <code class="inl">.loop</code> files by hand</em>, the optional <strong>LoopFlow</strong> VS&nbsp;Code extension helps — <em>Extensions ▸ search “LoopFlow” ▸ Install</em> — then open any <code class="inl">.loop</code> file:</p>
   <ul>
     <li><strong>Syntax highlighting</strong> for the whole language — <code class="inl">goal</code>, <code class="inl">done when</code>, gates, <code class="inl">flow</code>, <code class="inl">for each</code>, <code class="inl">git:</code>.</li>
     <li><strong>Completion + formatting</strong> — keyword snippets so you type a loop from muscle memory, not a cheat sheet.</li>
@@ -670,8 +670,8 @@ loop "fix the failing checkout tax test":
   each cycle: plan, then act, then observe
   when it fails: reflect, then plan again
   after 5 tries: stop and warn "stuck"</code></pre>
-  <h3>In conversation (recommended)</h3>
-  <p>With the LoopFlow skill loaded, run it inside the chat — the assistant executes the cycle itself, narrates every step, and you answer gates inline:</p>
+  <h3>In a Claude Code chat <span class="badge b-basic">recommended — the main way</span></h3>
+  <p>This is how LoopFlow is meant to be used. With the <code class="inl">/loopflow</code> skill loaded, run it inside the chat — the assistant executes the cycle itself, narrates every step, and you answer gates inline:</p>
   <pre class="sh"><code>/loopflow "fix the failing checkout tax test"   # write a .loop from a request
 /loopflow run examples/fix_test.loop            # run it, right here in the chat</code></pre>
   <p>You stay in the chat the whole time: you watch each step, you answer the gate, and the loop ends on a <em>real</em> green test — not the assistant saying "done". This is the only mode where a long interactive discovery works, because the human is already in the loop.</p>
@@ -693,7 +693,8 @@ loop-run viz   examples/ship_flow.loop     # write a self-contained HTML schemat
 live=true            # /loopflow shows the live dashboard during in-session runs</code></pre>
   <p>The page streams over Server-Sent Events (each event carries an id; the server replays on connect and dedupes on reconnect), is self-contained — no external assets — and binds to <code class="inl">127.0.0.1</code> only.</p>
 
-  <h3>In VS Code</h3>
+  <h3>In VS Code <span class="badge b-basic">optional — for hand-authoring</span></h3>
+  <p>Secondary to the chat — reach for the extension only when you want to write <code class="inl">.loop</code> files by hand in an editor.</p>
   <ul>
     <li>Syntax highlighting, hover docs, and tab-completion for every construct.</li>
     <li>A <strong>▶ Run</strong> CodeLens above each definition. When you click it, you choose <em>where</em> it runs (the <code class="inl">loop.runMode</code> setting): <strong>open a Claude Code session</strong> — an interactive run in the integrated terminal where you watch every step and answer gates in chat — or the <strong>VS Code output panel</strong> (headless, with a live trace and native gate dialogs). Set <code class="inl">loop.runMode</code> to <code class="inl">ask</code> (prompt each time), <code class="inl">session</code>, or <code class="inl">output</code>.</li>
