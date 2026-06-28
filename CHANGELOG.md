@@ -25,6 +25,12 @@ Versions track the `@loop-lang/loop` installer package.
 - `@loop-lang/viz` exports `renderLiveHtml`; `@loop-lang/runtime` adds `startLiveServer`
   and derives short item labels (`labelOf`) so headless sprints show real story titles.
 - `/loopflow` integrates `superpowers:brainstorming` for the no-plan (medium/large) path.
+- **Template library** — `templates/` ships best-practice, copy-and-edit starter loops for
+  everyday work (bugfix, feature, brownfield-feature, refactor; cicd-check, security,
+  clean-architecture, test-coverage, review-diff; greenfield-app and load-spec with their
+  supporting discover/design/story-template + starter sprint.yaml/plan.md). `loop init`
+  installs them (`--no-templates` to skip), and AGENTS.md + the `/loopflow` skill point the
+  agent at a matching template before authoring from scratch. All validated to parse.
 
 ### Changed
 - The dashboard uses a flat, Linear-style dark theme; self-contained (no external assets)
@@ -51,6 +57,9 @@ Versions track the `@loop-lang/loop` installer package.
 - Tutorial (`docs/index.html`), `README.md`, `docs/MANUAL.md`, `AGENTS.md`, and the
   `/loopflow` skill document the live dashboard, the `loop.config` gate, and the
   `live`/`emit`/`--live` commands.
+- The tutorial now leads with the **Claude Code chat (`/loopflow`)** as the first-class
+  usage path and demotes the VS Code extension to optional hand-authoring; added a
+  "Starter templates" section.
 
 ## [0.4.0] — 2026-06-27
 
