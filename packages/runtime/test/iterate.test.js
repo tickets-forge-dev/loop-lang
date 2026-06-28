@@ -68,6 +68,21 @@ test("labelOf: skips YAML comments, empty → ''", () => {
   assert.equal(labelOf(""), "");
 });
 
+test("labelOf: a block scalar (| or >) follows to its body line", () => {
+  assert.equal(labelOf("- story: |\n    As a user I log in\n    more"), "As a user I log in");
+  assert.equal(labelOf("- summary: >\n    folded text here"), "folded text here");
+});
+
+test("labelOf: a colon inside a bare scalar is not mistaken for a key", () => {
+  assert.equal(labelOf("- https://example.com/path"), "https://example.com/path");
+  assert.equal(labelOf("- 09:00 standup with team"), "09:00 standup with team");
+});
+
+test("labelOf: only strips a balanced quote pair", () => {
+  assert.equal(labelOf('- name: say "hi"'), 'say "hi"');
+  assert.equal(labelOf("- title: 'wrapped'"), "wrapped");
+});
+
 test("enumerate + labelOf together on a story list", () => {
   const src = "stories:\n  - title: Login\n    ac: a\n  - title: Signup\n    ac: b\n";
   assert.deepEqual(enumerateItems(src, "yaml").map(labelOf), ["Login", "Signup"]);

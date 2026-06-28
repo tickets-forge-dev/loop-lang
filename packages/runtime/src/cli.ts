@@ -256,41 +256,9 @@ async function main() {
     process.exit(ok ? 0 : 1);
   }
 
-  if (rest.includes("--live")) {
-    const { renderLiveHtml } = await import("@loop-lang/viz");
-    const { startLiveServer } = await import("./serve.js");
-    const html = renderLiveHtml(file, { title: basename(fileArg) });
-    const srv = await startLiveServer(html);
-    console.error(`\n  ↻ Loop live dashboard → http://127.0.0.1:${srv.port}\n`);
-    const liveEvents: LoopEvent[] = [];
-    const liveOutcomes = await run(file, {
-      runner: new ClaudeCodeRunner({}),
-      verifier: new ShellVerifier(),
-      human: new CliHumanIO(),
-      git,
-      baseDir: target,
-      loadFile,
-      readText,
-      writeText,
-      flowStack: [path],
-      modelPolicy: file.config?.models,
-      cliModel: model,
-      onEvent: (e) => {
-        liveEvents.push(e);
-        srv.emit(e);
-        const line = render(e);
-        if (line) console.log(line);
-      },
-    });
-    srv.close();
-    const liveSummary = formatModelSummary(summarizeModels(liveEvents));
-    if (liveSummary) console.error(liveSummary);
-    const liveOk = liveOutcomes.every((o) => o.satisfied);
-    process.exit(liveOk ? 0 : 1);
-  }
-
-  const traceEvents: LoopEvent[] = [];
-  const outcomes = await run(file, {
+  // Shared run wiring for the two terminal-trace paths (--live and default); they differ
+  // only in whether events also stream to a live dashboard.
+  const baseOpts = {
     runner: new ClaudeCodeRunner({}),
     verifier: new ShellVerifier(),
     human: new CliHumanIO(),
@@ -302,16 +270,38 @@ async function main() {
     flowStack: [path],
     modelPolicy: file.config?.models,
     cliModel: model,
-    onEvent: (e) => {
-      traceEvents.push(e);
-      const line = render(e);
-      if (line) console.log(line);
-    },
-  });
+  };
+  const traceEvents: LoopEvent[] = [];
+  const onTrace = (e: LoopEvent) => {
+    traceEvents.push(e);
+    const line = render(e);
+    if (line) console.log(line);
+  };
+  const reportSummary = () => {
+    const summary = formatModelSummary(summarizeModels(traceEvents));
+    if (summary) console.error(summary);
+  };
 
-  const summary = formatModelSummary(summarizeModels(traceEvents));
-  if (summary) console.error(summary);
+  if (rest.includes("--live")) {
+    const { renderLiveHtml } = await import("@loop-lang/viz");
+    const { startLiveServer } = await import("./serve.js");
+    const html = renderLiveHtml(file, { title: basename(fileArg) });
+    const srv = await startLiveServer(html);
+    console.error(`\n  ↻ Loop live dashboard → http://127.0.0.1:${srv.port}\n`);
+    const outcomes = await run(file, { ...baseOpts, onEvent: (e) => { srv.emit(e); onTrace(e); } });
+    reportSummary();
+    const ok = outcomes.every((o) => o.satisfied);
+    // Keep the dashboard up after the run — a fast loop can finish before the browser even
+    // connects; leaving it alive lets the page load + replay and the user review the result.
+    console.error(`  ↻ dashboard still live → http://127.0.0.1:${srv.port}  (Ctrl-C to exit)`);
+    const shutdown = () => { srv.close(); process.exit(ok ? 0 : 1); };
+    process.on("SIGINT", shutdown);
+    process.on("SIGTERM", shutdown);
+    return;
+  }
 
+  const outcomes = await run(file, { ...baseOpts, onEvent: onTrace });
+  reportSummary();
   const ok = outcomes.every((o) => o.satisfied);
   process.exit(ok ? 0 : 1);
 }

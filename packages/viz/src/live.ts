@@ -98,7 +98,6 @@ const APP_JS = `(function(){
 function q(s,r){return (r||document).querySelector(s);}
 function qa(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
 function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;}
-function esc(s){return String(s==null?"":s);}
 
 function doneLabel(dw){
   if(!dw)return "you confirm";
@@ -171,7 +170,7 @@ function buildRoute(spec){
           var card2=el("div","leg-card");
           var t2=el("div","leg-title");
           t2.appendChild(document.createTextNode("for each "+step.forEach.var+" in "+step.forEach.source));
-          t2.appendChild(el("span","item-count","","")).setAttribute("data-count","");
+          t2.appendChild(el("span","item-count")).setAttribute("data-count","");
           card2.appendChild(t2);
           var m2=el("div","leg-meta");m2.appendChild(el("span","k","template "));m2.appendChild(el("code",null,step.ref));card2.appendChild(m2);
           card2.appendChild(el("ol","items")).setAttribute("data-items",step.forEach.var);
@@ -231,7 +230,12 @@ function handle(e){
   switch(e.type){
     case "pipeline-start": logLine("\\u25a3 pipeline \\""+e.name+"\\"","enter");setStatus("live","running");break;
     case "flow-start": logLine("\\u2192 flow \\""+e.name+"\\"","enter");setStatus("live","running");break;
-    case "loop-start": setStatus("live","running");if(e.name)logLine("\\u21bb loop \\""+e.name+"\\"","enter");break;
+    case "loop-start":{
+      setStatus("live","running");
+      if(e.name){logLine("\\u21bb loop \\""+e.name+"\\"","enter");
+        var lleg=q('[data-leg="loop:'+cssEsc(e.name)+'"]'); // standalone loop file → activate its leg (no-op inside a pipeline stage)
+        if(lleg){markCurrentLeg(lleg);setNow(e.name,lleg);}}
+      break;}
 
     case "stage-start":{
       var leg=q('[data-leg="stage:'+cssEsc(e.name)+'"]');markCurrentLeg(leg);clearHuman();
@@ -281,6 +285,10 @@ function handle(e){
       var items2=qa('[data-items="'+cssEsc(e["var"])+'"] > .item');
       var it3=items2[e.index];if(it3){it3.classList.remove("current","upcoming");it3.classList.add(e.satisfied?"done":"fail");var nd=q(".node",it3);if(nd)nd.textContent=e.satisfied?"\\u2713":"\\u2717";}
       currentItem=null;break;}
+    case "foreach-end":{ // close the for-each leg so it doesn't linger on "current"
+      var feLeg=q('[data-foreach="'+cssEsc(e["var"])+'"]');
+      if(feLeg){feLeg.classList.remove("current","human");feLeg.classList.add(e.satisfied?"done":"fail");}
+      currentItem=null;break;}
 
     case "node-enter":{
       clearHuman();
@@ -288,7 +296,7 @@ function handle(e){
       q("#now-step").textContent=(currentItem?legTitleText(currentItem)+" \\u2192 ":"")+e.node;
       logLine("\\u2192 "+e.node+" (try "+e.attempt+")","enter");break;}
     case "node-exit":{
-      var scope2=nowEl();if(scope2){var s2=q('[data-cyc="'+e.node+'"]',scope2);if(s2){s2.classList.remove("on");s2.classList.add(e.ok?"ok":"");}}
+      var scope2=nowEl();if(scope2){var s2=q('[data-cyc="'+e.node+'"]',scope2);if(s2){s2.classList.remove("on");if(e.ok)s2.classList.add("ok");}}
       if(!e.ok)logLine("\\u2717 "+e.node,"fail");break;}
     case "loop-back":{var scope3=nowEl();if(scope3)resetCyc(scope3);logLine("\\u21ba reflect \\u2192 replan");break;}
 
@@ -298,13 +306,16 @@ function handle(e){
     case "observe": logLine("= "+(e.passed?"PASS":"fail")+(e.output?" \\u2014 "+e.output.split("\\n")[0].slice(0,46):""),e.passed?"done":"fail");break;
     case "reflect": logLine("~ "+e.text.split("\\n")[0].slice(0,54));break;
     case "stop": setStatus(e.reason==="done"?"done":"fail",e.reason==="done"?"done":e.reason);logLine("\\u25fc stop ("+e.reason+")"+(e.warn?" \\u2014 "+e.warn:""));break;
-    case "loop-end": if(currentLeg&&!currentLeg.classList.contains("fail")){/* keep */}break;
+    case "loop-end":{ // finalize a standalone loop's leg (stage loops are closed by stage-end)
+      if(currentLeg&&currentLeg.getAttribute("data-leg")&&currentLeg.getAttribute("data-leg").indexOf("loop:")===0){
+        currentLeg.classList.remove("current","human");currentLeg.classList.add(e.satisfied?"done":"fail");}
+      break;}
     case "pipeline-end": case "flow-end": setStatus(e.satisfied?"done":"fail",e.satisfied?"done":"stopped");if(currentLeg){currentLeg.classList.remove("current","human");currentLeg.classList.add(e.satisfied?"done":"fail");}clearHuman();break;
   }
 }
 function cssEsc(s){return String(s).split('"').join('\\\\"');}
 function showHuman(kind,prompt){q("#now").classList.add("human");var h=q("#now-human");h.innerHTML="";var b=el("b",null,"\\uD83D\\uDC64 needs you \\u00b7 ");h.appendChild(b);h.appendChild(document.createTextNode(prompt||kind));}
-function clearHuman(){q("#now").classList.remove("human");}
+function clearHuman(){q("#now").classList.remove("human");var ne=nowEl();if(ne)ne.classList.remove("human");}
 
 // boot
 buildRoute(window.__SPEC__);
