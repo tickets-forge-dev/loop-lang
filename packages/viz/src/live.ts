@@ -1,34 +1,58 @@
 import type { LoopFile } from "@loop-lang/parser";
-import { FONTS, BASE_CSS, RENDERER_JS } from "./render.js";
+import { BASE_CSS, RENDERER_JS } from "./render.js";
 import type { VizOptions } from "./render.js";
 
+// Linear-style dark restyle. Self-contained chrome (header/legend/body) because the
+// standalone schematic's chrome CSS isn't exported — and this is the slicker look anyway:
+// flat near-black, system sans (offline-safe, no serif fallback), one muted accent, calm
+// motion. Overrides the BASE_CSS :root palette and neon glows.
+const SANS = `-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif`;
+const MONO = `ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace`;
 const LIVE_CSS = `
-body.live{display:grid;grid-template-columns:1fr 300px;grid-template-rows:auto 1fr;height:100vh;overflow:hidden;}
-body.live header{grid-column:1/-1;}
-body.live main{overflow:auto;padding:12px 18px 60px;}
+:root{--bg:#08090a;--panel:#0c0d0f;--node:#15161a;--node-br:#2a2b30;--ink:#f7f8f8;--muted:#878a92;--line:#1d1e22;--fwd:#5e6ad2;--reflect:#8d7ee6;--stop:#4cb782;--gate:#d39a52;}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body.live{display:grid;grid-template-columns:minmax(0,1fr) 300px;grid-template-rows:auto 1fr;height:100vh;overflow:hidden;background:var(--bg);color:var(--ink);font-family:${SANS};-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+body.live header{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel);}
+.wordmark{display:flex;align-items:center;gap:9px;font-family:${SANS};font-size:14px;font-weight:600;letter-spacing:-.01em;color:var(--ink);background:none;-webkit-text-fill-color:var(--ink);text-transform:none;}
+.wordmark::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--fwd);box-shadow:0 0 0 3px rgba(94,106,210,.16);}
+.subtitle{font-size:12px;color:var(--muted);letter-spacing:-.01em;}
+.legend{margin-left:auto;display:flex;gap:18px;font-size:11px;color:var(--muted);}
+.legend span{display:inline-flex;align-items:center;gap:7px;}
+.legend i{display:inline-block;width:15px;height:0;border-top:2px solid currentColor;}
+.legend .fwd{color:var(--fwd);}.legend .ref{color:var(--reflect);}.legend .ref{border-top-style:dashed;}
+.legend .gat{color:var(--gate);}.legend .stp{color:var(--stop);}
+body.live main{overflow:auto;padding:20px 22px 60px;}
+svg{display:block;}
+.nlabel,.panel-title{font-family:${SANS}!important;font-weight:600;letter-spacing:-.01em;}
+.sub,.chip{font-family:${SANS}!important;}
+.fwd-flow{animation-duration:2.6s;}
+.reflect-flow{animation-duration:1.8s;}
+[data-cyc].lp-active rect:first-of-type{stroke:var(--fwd);stroke-width:1.7;filter:none;animation:lp-ring 1.5s ease-in-out infinite;}
+[data-cyc].lp-done{opacity:.4;}
+[data-cyc].lp-fail rect:first-of-type{stroke:var(--gate)!important;}
+@keyframes lp-ring{0%,100%{opacity:1}50%{opacity:.5}}
+[data-edge="reflect"].lp-fire{animation:lp-ring .5s ease-out 3;}
 #lp-panel{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;}
-#lp-panel section{padding:12px 14px;border-bottom:1px solid var(--line);flex-shrink:0;}
-#lp-panel h3{margin:0 0 6px;font-family:"Saira Condensed",sans-serif;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);}
-#lp-step{font-size:13px;color:var(--fwd);font-family:"Space Mono",monospace;word-break:break-all;}
-#lp-foreach-bar{height:4px;background:var(--line);border-radius:2px;margin-bottom:8px;}
-#lp-foreach-fill{height:100%;background:var(--fwd);border-radius:2px;transition:width .3s;width:0%;}
-#lp-foreach-list,#lp-flow-list{list-style:none;margin:0;padding:0;font-size:11px;font-family:"Space Mono",monospace;max-height:140px;overflow-y:auto;}
-#lp-foreach-list li,#lp-flow-list li{padding:3px 0;border-bottom:1px solid var(--line);color:var(--muted);display:flex;gap:6px;align-items:center;}
-#lp-foreach-list li.lp-active,#lp-flow-list li.lp-active{color:var(--fwd);}
+#lp-panel section{padding:14px 16px;border-bottom:1px solid var(--line);flex-shrink:0;}
+#lp-panel h3{margin:0 0 8px;font-family:${SANS};font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);}
+#lp-step{font-size:12.5px;color:var(--ink);font-family:${MONO};word-break:break-all;line-height:1.5;}
+#lp-foreach-bar{height:5px;background:var(--line);border-radius:3px;margin-bottom:10px;overflow:hidden;}
+#lp-foreach-fill{height:100%;background:var(--fwd);border-radius:3px;transition:width .35s ease;width:0%;}
+#lp-foreach-list,#lp-flow-list{list-style:none;margin:0;padding:0;font-size:12px;font-family:${SANS};max-height:150px;overflow-y:auto;}
+#lp-foreach-list li,#lp-flow-list li{padding:4px 0;color:var(--muted);display:flex;gap:8px;align-items:center;letter-spacing:-.01em;}
+#lp-foreach-list li span:first-child,#lp-flow-list li span:first-child{font-family:${MONO};font-size:11px;width:12px;text-align:center;flex-shrink:0;}
+#lp-foreach-list li.lp-active,#lp-flow-list li.lp-active{color:var(--ink);}
 #lp-foreach-list li.lp-done,#lp-flow-list li.lp-done{color:var(--stop);}
 #lp-foreach-list li.lp-fail,#lp-flow-list li.lp-fail{color:var(--gate);}
 #lp-log{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
-#lp-log-wrap{overflow-y:auto;flex:1;}
-#lp-log-list{list-style:none;margin:0;padding:0;font-size:11px;font-family:"Space Mono",monospace;}
-#lp-log-list li{padding:2px 6px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#lp-log-list li.lp-ev-enter{color:var(--fwd);}
+#lp-log-wrap{overflow-y:auto;flex:1;margin:0 -16px;padding:0 16px;}
+#lp-log-list{list-style:none;margin:0;padding:0;font-size:11px;font-family:${MONO};}
+#lp-log-list li{padding:2.5px 0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em;}
+#lp-log-list li.lp-ev-enter{color:var(--ink);}
 #lp-log-list li.lp-ev-fail{color:var(--gate);}
 #lp-log-list li.lp-ev-human{color:var(--reflect);}
-[data-cyc].lp-active rect:first-of-type{stroke-width:3;filter:drop-shadow(0 0 10px currentColor);animation:lp-pulse 1.1s ease-in-out infinite;}
-[data-cyc].lp-done{opacity:.38;}
-[data-cyc].lp-fail rect:first-of-type{stroke:var(--gate)!important;}
-@keyframes lp-pulse{0%,100%{opacity:1}50%{opacity:.5}}
-[data-edge="reflect"].lp-fire{animation:firepulse .5s ease-out 3;}
+::-webkit-scrollbar{width:8px;height:8px;}::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}::-webkit-scrollbar-track{background:transparent;}
 `;
 
 // ponytail: plain-var JS to stay embeddable alongside RENDERER_JS
@@ -173,7 +197,6 @@ export function renderLiveHtml(file: LoopFile, opts: VizOptions = {}): string {
 <html lang="en"><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Loop &#xb7; live &#xb7; ${title}</title>
-${FONTS}
 <style>${BASE_CSS}${LIVE_CSS}</style>
 </head>
 <body class="schematic live">
@@ -182,7 +205,7 @@ ${FONTS}
   <div class="subtitle" id="src"></div>
   <div class="legend">
     <span><i class="fwd"></i>signal</span><span><i class="ref"></i>reflect</span>
-    <span><i class="gat"></i>human gate</span><span><i class="stp"></i>done</span>
+    <span><i class="gat"></i>gate</span><span><i class="stp"></i>done</span>
   </div>
 </header>
 <main><div id="stage"></div></main>
