@@ -1,0 +1,58 @@
+# review-diff.loop
+# ─────────────────────────────────────────────────────────────────────────────
+# A single self-correcting loop that REVIEWS the current branch's diff and keeps
+# fixing the code until it is correct and clean — then lets a human sign off.
+#
+# Why a review-SKILL predicate instead of "it looks good"?
+#   "Looks good" is a vibe; it can't gate a loop. A review skill turns that vibe
+#   into a VERIFIABLE check: the skill reads the diff and returns either an
+#   approved/rejected verdict OR a numeric score. That verdict is what the loop
+#   tests every cycle, so the loop can self-correct against a real bar instead of
+#   stopping on a hunch. (Build & battle-test the "code-review" skill on its own
+#   first, confirm it judges well, THEN wire it in as the gate below.)
+#
+# The shape:
+#   plan → act → observe, with a ↺ reflect back-edge on failure,
+#   a ✓ done-when gate driven by the review skill,
+#   a 👤 human review before the loop is allowed to stop,
+#   and a ⛔ thrash guard so it can't spin forever.
+
+loop "review the current branch diff":
+  # The objective: not "pass a test" but "the change is correct and clean".
+  # The review skill is what makes that abstract goal checkable.
+  goal: the change on this branch is correct and clean — no bugs, no dead code, follows the existing style
+
+  # The verifier. TWO equivalent forms — pick ONE:
+  #
+  #   (a) approval gate — the skill returns approved / not approved:
+  done when the skill "code-review" approves
+  #
+  #   (b) numeric threshold — the skill scores the diff 0–10 and 8 clears the bar.
+  #       Swap the line above for this when you want a tunable quality bar:
+  # done when the skill "code-review" scores 8 or more       # TODO: tune the threshold
+  #
+  # Either way the verdict comes from a real, runnable skill — that is what turns
+  # "looks good" into a gate the loop can actually test.
+
+  # The skill the loop invokes while planning/acting to produce & judge the review.
+  use skills: code-review
+
+  # Context the agent reads before each plan: the diff under review, plus the
+  # previous cycle's failure so it fixes what the review last flagged rather than
+  # re-reviewing from scratch.
+  look at: the current diff, and the last failure          # TODO: e.g. `git diff main...HEAD`
+
+  # The repeated movement of the loop.
+  each cycle: plan, then act, then observe
+
+  # Self-correction: a rejection (or a sub-threshold score) feeds the next plan
+  # via reflect, so the loop attacks exactly what the review flagged.
+  when it fails: reflect on what the review flagged, then plan again
+
+  # 👤 The human signs off LAST: even once the skill approves, a person reviews
+  # the result before the loop is allowed to stop. Machine gate first, human last.
+  a human reviews before stopping
+
+  # ⛔ Thrash guard: if four cycles can't satisfy the review, stop and escalate
+  # instead of burning tokens forever.
+  after 4 tries: stop and warn "review still failing after 4 tries — needs a human"

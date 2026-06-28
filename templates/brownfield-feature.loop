@@ -1,0 +1,157 @@
+# ============================================================================
+# TEMPLATE: brownfield-feature.loop
+# Add a feature to an EXISTING codebase without breaking it.
+# ============================================================================
+#
+# WHAT MAKES THIS "BROWNFIELD"
+# Greenfield work is a blank page — you invent the patterns. Brownfield work
+# lands inside code other people already rely on. The job is not just "make the
+# new thing work"; it's "make the new thing work WITHOUT disturbing everything
+# around it." So this template optimizes for three habits, in priority order:
+#
+#   1. MATCH EXISTING PATTERNS — read the neighbours first; copy their shape,
+#      naming, error handling, and layering. New code should look like it was
+#      always there, not like a transplant.
+#   2. CHANGE THE MINIMUM — the smallest diff that satisfies the acceptance
+#      test. Every extra line you touch is extra surface area for a regression.
+#      Resist refactors, renames, and "while I'm here" cleanups.
+#   3. PROVE NO REGRESSION — existing behaviour must be byte-for-byte intact.
+#      The whole pre-existing suite has to stay green. That proof is a separate,
+#      non-negotiable stage below — it is the core brownfield guarantee.
+#
+# WHY A PIPELINE (not a single loop)
+# A pipeline runs its stages top-to-bottom and is FAIL-FAST: a stage must be
+# satisfied before the next one starts. That ordering is the safety rail here —
+# we refuse to even run the security scan or ask for human review until we have
+# PROVEN the existing suite is still green. Build → prove-no-regression →
+# security → human review. Each stage body is a normal loop (its own goal, its
+# own `done when` gate, its own thrash guard).
+#
+# HOW TO USE
+#   1. Replace every "# TODO:" below with your real module paths, test names,
+#      and commands.
+#   2. node packages/runtime/dist/cli.js show templates/brownfield-feature.loop
+#      to eyeball the shape.
+#   3. node packages/runtime/dist/cli.js run templates/brownfield-feature.loop
+#      to execute it (pauses at the human gates).
+
+# --- Git strategy (file-level, applies to every stage) ----------------------
+# Safe brownfield defaults: never touch your current branch, and never push.
+#   - work on a branch        -> your existing code on main/master stays clean
+#   - commit each story        -> one commit PER STAGE, so the history reads
+#                                 build / regression-proof / security and you
+#                                 can bisect or roll back a single stage cleanly
+#   - do not push              -> review locally before anything leaves the machine
+# Loop NEVER pushes to main/master regardless of this block. Add `push when done`
+# / `open a pull request` only once you actually want to publish.
+git:
+  work on a branch
+  commit each story
+  do not push
+
+pipeline "feature: <NAME> (brownfield — do not break existing behaviour)":   # TODO: name the feature
+
+  # ==========================================================================
+  # 1. BUILD  (explore + build)
+  # --------------------------------------------------------------------------
+  # This stage is two moves fused into one self-correcting loop:
+  #   EXPLORE — before writing a line, the agent reads the TARGET module AND its
+  #             NEIGHBOURS so it learns the local conventions (how this codebase
+  #             names things, handles errors, structures a layer). `look at:`
+  #             below is what forces that reconnaissance.
+  #   BUILD   — implement the feature by MATCHING those patterns and changing as
+  #             little as possible, iterating until the acceptance test is green.
+  # The acceptance test is the objective gate: the loop literally cannot claim
+  # "done" until that exact test passes.
+  # ==========================================================================
+  stage build:
+    goal: implement <FEATURE> by matching the surrounding code's patterns and changing the minimum, so the acceptance test passes   # TODO: describe the feature
+
+    # EXPLORE FIRST. List the target module AND the modules it touches — the
+    # callers, the shared types, the layer above and below it. Reading the
+    # NEIGHBOURS is how the agent matches existing patterns instead of inventing
+    # new ones. "and the last failure" feeds each red test back into the plan.
+    # Items can be exact paths or plain-language descriptions the agent resolves.
+    look at: src/<target-module>, its neighbours (callers, shared types, the layer above and below), the existing tests for this area, and the last failure   # TODO: real paths
+
+    # Auto-edit so the loop can iterate fast, but HARD-GATE the irreversible:
+    # a schema migration can corrupt existing data and a push is hard to undo —
+    # both pause for a human. This is the brownfield "do no harm" guard.
+    allow edits automatically, but ask me before migrations or pushes
+
+    each cycle: plan, then act, then observe    # explore/plan -> implement -> read the test result
+
+    # THE GATE: one specific acceptance test for the NEW behaviour. Keep it
+    # fast and deterministic — this runs every cycle.
+    done when the test "<path/to/feature.spec.ts>::<acceptance test name>" passes   # TODO: real test id
+
+    # On red, reflect on WHICH LAYER broke (api / service / data / ui) — naming
+    # the layer keeps the fix local and stops the agent thrashing across files.
+    when it fails: reflect on which layer broke and whether you drifted from the existing pattern, then plan again
+
+    when it passes and the goal is met: stop
+    when blocked: ask a human                                   # stuck on intent? get a human, don't guess
+    after 6 tries: stop and warn "feature build is thrashing — the change may be bigger than one acceptance test"
+
+  # ==========================================================================
+  # 2. REGRESSION  (the core brownfield guarantee — existing behaviour UNCHANGED)
+  # --------------------------------------------------------------------------
+  # This is the stage that makes the whole template "brownfield". The build
+  # stage proved the NEW test passes; this stage proves we broke NOTHING ELSE.
+  # The bar is the ENTIRE pre-existing suite, green — not the one new test. A
+  # change that satisfies the acceptance test but quietly breaks a neighbour
+  # keeps this stage RED until the regression is undone. Fail-fast ordering
+  # means we never reach security/review on top of a regression.
+  # ==========================================================================
+  stage regression:
+    goal: the FULL existing test suite is still green — the feature changed nothing it shouldn't have
+
+    # No new code to plan here — just run the whole suite and read the result.
+    each cycle: act, then observe
+
+    # The whole suite, exit 0. This is the proof of "no regression". Use your
+    # real, complete test command (NOT a filtered subset — a subset can't catch
+    # a regression in code you didn't think to re-run).
+    done when "<full test command>" passes   # TODO: e.g. pnpm test  /  npm test  /  pytest  /  go test ./...
+
+    # If something downstream went red, the fix likely OVER-REACHED. Reflect on
+    # what the feature changed that rippled outward, and prefer SHRINKING the
+    # diff (revert the unnecessary edit) over piling on more changes.
+    when it fails: reflect on which existing tests broke and how to shrink the change so they pass again, then plan again
+
+    when it passes and the goal is met: stop
+    after 6 tries: stop and warn "existing tests still failing — the feature is causing a regression; a human should scope the change down"
+
+  # ==========================================================================
+  # 3. SECURITY  (the new code introduces no high-severity findings)
+  # --------------------------------------------------------------------------
+  # New surface area in an existing app is exactly where vulnerabilities sneak
+  # in. "finds nothing" = the scanner exits 0 AND prints no output, so only a
+  # clean run passes the gate.
+  # ==========================================================================
+  stage security:
+    goal: the new code introduces no high-severity vulnerabilities
+
+    each cycle: plan, then act, then observe
+
+    # A real scanner is the bar. Swap in your configured Semgrep command (or
+    # your team's equivalent).
+    done when "semgrep --config auto --severity=high" finds nothing   # TODO: your scanner / config
+
+    when it fails: reflect on the flagged lines and fix them without expanding the change, then plan again
+    after 4 tries: stop and warn "security findings need a human"
+
+  # ==========================================================================
+  # 4. REVIEW  (a human signs off before we call it done)
+  # --------------------------------------------------------------------------
+  # Every objective gate is green: new test passes, the whole suite passes,
+  # the scanner is clean. But "does this fit the codebase?" is a judgement call
+  # a machine can't make — does the new code truly match the existing patterns,
+  # is the diff genuinely minimal, did we respect the architecture? A human
+  # reviews the final diff and is the blocking gate before the pipeline stops.
+  # ==========================================================================
+  stage review:
+    goal: a human confirms the change matches existing patterns, is minimal, and respects the architecture
+
+    each cycle: observe              # nothing to change automatically — just present the diff for review
+    a human reviews before stopping  # blocking gate: a person signs off on the final diff

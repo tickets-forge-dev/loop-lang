@@ -24,6 +24,7 @@ init options:
   --global         install the /loopflow skill into ~/.claude/skills (done automatically on \`npm install -g\`)
   --no-skill       don't install the Claude Code /loopflow skill
   --no-example     don't write examples/fix_test.loop
+  --no-templates   don't write the templates/ starter loops (written by default)
   --no-claude-md   don't write the CLAUDE.md pointer (written by default)
   --cursor         also write .cursor/rules/loop.md
   --copilot        also write .github/copilot-instructions.md
@@ -68,6 +69,7 @@ async function main(argv) {
       skill,
       agents,
       example: !flag(argv, "--no-example"),
+      templates: !flag(argv, "--no-templates"),
       force: flag(argv, "--force"),
     }, ASSETS);
 

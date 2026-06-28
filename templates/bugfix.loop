@@ -1,0 +1,62 @@
+# bugfix.loop — COPY-AND-EDIT TEMPLATE: fix one bug as a self-correcting loop.
+#
+# SHAPE: reproduce → fix → verify, on repeat until a named test goes green.
+#   1. REPRODUCE — a failing test ("file::name") that proves the bug exists.
+#   2. FIX       — the loop edits the code to make that test pass.
+#   3. VERIFY    — the same test re-runs every cycle; green == done.
+#
+# Copy this file, then edit every line marked "# TODO:" to match your repo
+# (the test name, the files to read, the try ceiling). Everything else is a
+# sane default you can keep as-is.
+#
+# WHY A LOOP (not a one-shot prompt)? A bug fix is the textbook case: there's a
+# crisp definition of "done" (the test passes), the work may take several
+# attempts, and the loop can verify its own progress between attempts.
+
+loop "fix <the bug>":                                    # TODO: name the bug, e.g. "fix null user on logout"
+  # The objective in one sentence. "without breaking its file" is deliberate:
+  # the fix must turn the target test green WITHOUT making its sibling tests red.
+  goal: the bug is fixed and the test file stays green — no neighbor tests break
+
+  # ── VERIFY ────────────────────────────────────────────────────────────────
+  # The finish line. A single named test, "file::test name", is the cheapest,
+  # most precise gate — the loop is done the moment this exact test exits green.
+  # FIRST make sure this test exists and currently FAILS (that's your repro). If
+  # there's no failing test yet, write one that reproduces the bug, then point
+  # here. A bug "fixed" with no test to prove it can silently come back.
+  done when the test "<file>::<test name>" passes        # TODO: real "file::name", e.g. "auth.spec.ts::logs out cleanly"
+
+  # ── CONTEXT (reproduce) ─────────────────────────────────────────────────────
+  # Scope what the agent reads so it makes the SMALLEST change inside the
+  # existing code instead of rewriting things. List the buggy module, its test
+  # file, and "the last failure" — that final phrase feeds the most recent test
+  # output (assertion + stack trace) into the next plan, which is what makes the
+  # reflect step below actually useful.
+  look at: <src/buggy-file.ts>, <its test file>, and the last failure   # TODO: the real code + test paths
+
+  # Let the agent edit code and tests on its own, but gate anything irreversible
+  # so an autonomous loop can't reshape your DB or push while chasing a bug.
+  allow edits automatically, but ask me before migrations or pushes
+
+  # ── THE CYCLE ───────────────────────────────────────────────────────────────
+  # One iteration: think (plan), change code (act), then run the test and read
+  # the result (observe). Observe is what closes the feedback loop.
+  each cycle: plan, then act, then observe
+
+  # ── REFLECT, DON'T JUST RETRY ───────────────────────────────────────────────
+  # The heart of a self-correcting loop. A naive loop re-runs the SAME failed
+  # idea and spins. Instead, on every red run we reflect FIRST — read the failing
+  # assertion and the stack trace to understand *why* it broke — and only then
+  # form a new plan. Reflection turns each failure into evidence for the next
+  # attempt, so the loop converges instead of thrashing in circles.
+  when it fails: reflect on the failing assertion and stack trace, then plan again
+
+  # Success condition: the named test passes AND the goal is met → stop cleanly.
+  # Don't keep polishing once it's green; that's how a fix accidentally regresses.
+  when it passes and the goal is met: stop
+
+  # ── THRASH GUARD ────────────────────────────────────────────────────────────
+  # A hard ceiling so the loop can't spin forever. If 6 reflect-and-retry rounds
+  # don't crack it, the bug is deeper than a quick fix — stop and hand a human
+  # the context instead of burning tokens. Tune the count to the bug's difficulty.
+  after 6 tries: stop and warn "<the bug> still failing after 6 tries — needs a human"   # TODO: message + count

@@ -82,6 +82,13 @@ it in front of them. Never silently guess the loop; interview first, then author
 one topic at a time, and always offer a default so a confident user can accept it all
 in one reply.
 
+**Check the template library first.** If the repo has a `templates/` directory (see
+`templates/README.md`), and the user's request matches one — a bug fix, a feature, a
+brownfield change, a CI/security/architecture gate, delivering an existing spec, building
+a greenfield app — start from that template instead of a blank file: read it, copy it, and
+fill in its `# TODO` lines with the user's specifics. Still interview them for the goal,
+the real `done when`, and what to gate; the template is the skeleton, not the answer.
+
 ### Step 0 — scope the purpose first (ask this before anything else)
 
 Open with **"What do you want the loop to accomplish?"** and show the range, so the

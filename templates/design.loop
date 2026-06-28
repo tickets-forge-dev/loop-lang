@@ -1,0 +1,58 @@
+# ============================================================================
+# design.loop — STEP 2 of the greenfield A-to-Z build (see greenfield-app.loop)
+# ============================================================================
+#
+# WHAT THIS IS
+#   The bridge between "what to build" (sprint.yaml, from discover.loop) and
+#   "how to build it" (design.md). It reads the backlog and produces an
+#   architecture note: the stack, the modules/boundaries, the data model, the
+#   key decisions and trade-offs every story will be built against.
+#
+# WHY IT MATTERS THAT THIS RUNS BEFORE THE STORY LOOP
+#   In the greenfield flow, the next step builds every story autonomously. If
+#   each story invents its own architecture, you get a patchwork app. design.md
+#   is the shared blueprint that keeps all those independent story builds
+#   coherent — so the small amount of human attention spent here pays off across
+#   the whole sprint.
+#
+# DONE = THE ARTIFACT EXISTS, AND A HUMAN APPROVES IT
+#   Like discovery, "done" is anchored to a file on disk (design.md), not to how
+#   thorough the discussion felt. But architecture is a judgment call a file
+#   check can't make, so this loop ALSO requires a human review before it stops:
+#   the file must exist AND a person must agree the design is sound.
+
+loop "design":
+  # The objective. Note it names the input (sprint.yaml) and the output (design.md).
+  goal: turn sprint.yaml into design.md — an architecture note covering the stack, module boundaries, data model, and the key decisions each story will be built against
+
+  # Read the backlog this design must satisfy, plus any existing architecture
+  # docs so the design extends what's there instead of reinventing it.
+  # "the last failure" feeds the reflect step after a rejected draft.
+  # TODO: add real paths — your ADRs, an existing docs/architecture.md, etc.
+  look at: sprint.yaml, any existing architecture docs, and the last failure
+
+  # Writing a markdown design note is cheap and reversible, so don't gate edits.
+  allow edits automatically
+
+  # PLAN the design (or the next revision), ACT (write design.md), OBSERVE
+  # (check the file exists, then hand it to the human reviewer below).
+  each cycle: plan, then act, then observe
+
+  # ARTIFACT GATE: a non-empty design.md exists on disk. Necessary but not
+  # sufficient — the human review below is the real quality bar.
+  # TODO (optional): require named sections, e.g.
+  #   done when "grep -q '## Data model' design.md && grep -q '## Decisions' design.md" passes
+  done when "test -s design.md" passes
+
+  # If a draft is rejected or thin, turn the gap into the next plan rather than
+  # rewriting from scratch.
+  when it fails: reflect on the architectural gap or the reviewer's objection, then plan again
+
+  # THE HUMAN GATE: a person reads design.md and approves before this loop stops.
+  # Architecture soundness isn't something a shell check can verify, and this
+  # blueprint constrains every downstream story — so a human signs off here.
+  a human reviews before stopping
+
+  # Thrash guard so a contested design can't loop forever burning tokens.
+  # TODO: tune to taste.
+  after 5 tries: stop and warn "design isn't landing — pair with a human on design.md before building stories"

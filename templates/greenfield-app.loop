@@ -1,0 +1,67 @@
+# ============================================================================
+# greenfield-app.loop — build a whole app from NOTHING, A to Z, as one flow
+# ============================================================================
+#
+# THE BIG PICTURE
+#   A `flow` chains whole .loop files end to end, passing each step's result
+#   forward as context for the next. This flow is the complete greenfield
+#   lifecycle — idea → backlog → architecture → a working app:
+#
+#       discover  ──▶  design  ──▶  for each story ──▶  story-template
+#       (interview)    (blueprint)   (build the backlog, one story at a time)
+#
+#   1. discover.loop  — interviews you in chat and writes sprint.yaml (the backlog).
+#   2. design.loop    — turns sprint.yaml into design.md (the architecture note),
+#                       and a human approves it before the build starts.
+#   3. for each story — runs story-template.loop ONCE PER STORY in sprint.yaml.
+#                       Each story's text (epic + title + acceptance) arrives as
+#                       that run's context, so the same checklist builds every
+#                       story without you naming them here.
+#
+# WHY A FLOW AND NOT ONE GIANT LOOP
+#   Each phase has a different shape of "done": discovery is done when the
+#   backlog file exists, design when a human approves the note, a story when its
+#   tests pass. A flow lets each phase use its own verification and its own human
+#   gates, while the chain wires them together. The chain is FAIL-FAST: if
+#   discover never produces a sprint.yaml, design never runs.
+#
+# THE BACKLOG IS THE HINGE
+#   discover WRITES sprint.yaml; `for each` READS it. So the number of stories
+#   built, and what each one is, is decided live during the interview — not
+#   hard-coded here. Re-run discovery, get a different app. This file never
+#   changes.
+#
+# DEPENDENCY (do not author here)
+#   story-template.loop is provided by a SEPARATE template in this same
+#   templates/ directory — the per-story checklist (implement → security →
+#   manual QA, with its own done-when, reflect, thrash guard, and gates). This
+#   flow only references it.
+#
+# RUN IT
+#   /loopflow run greenfield-app.loop     # in the Claude Code conversation
+#   loop run greenfield-app.loop          # headless via the CLI
+#   (Run `show` first to eyeball the shape before you run anything for real.)
+#
+# GIT SAFETY
+#   No git: block here, so the built-in safe default applies to the loops this
+#   flow runs: work on a branch, commit when the goal is met, never push to
+#   main/master. Add a file-level git: block (e.g. open a pull request) only
+#   once you trust the flow end to end.
+
+# TODO: rename the flow to your app (this label is just for humans + the viz).
+flow "greenfield app: my new app":
+
+  # STEP 1 — DISCOVER. Interview the user in chat; write sprint.yaml.
+  #   Done when the backlog file exists (the artifact check, not the chat).
+  run "discover.loop"
+
+  # STEP 2 — DESIGN. Receives discover's result as context. Turn sprint.yaml
+  #   into design.md; a human approves the architecture before we build.
+  then run "design.loop"
+
+  # STEP 3 — BUILD. Iterate the backlog: run the story checklist once per story
+  #   in sprint.yaml. The current story's text becomes that run's context (what
+  #   to build); the checks inside story-template.loop are the SAME every time.
+  #   A failed story pauses the flow and asks whether to continue or stop.
+  then for each story in "sprint.yaml":
+    run "story-template.loop"

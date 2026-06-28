@@ -66,7 +66,7 @@ async function copyInto(src, dst, { force }) {
  * @returns {Promise<{steps:string[]}>}
  */
 export async function init(targetDir, opts, assetsDir) {
-  const { skill = "local", agents = [], example = true, force = false } = opts;
+  const { skill = "local", agents = [], example = true, templates = true, force = false } = opts;
   const steps = [];
   const withSkill = skill !== "none";
 
@@ -113,6 +113,14 @@ export async function init(targetDir, opts, assetsDir) {
   if (example) {
     const r = await copyInto(join(assetsDir, "examples", "fix_test.loop"), join(targetDir, "examples", "fix_test.loop"), { force });
     steps.push(`${r === "skipped" ? "skipped (exists)" : "wrote"} examples/fix_test.loop  (a starter loop)`);
+  }
+
+  // 5. Best-practice starter templates — the agent (and you) copy + adapt these for
+  //    everyday jobs (bugfix, feature, CI, security, deliver a spec, …). AGENTS.md
+  //    points the agent at them.
+  if (templates) {
+    const r = await copyInto(join(assetsDir, "templates"), join(targetDir, "templates"), { force });
+    steps.push(`${r === "skipped" ? "skipped (exists)" : "wrote"} templates/  (best-practice starter loops — see templates/README.md)`);
   }
 
   return { steps };

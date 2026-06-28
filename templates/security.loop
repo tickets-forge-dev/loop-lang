@@ -1,0 +1,94 @@
+# =============================================================================
+# templates/security.loop — a SECURITY PASS as a fail-fast pipeline.
+# =============================================================================
+#
+# A `pipeline` runs its stages IN ORDER and is FAIL-FAST: a stage that can't
+# reach its `done when` halts the whole pipeline — the next stage never starts.
+# That's exactly what you want for security gates. There's no point auditing
+# dependencies or hunting for secrets if static analysis already found a
+# high-severity hole: fix that first, then move down the chain.
+#
+# The chain here is the classic three-pass scan:
+#
+#     sast  →  deps  →  secrets
+#      │        │         │
+#      │        │         └─ no committed credentials / tokens / keys
+#      │        └─ no known-vulnerable dependencies
+#      └─ no high-severity code-level findings (injection, XSS, …)
+#
+# Each stage's body is a self-correcting loop: it scans, and if the scanner
+# reports anything it REFLECTS on the findings and plans a fix, then re-scans.
+# A thrash guard (`after N tries: stop and warn`) keeps it from spinning
+# forever on something only a human can resolve.
+#
+# ── On "finds nothing" ───────────────────────────────────────────────────────
+# `done when "<cmd>" finds nothing` means the command must BOTH exit 0 AND print
+# NO output. That is the right shape for a scanner: a clean run is silent and
+# successful; ANY finding (a non-zero exit OR a single printed line) keeps the
+# stage looping. Make sure each TODO command below actually fails loudly — i.e.
+# prints its findings to stdout/stderr and/or exits non-zero — or the gate is
+# worthless.
+#
+# ── How to adapt ─────────────────────────────────────────────────────────────
+# Every line marked "# TODO:" is the bit you must tailor to YOUR stack: the
+# exact scanner commands and (optionally) the try-count thresholds. The SAST
+# stage is wired for `semgrep`; the other two ship with sensible example
+# commands you should swap for whatever your project already uses.
+#
+# Validate with:  loop-run show templates/security.loop
+# Run with:       loop-run run  templates/security.loop
+# =============================================================================
+
+pipeline "security pass":
+
+  # ── 1. SAST — static application security testing ──────────────────────────
+  # Scan the SOURCE for code-level vulnerabilities (injection, XSS, unsafe
+  # deserialization, …). This runs first because a high-severity code flaw is
+  # the most dangerous class of finding — gate it before anything else.
+  #
+  # "finds nothing" == semgrep exits 0 AND prints no findings. `--severity=high`
+  # keeps the gate focused on what must block a release; tighten or loosen as
+  # your risk appetite requires.
+  stage sast:
+    goal: no high-severity static-analysis findings remain in the codebase
+    look at: the application source, the semgrep config, and the last failure
+    each cycle: plan, then act, then observe
+    done when "semgrep --config auto --severity=high" finds nothing   # exit 0 + empty output == clean
+    when it fails: reflect on each flagged finding, then plan again    # turn the report into the next fix
+    after 4 tries: stop and warn "security findings need a human"      # thrash guard: a person decides
+
+  # ── 2. DEPS — dependency / supply-chain audit ──────────────────────────────
+  # Only reached once SAST is clean. Scan your DEPENDENCIES for known CVEs.
+  # "finds nothing" == the audit command exits 0 with no reported advisories.
+  # Some fixes are a version bump; some need a human (no patch exists yet), and
+  # that's what the thrash guard is for.
+  stage deps:
+    goal: no known-vulnerable dependencies remain at the high/critical level
+    look at: the dependency manifest and lockfile, and the last failure
+    each cycle: plan, then act, then observe
+    # TODO: replace with your ecosystem's audit command, e.g.
+    #   Node:   npm audit --audit-level=high
+    #   pnpm:   pnpm audit --audit-level high
+    #   Python: pip-audit
+    #   Rust:   cargo audit
+    done when "npm audit --audit-level=high" finds nothing             # exit 0 + empty output == clean
+    when it fails: reflect on the flagged advisories, then plan again  # bump / patch / replace the dep
+    after 4 tries: stop and warn "security findings need a human"      # no clean upgrade path -> escalate
+
+  # ── 3. SECRETS — committed-credential scan ─────────────────────────────────
+  # The last gate, and the one a human MUST eyeball before we call the pass
+  # done. Scan the repo (and ideally its history) for leaked keys, tokens, and
+  # passwords. A hit here usually also means rotating the exposed credential —
+  # not something to auto-resolve silently — so this stage ends with a human
+  # review before the pipeline is allowed to stop.
+  stage secrets:
+    goal: no committed secrets, API keys, or credentials anywhere in the repo
+    look at: the repository contents and history, and the last failure
+    each cycle: plan, then act, then observe
+    # TODO: replace with your secret scanner, e.g.
+    #   gitleaks detect --no-banner
+    #   trufflehog filesystem .
+    done when "gitleaks detect" finds nothing                         # exit 0 + empty output == clean
+    when it fails: reflect on each leaked secret, then plan again      # remove from code AND rotate it
+    after 4 tries: stop and warn "security findings need a human"      # thrash guard before escalation
+    a human reviews before stopping                                   # final sign-off: a person confirms the repo is clean

@@ -38,6 +38,23 @@ high-leverage questions and offering defaults for the rest: (1) the **goal**;
 never push to `main`; ask if they want a PR or a worktree). Offer the defaults
 inline so a confident user can accept everything at once.
 
+### Start from a template when one fits
+
+This repo ships a library of **best-practice starter loops** in [`templates/`](./templates/)
+(see [`templates/README.md`](./templates/README.md)). When the user's request matches one,
+**reach for it first** — copy it, fill in its `# TODO` lines (test commands, paths), and
+adapt — instead of authoring from a blank file. They cover the everyday jobs:
+
+- **Spec-driven:** `greenfield-app.loop` (whole app, A-to-Z), `load-spec.loop` (deliver an
+  existing `plan.md` + `sprint.yaml` backlog story by story) — with `discover.loop`,
+  `design.loop`, `story-template.loop`, and starter `sprint.yaml`/`plan.md`.
+- **Change:** `feature.loop`, `brownfield-feature.loop`, `bugfix.loop`, `refactor.loop`.
+- **Quality gates:** `cicd-check.loop`, `security.loop`, `clean-architecture.loop`,
+  `test-coverage.loop`, `review-diff.loop`.
+
+Each is heavily commented and verified to parse. Still interview the user for the specifics
+(goal, the real `done when`, what to gate) — the template is the skeleton, not the answer.
+
 ## Vocabulary (the whole language)
 
 ```

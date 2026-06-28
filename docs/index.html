@@ -201,6 +201,7 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
     <li class="grp">In practice</li>
     <li><a href="#workflows">Real workflows</a></li>
     <li><a href="#byrole">LoopFlow by role</a></li>
+    <li><a href="#templates">Starter templates</a></li>
     <li><a href="#running">Running it</a></li>
     <li><a href="#live">Live dashboard</a></li>
     <li><a href="#library">Your global library</a></li>
@@ -660,6 +661,27 @@ pipeline "forge sandbox runner":
 <!-- 15 -->
 
 <!-- 16 -->
+<section id="templates">
+  <h2>Starter templates — don't write from scratch <span class="badge b-basic">copy &amp; edit</span></h2>
+  <p>The repo ships a library of <strong>best-practice <code class="inl">.loop</code> templates</strong> for everyday work in <a href="https://github.com/tickets-forge-dev/loop-lang/tree/master/templates"><code class="inl">templates/</code></a> — heavily commented, validated to parse, with every project-specific line marked <code class="inl"># TODO</code>. When your job matches one, start there: copy it, fill in the TODOs (your test commands, paths), and run it. In a Claude Code chat the <code class="inl">/loopflow</code> skill reaches for these automatically when a request matches.</p>
+  <table>
+    <tr><th>Group</th><th>Template</th><th>When to use</th></tr>
+    <tr><td rowspan="2"><strong>Spec-driven</strong></td><td><code class="inl">greenfield-app.loop</code></td><td>Build a whole app from nothing, A-to-Z (discover → design → build each story).</td></tr>
+    <tr><td><code class="inl">load-spec.loop</code></td><td>You already have a <code class="inl">plan.md</code> + <code class="inl">sprint.yaml</code> backlog — deliver it story by story.</td></tr>
+    <tr><td rowspan="4"><strong>Change</strong></td><td><code class="inl">feature.loop</code></td><td>Ship one feature with regression + security + human review.</td></tr>
+    <tr><td><code class="inl">brownfield-feature.loop</code></td><td>Add a feature to an existing codebase without breaking it.</td></tr>
+    <tr><td><code class="inl">bugfix.loop</code></td><td>Fix one bug, proven by a named test.</td></tr>
+    <tr><td><code class="inl">refactor.loop</code></td><td>Improve structure with behavior unchanged (full suite stays green).</td></tr>
+    <tr><td rowspan="5"><strong>Quality gates</strong></td><td><code class="inl">cicd-check.loop</code></td><td>Drive every CI check (lint → typecheck → test → build) to green.</td></tr>
+    <tr><td><code class="inl">security.loop</code></td><td>A security pass: SAST → dependency audit → secrets scan.</td></tr>
+    <tr><td><code class="inl">clean-architecture.loop</code></td><td>Enforce boundaries — dependencies point inward, no layer leaks.</td></tr>
+    <tr><td><code class="inl">test-coverage.loop</code></td><td>Raise coverage to a threshold with meaningful tests.</td></tr>
+    <tr><td><code class="inl">review-diff.loop</code></td><td>Review and clean the current branch diff (review-skill gate + human).</td></tr>
+  </table>
+  <p class="sub" style="margin-top:8px">Supporting files: <code class="inl">story-template.loop</code> (the per-story checklist shared by the two spec-driven flows), plus starter <code class="inl">sprint.yaml</code> and <code class="inl">plan.md</code> to replace with your own.</p>
+</section>
+
+<!-- 17 -->
 <section id="running">
   <h2>Running a loop <span class="badge b-inter">intermediate</span></h2>
   <p>Every command below runs the same kind of file — here's the one referenced throughout this section:</p>
