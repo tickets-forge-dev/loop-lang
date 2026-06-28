@@ -6,6 +6,30 @@ export function enumerateItems(text: string, format: "yaml" | "yml" | "md"): str
   return format === "md" ? chunkMarkdown(lines) : chunkYaml(lines);
 }
 
+const stripQuotes = (s: string): string => s.replace(/^["']|["']$/g, "");
+
+/** A short human label for one enumerated item — for the live dashboard's item list.
+ *  Markdown: the `## ` heading. YAML: the first of title/name/story/summary, else the
+ *  first scalar value, else the first line. Truncated. */
+export function labelOf(item: string): string {
+  const raw = item.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+  if (raw.length === 0) return "";
+  const heading = raw[0].match(/^#{2,}\s+(.*)$/); // markdown `## ` section title (2+ #; single # is a YAML comment)
+  if (heading) return heading[1].trim().slice(0, 80);
+  const lines = raw.filter((l) => !l.startsWith("#")); // drop YAML comments
+  if (lines.length === 0) return "";
+  for (const key of ["title", "name", "story", "summary"]) {
+    for (const l of lines) {
+      const m = l.replace(/^-\s+/, "").match(new RegExp(`^${key}:\\s*(.+)$`, "i"));
+      if (m) return stripQuotes(m[1].trim()).slice(0, 80);
+    }
+  }
+  let first = lines[0].replace(/^-\s+/, "");
+  const kv = first.match(/^[\w.-]+:\s*(.+)$/);
+  if (kv) first = kv[1];
+  return stripQuotes(first.trim()).slice(0, 80);
+}
+
 function chunkMarkdown(lines: string[]): string[] {
   const chunks: string[] = [];
   let cur: string[] | null = null;
