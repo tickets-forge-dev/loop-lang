@@ -184,27 +184,70 @@ show the file chain (`a.loop → b.loop → …`). `loop ls` lists every loop in
 
 ## Live browser dashboard
 
-While a loop runs you can watch a live animated schematic — the active cycle node pulses,
-flow steps highlight as they execute, and a for-each progress bar fills item by item.
+A live animated schematic in the browser — the active cycle node pulses, flow steps
+highlight as they execute, and a for-each (sprint) progress bar fills item by item, so the
+user always sees **where in the loop / where in the plan** the run currently is.
 
-**From the CLI** (`loop-run`):
+### Always ask first (in-session runs)
+
+**Before you start running any loop in this session, ask the user once:**
+
+> *"Want a live browser dashboard for this run? I'll open a real-time view of the loop and
+> update it as each step happens."*
+
+- **No** → run normally, narrating the trace in chat (the *Running a .loop* section below).
+- **Yes** → start the dashboard, then drive it as you narrate. Mechanism below.
+
+### How the in-session dashboard works
+
+You (the skill) **are** the engine in-session — so you spin up a tiny server, point the
+browser at it, and push an event for each step you narrate. The browser renders in real
+time. Three pieces, all via the `loop-run` CLI:
+
+1. **Start the server (background) and grab its port:**
+   ```bash
+   loop-run live <file.loop>      # opens the browser automatically
+   ```
+   Run it in the **background** (don't block on it). Read its first stdout line —
+   `LOOP_LIVE_PORT=<port>` — and keep `<port>` for the rest of the run. The server renders
+   the loop's schematic and stays up until you stop it (or the user hits Ctrl-C).
+
+2. **Push an event as you reach each step** — one `emit` per narrated step:
+   ```bash
+   loop-run emit <port> '<event-json>'
+   ```
+   `emit` is best-effort (never blocks your narration if the browser is closed). Push the
+   same events the engine would emit; the key ones to keep the view truthful:
+
+   | When you… | Push |
+   |-----------|------|
+   | start a flow | `{"type":"flow-start","name":"<flow>"}` |
+   | enter a flow step | `{"type":"flow-step-start","name":"<step>","ref":"<file>"}` |
+   | finish a flow step | `{"type":"flow-step-end","name":"<step>","satisfied":true}` |
+   | start a `for each` | `{"type":"foreach-start","var":"<var>","source":"<file>","count":<N>}` |
+   | start item i (0-based) | `{"type":"foreach-item-start","var":"<var>","index":<i>,"total":<N>}` |
+   | finish item i | `{"type":"foreach-item-end","var":"<var>","index":<i>,"satisfied":true}` |
+   | begin a cycle step | `{"type":"node-enter","node":"plan","attempt":<n>}` (then `act`, `observe`) |
+   | finish a cycle step | `{"type":"node-exit","node":"plan","attempt":<n>,"ok":true}` |
+   | run the done-when check | `{"type":"observe","passed":true,"output":"<first line>"}` |
+   | reflect on failure | `{"type":"reflect","text":"<why>"}` then loop-back `{"type":"loop-back","to":"plan"}` |
+   | start a pipeline stage | `{"type":"stage-start","name":"<stage>"}` |
+   | stop | `{"type":"stop","reason":"done"}` then `{"type":"loop-end","name":"<loop>","satisfied":true}` |
+
+3. **At the end**, leave the server running so the user can review the final state. Mention
+   they can Ctrl-C the `loop-run live` process to close it.
+
+So a sprint (`for each story in "sprint.yaml"`) shows the progress bar filling story by
+story, each cycle node pulsing as you work — exactly "where are we in the loop / in the plan".
+
+### CLI-only alternative (headless)
+
+If the user would rather run it headless (gates answered in the terminal, not chat):
 ```bash
 loop-run run <file.loop> --live
 ```
-Opens a browser tab automatically. The terminal still shows the normal text trace; the
-browser view adds the animated SVG schematic + side panel (current step · progress bar ·
-log).
-
-**From this session** (`/loopflow`):
-When you start running a loop in this session, **always** open the schematic first:
-1. Run `loop show <file>` (or `loop-run viz <file>` for the full HTML schematic) so the
-   user sees the loop's shape.
-2. Offer: *"Want a live browser dashboard while I run this? Run
-   `loop-run run <file> --live` in a separate terminal — it'll stream every step to the
-   browser in real time. Or I can run it here and narrate progress inline."*
-3. If they want in-session: proceed with the plan/act/observe narration below. Print a
-   short progress line before each cycle step: `↻ plan (cycle N)`, `⚡ act`, `= observe`.
-4. If they prefer the CLI: give them the command and wait; don't run in-session.
+The engine itself emits every event to the browser — no manual `emit` needed. Use this only
+when the user explicitly wants the headless runner.
 
 ## Running a .loop (in this session)
 

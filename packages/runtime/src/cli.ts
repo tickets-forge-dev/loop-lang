@@ -99,6 +99,17 @@ function findLoops(dir: string, acc: string[] = [], depth = 0): string[] {
   return acc;
 }
 
+/** Read all of stdin as a string (used by `emit` when the event isn't an arg). */
+function readStdin(): Promise<string> {
+  return new Promise((resolve) => {
+    if (process.stdin.isTTY) { resolve(""); return; }
+    let data = "";
+    process.stdin.setEncoding("utf8");
+    process.stdin.on("data", (c) => { data += c; });
+    process.stdin.on("end", () => resolve(data.trim()));
+  });
+}
+
 async function main() {
   const [cmd, fileArg, ...rest] = process.argv.slice(2);
 
@@ -128,8 +139,27 @@ async function main() {
     return;
   }
 
-  if (!cmd || (cmd !== "run" && cmd !== "parse" && cmd !== "viz") || !fileArg) {
-    console.error("usage: loop-run <run|parse|viz|show|ls> <file.loop>  [--model <alias>] [--live] [--events] [--out <path>]");
+  // `loop-run emit <port> '<event-json>'` — push one LoopEvent to a running
+  // `loop-run live` server so it broadcasts to the browser. Best-effort: never
+  // throws (so the /loopflow skill's narration is never blocked by a push).
+  if (cmd === "emit") {
+    const port = fileArg;
+    const json = rest.length ? rest.join(" ") : await readStdin();
+    if (!port || !json) { console.error("usage: loop-run emit <port> '<event-json>'"); process.exit(2); }
+    try {
+      await fetch(`http://127.0.0.1:${port}/emit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: json,
+      });
+    } catch {
+      /* server not up / closed — ignore so narration continues */
+    }
+    return;
+  }
+
+  if (!cmd || (cmd !== "run" && cmd !== "parse" && cmd !== "viz" && cmd !== "live") || !fileArg) {
+    console.error("usage: loop-run <run|parse|viz|live|show|ls|emit> <file.loop>  [--model <alias>] [--live] [--events] [--out <path>]");
     process.exit(2);
   }
 
@@ -154,6 +184,25 @@ async function main() {
   if (cmd === "parse" || rest.includes("--json")) {
     console.log(JSON.stringify(file, null, 2));
     if (cmd === "parse") return;
+  }
+
+  // `loop-run live <file>` — start the live dashboard server WITHOUT running the
+  // engine, then stay up. The /loopflow skill runs the loop in-session and pushes
+  // events with `loop-run emit <port> ...`; the browser renders them in real time.
+  if (cmd === "live") {
+    const { renderLiveHtml } = await import("@loop-lang/viz");
+    const { startLiveServer } = await import("./serve.js");
+    const html = renderLiveHtml(file, { title: fileArg.split("/").pop() });
+    const noOpen = rest.includes("--no-open");
+    const srv = await startLiveServer(html, { open: !noOpen });
+    // Machine-readable line first so a driver can grep the port deterministically.
+    console.log(`LOOP_LIVE_PORT=${srv.port}`);
+    console.error(`\n  ↻ Loop live dashboard → http://127.0.0.1:${srv.port}`);
+    console.error(`  push events: loop-run emit ${srv.port} '<event-json>'`);
+    console.error(`  (Ctrl-C to stop)\n`);
+    process.on("SIGINT", () => { srv.close(); process.exit(0); });
+    process.on("SIGTERM", () => { srv.close(); process.exit(0); });
+    return; // server keeps the event loop alive
   }
 
   // Visualize: write a self-contained HTML schematic of the flow.

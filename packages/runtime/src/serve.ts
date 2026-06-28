@@ -9,13 +9,28 @@ export interface LiveServer {
   close(): void;
 }
 
+export interface LiveServerOptions {
+  /** Open the browser automatically (default true). */
+  open?: boolean;
+}
+
 /** Start a minimal HTTP+SSE server for the live dashboard.
- *  GET /        → serves the pre-rendered HTML page
- *  GET /events  → SSE stream of LoopEvent NDJSON
+ *  GET  /        → serves the pre-rendered HTML page
+ *  GET  /events  → SSE stream of LoopEvent NDJSON
+ *  POST /emit    → push a LoopEvent (JSON body) to broadcast to all clients;
+ *                  this is how an out-of-process driver (the /loopflow skill via
+ *                  `loop-run emit`) feeds a live in-session run.
  *  Auto-opens the browser (best-effort; skips silently on failure).
  */
-export function startLiveServer(html: string): Promise<LiveServer> {
+export function startLiveServer(html: string, opts: LiveServerOptions = {}): Promise<LiveServer> {
   const clients: ServerResponse[] = [];
+
+  function broadcast(e: unknown): void {
+    const data = `data: ${JSON.stringify(e)}\n\n`;
+    for (const c of [...clients]) {
+      try { c.write(data); } catch { /* client disconnected */ }
+    }
+  }
 
   return new Promise((resolve, reject) => {
     const server = createServer((req: IncomingMessage, res: ServerResponse) => {
@@ -31,6 +46,22 @@ export function startLiveServer(html: string): Promise<LiveServer> {
           const i = clients.indexOf(res);
           if (i >= 0) clients.splice(i, 1);
         });
+      } else if (req.method === "POST" && req.url === "/emit") {
+        let body = "";
+        req.on("data", (chunk) => {
+          body += chunk;
+          if (body.length > 1_000_000) req.destroy(); // cap: refuse oversized payloads
+        });
+        req.on("end", () => {
+          try {
+            broadcast(JSON.parse(body));
+            res.writeHead(204);
+            res.end();
+          } catch {
+            res.writeHead(400, { "Content-Type": "text/plain" });
+            res.end("invalid JSON");
+          }
+        });
       } else {
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
         res.end(html);
@@ -42,20 +73,17 @@ export function startLiveServer(html: string): Promise<LiveServer> {
     server.listen(0, "127.0.0.1", () => {
       const addr = server.address() as { port: number };
       const url = `http://127.0.0.1:${addr.port}`;
-      // Best-effort browser open — platform-specific, ignore failures
-      const opener = process.platform === "darwin" ? "open"
-        : process.platform === "win32" ? "start"
-        : "xdg-open";
-      execFile(opener, [url], () => { /* ignore errors */ });
+      if (opts.open !== false) {
+        // Best-effort browser open — platform-specific, ignore failures
+        const opener = process.platform === "darwin" ? "open"
+          : process.platform === "win32" ? "start"
+          : "xdg-open";
+        execFile(opener, [url], () => { /* ignore errors */ });
+      }
 
       resolve({
         port: addr.port,
-        emit(e: LoopEvent) {
-          const data = `data: ${JSON.stringify(e)}\n\n`;
-          for (const c of [...clients]) {
-            try { c.write(data); } catch { /* client disconnected */ }
-          }
-        },
+        emit: broadcast,
         close() { server.close(); },
       });
     });

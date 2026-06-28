@@ -294,6 +294,23 @@ flow, show the file chain. `loop-run ls` lists every loop in the repo.
 - `loop-run show file.loop` — print the loop's flow as compact ASCII (and `loop-run ls` to list them).
 - `loop-run viz file.loop` — open a visual HTML schematic of the flow.
 
+### Ask about a live visual — every in-session run
+
+Before you start running a loop **in this session**, ask the user once:
+*"Want a live browser dashboard for this run? I'll open a real-time view and update it as
+each step happens."* If yes, fire the backend and drive it as you narrate:
+
+- `loop-run live file.loop` — start the dashboard server (opens the browser, prints
+  `LOOP_LIVE_PORT=<port>`), run it in the **background**, keep the port.
+- `loop-run emit <port> '<event-json>'` — push one event per narrated step so the browser
+  animates in real time: the active cycle node pulses, flow steps light up, and a
+  `for each` (sprint) progress bar fills item by item — the user always sees where in the
+  loop and where in the plan the run is.
+- `loop-run run file.loop --live` — headless alternative: the engine itself streams every
+  event to the browser (no manual `emit`), gates answered in the terminal.
+
+The `/loopflow` skill has the full event cheat-sheet for the in-session push protocol.
+
 ## Authoring checklist
 
 1. One coherent objective per `loop`; one story per `stage`.
