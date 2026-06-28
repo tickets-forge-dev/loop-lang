@@ -224,7 +224,7 @@ time. Three pieces, all via the `loop-run` CLI:
    | start a flow | `{"type":"flow-start","name":"<flow>"}` |
    | enter a flow step | `{"type":"flow-step-start","name":"<step>","ref":"<file>"}` |
    | finish a flow step | `{"type":"flow-step-end","name":"<step>","satisfied":true}` |
-   | start a `for each` | `{"type":"foreach-start","var":"<var>","source":"<file>","count":<N>}` |
+   | start a `for each` | `{"type":"foreach-start","var":"<var>","source":"<file>","count":<N>,"labels":["<title 1>","<title 2>",…]}` — pass `labels` (one short title per item, e.g. each story's title) so the dashboard lists the real items instead of "story 1..N" |
    | start item i (0-based) | `{"type":"foreach-item-start","var":"<var>","index":<i>,"total":<N>}` |
    | finish item i | `{"type":"foreach-item-end","var":"<var>","index":<i>,"satisfied":true}` |
    | begin a cycle step | `{"type":"node-enter","node":"plan","attempt":<n>}` (then `act`, `observe`) |
@@ -237,8 +237,11 @@ time. Three pieces, all via the `loop-run` CLI:
 3. **At the end**, leave the server running so the user can review the final state. Mention
    they can Ctrl-C the `loop-run live` process to close it.
 
-So a sprint (`for each story in "sprint.yaml"`) shows the progress bar filling story by
-story, each cycle node pulsing as you work — exactly "where are we in the loop / in the plan".
+The dashboard renders the loop's **actual structure** as a turn-by-turn route (Waze-style):
+the real stages / flow steps / for-each items, with a "you are here", the steps ahead, and
+human gates flagged. So a sprint (`for each story in "sprint.yaml"`) lists each story by title
+with N/total progress, a check on finished stories, and a plan/act/observe tracker on the one
+you're working now — exactly "where are we in the loop / in the plan".
 
 ### CLI-only alternative (headless)
 
