@@ -128,13 +128,13 @@ function handle(e){
       qa('#lp-flow-list li').forEach(function(l){l.classList.remove('lp-active');});
       var safeName=e.name.split('"').join('\\\\"');
       var fli=q('[data-lp-step="'+safeName+'"]');
-      if(fli)fli.classList.add('lp-active');
+      if(fli){fli.classList.add('lp-active');if(fli.firstChild)fli.firstChild.textContent='\\u25b6';}
       log('\\u25b8 '+e.name,'lp-ev-enter');
       break;}
     case 'flow-step-end':{
       var safeName2=e.name.split('"').join('\\\\"');
       var fli2=q('[data-lp-step="'+safeName2+'"]');
-      if(fli2){fli2.classList.remove('lp-active');fli2.classList.add(e.satisfied?'lp-done':'lp-fail');}
+      if(fli2){fli2.classList.remove('lp-active');fli2.classList.add(e.satisfied?'lp-done':'lp-fail');if(fli2.firstChild)fli2.firstChild.textContent=e.satisfied?'\\u2713':'\\u2717';}
       break;}
     case 'stage-start':
       setStep('stage: '+e.name);
@@ -176,18 +176,21 @@ function embedJson(value: unknown): string {
     .split(PS).join("\\u2029");
 }
 
+/** Escape a string for safe interpolation into HTML text / attributes. */
+function htmlEscape(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
 export function renderLiveHtml(file: LoopFile, opts: VizOptions = {}): string {
   const title = opts.title ?? "loop";
+  const safeTitle = htmlEscape(title);
 
   // Pre-populate flow-step list items for known flow definitions
   let flowStepItems = "";
   for (const def of file.definitions) {
     if (def.kind === "flow") {
       for (const step of def.steps) {
-        const safe = step.name
-          .replace(/&/g, "&amp;")
-          .replace(/"/g, "&quot;")
-          .replace(/</g, "&lt;");
+        const safe = htmlEscape(step.name);
         flowStepItems += `<li data-lp-step="${safe}"><span>&#9675;</span><span>${safe}</span></li>`;
       }
     }
@@ -196,7 +199,7 @@ export function renderLiveHtml(file: LoopFile, opts: VizOptions = {}): string {
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Loop &#xb7; live &#xb7; ${title}</title>
+<title>Loop &#xb7; live &#xb7; ${safeTitle}</title>
 <style>${BASE_CSS}${LIVE_CSS}</style>
 </head>
 <body class="schematic live">

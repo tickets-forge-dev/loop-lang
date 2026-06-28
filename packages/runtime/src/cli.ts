@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { appendFileSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
-import { dirname, resolve, relative } from "node:path";
+import { dirname, resolve, relative, basename } from "node:path";
 import { createInterface } from "node:readline";
 import { parse } from "@loop-lang/parser";
 import { resolvePreset } from "@loop-lang/stdlib";
@@ -192,7 +192,7 @@ async function main() {
   if (cmd === "live") {
     const { renderLiveHtml } = await import("@loop-lang/viz");
     const { startLiveServer } = await import("./serve.js");
-    const html = renderLiveHtml(file, { title: fileArg.split("/").pop() });
+    const html = renderLiveHtml(file, { title: basename(fileArg) });
     const noOpen = rest.includes("--no-open");
     const srv = await startLiveServer(html, { open: !noOpen });
     // Machine-readable line first so a driver can grep the port deterministically.
@@ -208,7 +208,7 @@ async function main() {
   // Visualize: write a self-contained HTML schematic of the flow.
   if (cmd === "viz") {
     const { renderHtml } = await import("@loop-lang/viz");
-    const html = renderHtml(file, { title: fileArg.split("/").pop() });
+    const html = renderHtml(file, { title: basename(fileArg) });
     const vOutIdx = rest.indexOf("--out");
     const dest = resolve(process.cwd(), vOutIdx >= 0 ? rest[vOutIdx + 1] : fileArg.replace(/\.loop$/, "") + ".html");
     writeFileSync(dest, html);
@@ -259,7 +259,7 @@ async function main() {
   if (rest.includes("--live")) {
     const { renderLiveHtml } = await import("@loop-lang/viz");
     const { startLiveServer } = await import("./serve.js");
-    const html = renderLiveHtml(file, { title: fileArg.split("/").pop() });
+    const html = renderLiveHtml(file, { title: basename(fileArg) });
     const srv = await startLiveServer(html);
     console.error(`\n  ↻ Loop live dashboard → http://127.0.0.1:${srv.port}\n`);
     const liveEvents: LoopEvent[] = [];

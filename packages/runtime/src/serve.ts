@@ -24,8 +24,16 @@ export interface LiveServerOptions {
  */
 export function startLiveServer(html: string, opts: LiveServerOptions = {}): Promise<LiveServer> {
   const clients: ServerResponse[] = [];
+  // Replay buffer: events fire before the browser finishes launching + connecting, so a
+  // fresh /events client would miss everything up to its connect. Buffer and replay on
+  // connect. ponytail: bounded ring (last 10k events) — the dashboard reconstructs state
+  // from the stream, so dropping the oldest events on a very long run is harmless.
+  const buffer: unknown[] = [];
+  const BUFFER_CAP = 10_000;
 
   function broadcast(e: unknown): void {
+    buffer.push(e);
+    if (buffer.length > BUFFER_CAP) buffer.shift();
     const data = `data: ${JSON.stringify(e)}\n\n`;
     for (const c of [...clients]) {
       try { c.write(data); } catch { /* client disconnected */ }
@@ -41,6 +49,7 @@ export function startLiveServer(html: string, opts: LiveServerOptions = {}): Pro
           Connection: "keep-alive",
         });
         res.write("retry: 2000\n\n");
+        for (const past of buffer) res.write(`data: ${JSON.stringify(past)}\n\n`);
         clients.push(res);
         req.on("close", () => {
           const i = clients.indexOf(res);
@@ -74,11 +83,13 @@ export function startLiveServer(html: string, opts: LiveServerOptions = {}): Pro
       const addr = server.address() as { port: number };
       const url = `http://127.0.0.1:${addr.port}`;
       if (opts.open !== false) {
-        // Best-effort browser open — platform-specific, ignore failures
-        const opener = process.platform === "darwin" ? "open"
-          : process.platform === "win32" ? "start"
-          : "xdg-open";
-        execFile(opener, [url], () => { /* ignore errors */ });
+        // Best-effort browser open — platform-specific, ignore failures.
+        // Windows `start` is a cmd.exe built-in (no start.exe), so go via cmd; the empty
+        // "" is start's window-title arg, required so the URL isn't taken as the title.
+        const [opener, args] = process.platform === "darwin" ? ["open", [url]]
+          : process.platform === "win32" ? ["cmd", ["/c", "start", "", url]]
+          : ["xdg-open", [url]];
+        execFile(opener, args, () => { /* ignore errors */ });
       }
 
       resolve({
