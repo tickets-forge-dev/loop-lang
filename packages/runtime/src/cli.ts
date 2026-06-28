@@ -129,7 +129,7 @@ async function main() {
   }
 
   if (!cmd || (cmd !== "run" && cmd !== "parse" && cmd !== "viz") || !fileArg) {
-    console.error("usage: loop-run <run|parse|viz|show|ls> <file.loop>  [--model <alias>] [--out <path>]");
+    console.error("usage: loop-run <run|parse|viz|show|ls> <file.loop>  [--model <alias>] [--live] [--events] [--out <path>]");
     process.exit(2);
   }
 
@@ -205,6 +205,39 @@ async function main() {
     emit({ kind: "end", ok });
     rl.close();
     process.exit(ok ? 0 : 1);
+  }
+
+  if (rest.includes("--live")) {
+    const { renderLiveHtml } = await import("@loop-lang/viz");
+    const { startLiveServer } = await import("./serve.js");
+    const html = renderLiveHtml(file, { title: fileArg.split("/").pop() });
+    const srv = await startLiveServer(html);
+    console.error(`\n  ↻ Loop live dashboard → http://127.0.0.1:${srv.port}\n`);
+    const liveEvents: LoopEvent[] = [];
+    const liveOutcomes = await run(file, {
+      runner: new ClaudeCodeRunner({}),
+      verifier: new ShellVerifier(),
+      human: new CliHumanIO(),
+      git,
+      baseDir: target,
+      loadFile,
+      readText,
+      writeText,
+      flowStack: [path],
+      modelPolicy: file.config?.models,
+      cliModel: model,
+      onEvent: (e) => {
+        liveEvents.push(e);
+        srv.emit(e);
+        const line = render(e);
+        if (line) console.log(line);
+      },
+    });
+    srv.close();
+    const liveSummary = formatModelSummary(summarizeModels(liveEvents));
+    if (liveSummary) console.error(liveSummary);
+    const liveOk = liveOutcomes.every((o) => o.satisfied);
+    process.exit(liveOk ? 0 : 1);
   }
 
   const traceEvents: LoopEvent[] = [];
