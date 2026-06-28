@@ -8,6 +8,14 @@ import { join, dirname } from "node:path";
 const MARK_START = "<!-- loop:start (managed by `loop init` — edits between the markers are overwritten) -->";
 const MARK_END = "<!-- loop:end -->";
 
+/** Default repo settings the /loopflow skill reads. `key=value`, `#` comments. */
+const LOOP_CONFIG_DEFAULT = `# Loop config — settings for the /loopflow skill and runtime.
+# live: when true, running a loop in Claude Code via /loopflow opens a live browser
+#       dashboard and streams each step to it. Default false (off in Claude Code unless
+#       you opt in). The headless 'loop-run run <file> --live' flag is unaffected.
+live=false
+`;
+
 /** Short pointer dropped into an agent's memory file so it knows Loop lives here. */
 export function pointer({ skill }) {
   const run = skill
@@ -66,6 +74,16 @@ export async function init(targetDir, opts, assetsDir) {
   const agentsBody = await readFile(join(assetsDir, "AGENTS.md"), "utf8");
   const verb = await mergeMarkered(join(targetDir, "AGENTS.md"), agentsBody.trim());
   steps.push(`${verb} AGENTS.md  (the Loop language reference — any agent)`);
+
+  // 1b. loop.config — repo settings the /loopflow skill reads. Written once with safe
+  //     defaults (live=false); never clobbered unless --force, so user edits survive.
+  const cfgPath = join(targetDir, "loop.config");
+  if (force || !(await exists(cfgPath))) {
+    await writeFile(cfgPath, LOOP_CONFIG_DEFAULT);
+    steps.push("wrote loop.config  (live=false — set live=true to show the dashboard in /loopflow)");
+  } else {
+    steps.push("skipped (exists) loop.config");
+  }
 
   // 2. The Claude Code /loopflow skill.
   if (withSkill) {

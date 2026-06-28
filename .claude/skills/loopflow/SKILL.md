@@ -188,15 +188,20 @@ A live animated schematic in the browser — the active cycle node pulses, flow 
 highlight as they execute, and a for-each (sprint) progress bar fills item by item, so the
 user always sees **where in the loop / where in the plan** the run currently is.
 
-### Always ask first (in-session runs)
+### Gate it on `loop.config` (in-session runs)
 
-**Before you start running any loop in this session, ask the user once:**
+The in-session dashboard is **opt-in via repo config** — off by default so a normal
+`/loopflow` run stays entirely in the chat. Before running a loop in this session, read
+`loop.config` at the repo root and look for a `live=` line:
 
-> *"Want a live browser dashboard for this run? I'll open a real-time view of the loop and
-> update it as each step happens."*
+- **`live=false`, or the line/file is absent** → **do not** start the dashboard. Run
+  normally, narrating the trace in chat (the *Running a .loop* section below). Do not ask.
+- **`live=true`** → start the dashboard and drive it as you narrate (mechanism below). You
+  may still mention you're opening it.
 
-- **No** → run normally, narrating the trace in chat (the *Running a .loop* section below).
-- **Yes** → start the dashboard, then drive it as you narrate. Mechanism below.
+(`loop.config` is written by `loop init` with `live=false`; the user flips it to `live=true`
+to turn the dashboard on. The headless `loop-run run <file> --live` flag is independent of
+this config.)
 
 ### How the in-session dashboard works
 

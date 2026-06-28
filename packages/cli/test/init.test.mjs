@@ -52,6 +52,23 @@ test("init respects skill:none and example:false", async () => {
   assert.equal(existsSync(join(dir, "examples")), false, "no example");
 });
 
+test("init writes loop.config with live=false by default", async () => {
+  const dir = await fresh();
+  await init(dir, { skill: "none", agents: [], example: false }, ASSETS);
+  assert.ok(existsSync(join(dir, "loop.config")), "loop.config written");
+  const cfg = await readFile(join(dir, "loop.config"), "utf8");
+  assert.match(cfg, /^live=false$/m, "live=false default");
+});
+
+test("init does not clobber an edited loop.config (unless --force)", async () => {
+  const dir = await fresh();
+  await writeFile(join(dir, "loop.config"), "live=true\n");
+  await init(dir, { skill: "none", agents: [], example: false }, ASSETS);
+  assert.equal(await readFile(join(dir, "loop.config"), "utf8"), "live=true\n", "user value preserved");
+  await init(dir, { skill: "none", agents: [], example: false, force: true }, ASSETS);
+  assert.match(await readFile(join(dir, "loop.config"), "utf8"), /^live=false$/m, "force resets to default");
+});
+
 test("pointer mentions the skill only when one is installed", () => {
   assert.match(pointer({ skill: true }), /\/loopflow` skill/);
   assert.doesNotMatch(pointer({ skill: false }), /\/loopflow` skill/);

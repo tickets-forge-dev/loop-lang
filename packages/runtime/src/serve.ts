@@ -25,20 +25,38 @@ export interface LiveServerOptions {
 export function startLiveServer(html: string, opts: LiveServerOptions = {}): Promise<LiveServer> {
   const clients: ServerResponse[] = [];
   // Replay buffer: events fire before the browser finishes launching + connecting, so a
-  // fresh /events client would miss everything up to its connect. Buffer and replay on
-  // connect. ponytail: bounded ring (last 10k events) — the dashboard reconstructs state
-  // from the stream, so dropping the oldest events on a very long run is harmless.
-  const buffer: unknown[] = [];
+  // fresh /events client would miss everything up to its connect. Each event gets a
+  // monotonic id; on (re)connect we replay only the events newer than the client's
+  // Last-Event-ID, so a transient drop + EventSource auto-reconnect doesn't re-deliver
+  // (and thus duplicate) what the page already saw.
+  // ponytail: bounded ring (last 10k events) — the dashboard reconstructs state from the
+  // stream, so dropping the oldest events on a very long run is harmless.
+  const buffer: { id: number; data: string }[] = [];
   const BUFFER_CAP = 10_000;
+  let seq = 0;
 
+  function frame(id: number, data: string): string {
+    return `id: ${id}\ndata: ${data}\n\n`;
+  }
   function broadcast(e: unknown): void {
-    buffer.push(e);
+    const id = ++seq;
+    const data = JSON.stringify(e);
+    buffer.push({ id, data });
     if (buffer.length > BUFFER_CAP) buffer.shift();
-    const data = `data: ${JSON.stringify(e)}\n\n`;
+    const f = frame(id, data);
     for (const c of [...clients]) {
-      try { c.write(data); } catch { /* client disconnected */ }
+      try { c.write(f); } catch { /* client disconnected */ }
     }
   }
+
+  // SSE heartbeat: a comment line keeps idle connections alive through proxies / NAT.
+  // unref so it never keeps the process alive on its own (the listening socket does that).
+  const heartbeat = setInterval(() => {
+    for (const c of [...clients]) {
+      try { c.write(": ping\n\n"); } catch { /* disconnected */ }
+    }
+  }, 15_000);
+  heartbeat.unref?.();
 
   return new Promise((resolve, reject) => {
     const server = createServer((req: IncomingMessage, res: ServerResponse) => {
@@ -49,7 +67,9 @@ export function startLiveServer(html: string, opts: LiveServerOptions = {}): Pro
           Connection: "keep-alive",
         });
         res.write("retry: 2000\n\n");
-        for (const past of buffer) res.write(`data: ${JSON.stringify(past)}\n\n`);
+        // Replay only events the client hasn't already seen (0 if a first connect).
+        const lastId = Number(req.headers["last-event-id"]) || 0;
+        for (const ev of buffer) if (ev.id > lastId) res.write(frame(ev.id, ev.data));
         clients.push(res);
         req.on("close", () => {
           const i = clients.indexOf(res);
@@ -95,7 +115,7 @@ export function startLiveServer(html: string, opts: LiveServerOptions = {}): Pro
       resolve({
         port: addr.port,
         emit: broadcast,
-        close() { server.close(); },
+        close() { clearInterval(heartbeat); server.close(); },
       });
     });
   });

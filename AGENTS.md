@@ -294,11 +294,13 @@ flow, show the file chain. `loop-run ls` lists every loop in the repo.
 - `loop-run show file.loop` — print the loop's flow as compact ASCII (and `loop-run ls` to list them).
 - `loop-run viz file.loop` — open a visual HTML schematic of the flow.
 
-### Ask about a live visual — every in-session run
+### Live visual — opt-in via `loop.config`
 
-Before you start running a loop **in this session**, ask the user once:
-*"Want a live browser dashboard for this run? I'll open a real-time view and update it as
-each step happens."* If yes, fire the backend and drive it as you narrate:
+The in-session dashboard is **off by default**. Before running a loop **in this session**,
+read `loop.config` at the repo root: only if it has `live=true` do you start the dashboard
+and drive it as you narrate. With `live=false` (the default written by `loop init`) or no
+config, run normally in the chat — don't open anything, don't ask. (The headless
+`loop-run run <file> --live` flag below is independent of this config.) When enabled:
 
 - `loop-run live file.loop` — start the dashboard server (opens the browser, prints
   `LOOP_LIVE_PORT=<port>`), run it in the **background**, keep the port.

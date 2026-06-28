@@ -154,13 +154,18 @@ Two ways to drive it:
 
 - **Headless** — `loop-run run <file> --live` opens a browser tab and the engine streams
   every event to it. The terminal still prints the normal text trace.
-- **In-session** — when you run a loop inside Claude Code via `/loopflow`, the skill offers
-  a live dashboard; on yes it starts `loop-run live <file>` in the background (which prints
-  `LOOP_LIVE_PORT=<port>` and opens the browser) and pushes an event per narrated step with
-  `loop-run emit <port> '<event-json>'`. The page connects over Server-Sent Events; a replay
-  buffer means events fired before the browser connects are not lost.
+- **In-session** — when you run a loop inside Claude Code via `/loopflow`, the dashboard is
+  **opt-in via `loop.config`**: `loop init` writes `loop.config` with `live=false` (off by
+  default), and the skill only opens the dashboard when you set `live=true`. When enabled it
+  starts `loop-run live <file>` in the background (which prints `LOOP_LIVE_PORT=<port>` and
+  opens the browser) and pushes an event per narrated step with
+  `loop-run emit <port> '<event-json>'`. The headless `--live` flag is independent of this
+  config.
 
-The dashboard is self-contained (no external assets) and binds to `127.0.0.1` only.
+The page connects over Server-Sent Events; each event carries an id and the server replays
+on connect (and dedupes on reconnect via `Last-Event-ID`), so events fired before the browser
+connects are not lost and a transient drop doesn't double-deliver. The dashboard is
+self-contained (no external assets) and binds to `127.0.0.1` only.
 
 ## 5. Language reference
 
