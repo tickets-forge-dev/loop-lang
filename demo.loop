@@ -1,0 +1,25 @@
+pipeline "ship: loop-lang demo feature":
+
+  stage "plan":
+    goal: produce a short plan file (plan.md) describing one small CLI improvement
+    look at: packages/cli/src/cli.mjs, AGENTS.md
+    done when a human confirms "plan looks good"
+    allow edits automatically, but ask me before pushing
+    after 3 tries: stop and warn "can't produce a plan — clarify the goal"
+    a human approves the plan first
+
+  stage "implement":
+    goal: implement exactly what plan.md describes — nothing more
+    look at: plan.md, packages/cli/src/cli.mjs, packages/cli/test
+    done when "node --test packages/cli/test/*.test.mjs" passes
+    allow edits automatically, but ask me before pushing
+    when it fails: reflect on the test output, then plan again
+    after 6 tries: stop and warn "stuck — check plan.md for ambiguity"
+    also: a security scan, a code review
+
+  stage "ship":
+    goal: commit the change on a branch and open a PR
+    look at: plan.md
+    done when a human confirms "PR looks good"
+    allow edits automatically, but ask me before pushing
+    a human reviews before stopping

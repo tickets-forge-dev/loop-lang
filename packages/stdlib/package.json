@@ -1,18 +1,39 @@
 {
   "name": "@loop-lang/stdlib",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Bundled LoopFlow presets (methods as .loop files) and a resolver for `use`.",
   "license": "Apache-2.0",
   "type": "module",
-  "publishConfig": { "access": "public" },
-  "keywords": ["loop", "agent", "claude", "ai", "workflow", "dsl", "loop-engineering", "presets"],
-  "repository": { "type": "git", "url": "https://github.com/tickets-forge-dev/loop-lang.git", "directory": "packages/stdlib" },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "loop",
+    "agent",
+    "claude",
+    "ai",
+    "workflow",
+    "dsl",
+    "loop-engineering",
+    "presets"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tickets-forge-dev/loop-lang.git",
+    "directory": "packages/stdlib"
+  },
   "homepage": "https://github.com/tickets-forge-dev/loop-lang/tree/master/packages/stdlib#readme",
-  "bugs": { "url": "https://github.com/tickets-forge-dev/loop-lang/issues" },
+  "bugs": {
+    "url": "https://github.com/tickets-forge-dev/loop-lang/issues"
+  },
   "main": "index.js",
   "types": "index.d.ts",
   "exports": {
     ".": "./index.js"
   },
-  "files": ["index.js", "index.d.ts", "*.loop"]
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "*.loop"
+  ]
 }

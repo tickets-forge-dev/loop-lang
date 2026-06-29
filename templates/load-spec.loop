@@ -1,0 +1,41 @@
+# =============================================================================
+# load-spec.loop — deliver an EXISTING spec, story by story (brownfield)
+# =============================================================================
+#
+# WHEN TO USE THIS
+#   The plan already exists. You are not interviewing anyone or discovering scope
+#   from scratch — you have a written spec and a backlog, and you want the loop to
+#   grind through it with the same quality gates on every story. This is the
+#   spec-driven / "brownfield-with-a-plan" entry point.
+#
+# THE TWO INPUT FILES (data you edit, not loops)
+#   - plan.md    the HUMAN-READABLE spec: the epic summary and the stories in
+#                prose. This is the source of truth a person reads and signs off
+#                on. The loop does not parse plan.md directly; it is the
+#                authoring artifact that keeps you and the machine agreed on scope.
+#   - sprint.yaml  the MACHINE-READABLE backlog: a `stories:` list distilled from
+#                plan.md. `for each` iterates THIS file. Each story's text
+#                (epic + title + acceptance) becomes the context handed to the
+#                template — i.e. it tells story-template.loop exactly what to build.
+#
+#   Keep them in sync: write/refine the spec in plan.md, then mirror each story
+#   into sprint.yaml as a structured entry the loop can iterate.
+#
+# THE FLOW
+#   `for each story in "sprint.yaml"` reads the backlog and runs the per-story
+#   checklist (story-template.loop: implement -> security -> manual) once per
+#   entry. If a story fails its checklist, the runtime PAUSES and asks whether to
+#   continue with the next story or stop — so one bad story doesn't silently
+#   wreck the rest of the sprint.
+#
+#   Paths below are relative to THIS file, so keep load-spec.loop, sprint.yaml,
+#   plan.md, and story-template.loop together in one directory (or adjust paths).
+# =============================================================================
+
+flow "deliver spec":
+
+  # One iteration per story in the backlog. The story's text rides into the
+  # template as context (what to build); the template supplies the SAME gates
+  # for every story. Edit sprint.yaml to change the work — this file stays put.
+  for each story in "sprint.yaml":
+    run "story-template.loop"

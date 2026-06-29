@@ -10,7 +10,7 @@ export { ClaudeCodeRunner, interpretStreamLine, buildPlanPrompt, claudeArgs, par
 export type { ClaudeCodeRunnerOptions, AgentNode } from "./runners/claudeCode.js";
 export { IpcHumanIO } from "./ipc.js";
 export type { HumanRequest } from "./ipc.js";
-export { enumerateItems } from "./iterate.js";
+export { enumerateItems, labelOf } from "./iterate.js";
 export { resolveGit, isProtected, BUILTIN_GIT } from "./git.js";
 export type { GitIO, ResolvedGit } from "./git.js";
 export { MockGitIO } from "./runners/mockGit.js";

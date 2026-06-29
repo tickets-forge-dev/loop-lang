@@ -1,0 +1,66 @@
+# test-coverage.loop
+# TEACHES: drive test coverage up to a hard threshold as a self-correcting loop.
+#
+# The trick that makes this a *real* loop (not vibes): the `done when` command must
+# EXIT NON-ZERO when coverage is below the bar, and exit 0 only once you're at/above it.
+# Most runners already do this — point them at a coverage threshold and they fail the
+# process when you're under it. That failing exit code is the loop's finish line: it
+# keeps planning, writing tests, and re-measuring until the gate goes green on its own.
+#
+# IMPORTANT PHILOSOPHY: the goal is *meaningful* tests, not a green number. A loop that
+# only optimizes a percentage will happily write assertion-free tests that execute lines
+# without checking behavior ("coverage padding"). The comments below keep it honest —
+# cover real branches and edge cases, and let the reflect step name the risky uncovered
+# paths so each cycle adds tests that would actually catch a bug.
+#
+# Copy this file, then edit every `# TODO:` to match your project.
+
+loop "raise test coverage to the threshold":
+  # The objective is the *bar*, stated in plain language. The number lives in the
+  # command below so there's exactly one source of truth for "the threshold".
+  goal: test coverage meets the agreed threshold, with meaningful tests that assert real behavior
+
+  # THE FINISH LINE — a coverage command that FAILS (non-zero exit) when you're under
+  # the threshold and PASSES (exit 0) when you've hit it. The loop runs this every cycle
+  # and only stops when it exits clean.
+  #
+  # TODO: replace with YOUR coverage gate. Pick one and set the real threshold:
+  #   Jest:    "npx jest --coverage --coverageThreshold='{\"global\":{\"lines\":90}}'"
+  #   Vitest:  "npx vitest run --coverage --coverage.thresholds.lines=90"
+  #   or a check script that exits non-zero below the bar, e.g. "npm run coverage:check"
+  # Keep it deterministic and as fast as you can (scope to the package you're covering)
+  # — this command runs on EVERY cycle, so a slow gate makes the whole loop slow.
+  done when "npm run coverage:check" passes
+
+  # CONTEXT — point the agent at the modules that are dragging coverage down, plus the
+  # last failure (the coverage report) so it learns which files/lines are still uncovered
+  # instead of re-testing what's already green.
+  # TODO: list YOUR under-tested modules and their test folders.
+  look at: the under-tested modules src/, their existing tests in tests/, the coverage report, and the last failure
+
+  # ACTION POLICY — let the agent add and edit tests freely (that's the whole job), but
+  # gate anything irreversible. Tests sometimes tempt a "fix" in source or a dependency
+  # bump; keep those human-reviewed so a coverage run never silently reshapes the app.
+  # TODO: tune the gated classes for your repo (migrations, deploys, schema, lockfile…).
+  allow edits automatically, but ask me before changing production source, migrations, or pushes
+
+  # THE CYCLE — think about which paths are uncovered, write the tests, then re-measure.
+  each cycle: plan, then act, then observe
+
+  # THRASH GUARD part 1 (reflect-on-fail) — when the gate is still red, don't just bolt
+  # on more shallow tests. Reflect on WHICH branches / lines / files are still uncovered
+  # (read the coverage report) so the next plan targets real, behavior-checking tests for
+  # the riskiest gaps — not coverage padding that executes code without asserting anything.
+  when it fails: reflect on which files and branches are still uncovered, then plan again
+
+  # Stop the moment the threshold is met — don't keep padding tests past the goal.
+  when it passes and the goal is met: stop
+
+  # If a path genuinely can't (or shouldn't) be tested — dead code, a hard-to-reach
+  # error branch, generated files — that's a human judgment call, not more looping.
+  when blocked: ask a human
+
+  # THRASH GUARD part 2 (hard ceiling) — if 6 cycles don't reach the bar, the gap is
+  # likely structural (untestable code, an unrealistic threshold, or code that needs a
+  # refactor before it can be covered). Stop and surface it instead of spinning.
+  after 6 tries: stop and warn "coverage still below the threshold after 6 tries — likely needs a refactor or a threshold review rather than more tests"

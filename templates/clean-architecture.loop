@@ -1,0 +1,75 @@
+# clean-architecture.loop
+# TEACHES: enforce CLEAN ARCHITECTURE — fix the code until your boundary rules
+# hold, then keep them holding.
+#
+# Clean architecture is a set of *dependency rules*: dependencies point inward
+# (UI → application → domain, never the reverse), layers don't reach across,
+# and the domain knows nothing about frameworks, the database, or HTTP. Those
+# rules are only real if a machine checks them — a "we agreed not to" rule
+# rots the first time someone's in a hurry.
+#
+# So the finish line here is an ARCHITECTURE CHECK COMMAND, not a vibe. Encode
+# your boundaries once (in a depcruise / import-linter / eslint-boundaries /
+# ArchUnit / ts-arch config), and this loop drives the code until that check
+# passes — fixing the wrong-direction imports and layer leaks it finds.
+#
+# Pick whichever fits your stack for the `done when` below (TODO):
+#   - JS/TS:   "depcruise --config .dependency-cruiser.js --validate src"
+#   - JS/TS:   "eslint --rule 'boundaries/element-types: error' src"
+#   - Python:  "lint-imports"            (import-linter, reads importlinter.ini)
+#   - Java:    "mvn -q test -Dtest=ArchitectureTest"   (ArchUnit)
+#   - Go:      "go-cleanarch"            or a custom go vet analyzer
+# Or make a review skill the gate instead (see the alternative at the bottom).
+
+loop "enforce clean architecture boundaries":
+  goal: every module respects the architecture rules — dependencies point inward, layers don't cross, and the domain stays framework-free
+
+  # THE GATE: your boundary checker must pass (exit 0 = no violations). This is
+  # the whole point — a real tool decides "clean", not the agent's opinion.
+  # TODO: replace with your architecture-check command (see the menu above).
+  done when "depcruise --config .dependency-cruiser.js --validate src" passes
+
+  # Give the agent the rules themselves plus the offending modules, and feed the
+  # last failure back so it learns which boundary it just broke.
+  # TODO: point at your real rules file + the layers being checked.
+  look at: the architecture rules (e.g. .dependency-cruiser.js), the layer directories under src, and the last failure
+
+  each cycle: plan, then act, then observe
+
+  # KEY for architecture: a violation is fixed by RESTRUCTURING, not by relaxing
+  # the rule. Reflect on WHICH boundary was crossed and WHY (a domain file
+  # importing a framework? a layer reaching sideways?), then invert the
+  # dependency or move the code — don't loosen the checker to force green.
+  when it fails: reflect on which boundary was crossed and whether to invert the dependency or move the code, then plan again
+
+  # A clean architecture pass shouldn't quietly add libraries or reshape the
+  # schema — gate the irreversible / scope-expanding moves.
+  allow edits automatically, but ask me before adding dependencies, migrations, or pushes
+
+  when it passes and the goal is met: stop
+
+  # HUMAN GATE: boundaries encode design intent. A person confirms the fix moved
+  # the code the right way (and didn't just delete a rule or add an allow-list
+  # exception to silence the checker) before this loop is allowed to stop.
+  a human reviews before stopping
+
+  # THRASH GUARD: if six rounds can't satisfy the rules, the violation is
+  # structural and bigger than a loop should swallow — stop and surface it.
+  after 6 tries: stop and warn "architecture check still failing after 6 tries — the boundary break is structural; needs a human"
+
+# ---------------------------------------------------------------------------
+# ALTERNATIVE — no boundary tool yet? Make a REVIEW SKILL the gate instead of a
+# command. A review skill judges the change against clean-architecture principles
+# and returns approve / a score, which turns "looks well-layered" into a
+# verifiable predicate:
+#
+#   loop "enforce clean architecture boundaries":
+#     goal: the change respects clean-architecture boundaries
+#     use skills: clean-architecture
+#     done when the skill "clean-architecture" scores 8 or more
+#     look at: the changed modules and their imports, and the last failure
+#     each cycle: plan, then act, then observe
+#     when it fails: reflect on the skill's findings, then plan again
+#     a human reviews before stopping
+#     after 6 tries: stop and warn "still below the architecture bar after 6 tries — needs a human"
+# ---------------------------------------------------------------------------

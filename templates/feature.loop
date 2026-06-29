@@ -1,0 +1,68 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# TEMPLATE: ship a feature as a fail-fast `pipeline`.
+#
+# A pipeline runs its stages top-to-bottom and is FAIL-FAST: a stage must be
+# satisfied (its `done when` gate passes) before the next one starts. Each stage
+# body is a normal loop body — its own goal, its own gate, its own thrash guard.
+#
+# The shape of "shipping a feature" this template encodes:
+#   build  → write the feature until its acceptance test goes green
+#   regression → prove the WHOLE suite still passes (nothing else broke)
+#   security   → scan for high-severity findings before it ships
+#   review     → a human eyeballs the result before we call it done
+#
+# HOW TO USE THIS FILE:
+#   1. Copy it next to your project (or into your repo) and rename it.
+#   2. Fix every line marked "# TODO:" — they are the bits unique to YOUR repo
+#      (the acceptance test, the full test command, the files to look at).
+#   3. Validate:  loop-run show feature.loop   (sanity-check the shape)
+#   4. Run it:    loop-run run feature.loop    (executes on Claude Code)
+#
+# NOTE on git: there is no `git:` block here, so the built-in safe default
+# applies — work on a branch, commit when the goal is met, never push. If you
+# want a push or a PR, add a file-level `git:` block above the pipeline (see
+# AGENTS.md "Git strategy"). Pushing to main/master is blocked unconditionally.
+# ─────────────────────────────────────────────────────────────────────────────
+
+pipeline "feature: <name>":   # TODO: name the feature, e.g. "feature: bulk invite users"
+
+  # 1. BUILD — the self-correcting loop that actually writes the feature.
+  #    Edits run automatically so the loop can iterate without nagging you, but
+  #    it MUST ask a human before anything risky — a schema migration or a push.
+  #    The acceptance test is the objective gate: the loop cannot claim "done"
+  #    until that exact test goes green, so it can't talk itself into success.
+  stage build:
+    goal: the feature works end to end                                  # TODO: describe the user-visible behavior
+    look at: src/feature/, the relevant tests, and the last failure     # TODO: point at the real files/dirs to keep edits small
+    allow edits automatically, but ask me before migrations or pushes   # auto-edit, but human-gate the scary stuff
+    each cycle: plan, then act, then observe                            # the inner reasoning loop
+    done when the test "feature.spec::works end to end" passes          # TODO: your ONE acceptance test (file::name)
+    when it fails: reflect on which layer broke, then plan again        # turn each red run into the next plan
+    after 6 tries: stop and warn "feature build is thrashing"          # thrash guard: give up before burning cycles
+
+  # 2. REGRESSION — run the FULL suite, not just the new test, so a fix that
+  #    quietly breaks a neighbor keeps the loop red until everything is green.
+  #    "<cmd> passes" means the command exits 0 across every test.
+  stage regression:
+    goal: the entire test suite is green — the feature broke nothing else
+    each cycle: act, then observe                          # no planning needed; run the suite and read results
+    done when "npm test" passes                            # TODO: your full-suite command, e.g. "pnpm test" / "pytest"
+    when it fails: reflect on which tests broke and whether the feature caused it, then plan again
+    after 4 tries: stop and warn "regressions remain after 4 tries"   # don't loop forever on a hidden break
+
+  # 3. SECURITY — a real scanner is the bar. "finds nothing" requires the
+  #    command to exit 0 AND print no output, so only a clean run counts.
+  stage security:
+    goal: no high-severity findings in the new code
+    each cycle: plan, then act, then observe
+    done when "semgrep --config auto --severity=high" finds nothing   # clean = exit 0 + empty output
+    when it fails: reflect on the flagged lines, then plan again
+    after 4 tries: stop and warn "security findings need a human"     # security never auto-passes on thrash
+
+  # 4. REVIEW — the objective gates are all green, but a person makes the final
+  #    call. This is a BLOCKING gate: the pipeline cannot stop until a human
+  #    signs off on the finished feature.
+  stage review:
+    goal: a human is satisfied the feature is correct and ready to ship
+    each cycle: observe               # nothing to change automatically — just present the result
+    a human reviews before stopping   # hard gate: a person approves before the pipeline finishes

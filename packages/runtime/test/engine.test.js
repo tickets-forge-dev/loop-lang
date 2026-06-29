@@ -337,6 +337,23 @@ test("for each: runs the template once per item, item text becomes upstream", as
   assert.match(runner.planCalls[2].upstream, /gamma/);
 });
 
+test("for each: foreach-start carries item labels for the live dashboard", async () => {
+  const tmpl = parse('loop "t":\n  goal: do it\n  done when "x" passes\n  each cycle: plan, then act, then observe');
+  const flow = parse('flow "f":\n  for each story in "sprint.yaml":\n    run "t.loop"').definitions[0];
+  const { events, onEvent } = collect();
+  await runDefinition(flow, {
+    runner: new MockRunner(),
+    verifier: new SeqVerifier([true, true]),
+    human: new ScriptedHumanIO(),
+    baseDir: "/proj",
+    loadFile: async () => tmpl,
+    readText: async () => "stories:\n  - title: User can log in\n  - title: User can sign up\n",
+    onEvent,
+  });
+  const start = events.find((e) => e.type === "foreach-start");
+  assert.deepEqual(start.labels, ["User can log in", "User can sign up"]);
+});
+
 test("for each: a failed item asks continue/stop — stop halts the flow", async () => {
   const tmpl = parse('loop "t":\n  goal: do it\n  done when "x" passes\n  each cycle: plan, then act, then observe\n  after 1 tries: stop and warn "nope"');
   const flow = parse('flow "f":\n  for each item in "plan.yaml":\n    run "t.loop"').definitions[0];

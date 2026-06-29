@@ -25,7 +25,7 @@ export type LoopEvent =
   | { type: "flow-step-start"; name: string; ref: string }
   | { type: "flow-step-end"; name: string; satisfied: boolean }
   | { type: "flow-end"; name: string; satisfied: boolean }
-  | { type: "foreach-start"; var: string; source: string; count: number }
+  | { type: "foreach-start"; var: string; source: string; count: number; labels?: string[] }
   | { type: "foreach-item-start"; var: string; index: number; total: number }
   | { type: "foreach-item-end"; var: string; index: number; satisfied: boolean }
   | { type: "foreach-end"; var: string; satisfied: boolean }

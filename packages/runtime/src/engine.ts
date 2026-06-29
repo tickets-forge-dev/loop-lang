@@ -1,7 +1,7 @@
 import { resolve, dirname, basename } from "node:path";
 import type { Loop, Pipeline, Stage, Flow, FlowStep, Definition, Transition, Action, LoopFile, HookPoint } from "@loop-lang/parser";
 import type { CycleNode, LoopEvent, LoopOutcome, RunOptions, StopReason } from "./types.js";
-import { enumerateItems } from "./iterate.js";
+import { enumerateItems, labelOf } from "./iterate.js";
 import { resolveGit, isProtected } from "./git.js";
 import { resolveModels, modelForPhase } from "./models.js";
 
@@ -429,7 +429,8 @@ async function executeForEach(step: FlowStep, opts: RunOptions, stack: string[])
   const text = await opts.readText(source, opts.baseDir);
   const fmt = /\.md$/i.test(source) ? "md" : "yaml";
   const items = enumerateItems(text, fmt);
-  emit(opts, { type: "foreach-start", var: varName, source, count: items.length });
+  const labels = items.map(labelOf);
+  emit(opts, { type: "foreach-start", var: varName, source, count: items.length, labels });
 
   const templatePath = resolve(opts.baseDir, step.ref);
   if (stack.includes(templatePath)) {

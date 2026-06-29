@@ -1,9 +1,0 @@
-# A plain list of work items. `for each` runs the template once per entry;
-# each entry's text becomes the template's context (what to build).
-items:
-  - title: Parse the uploaded CSV into rows
-    detail: accept a multipart upload, stream-parse, reject malformed input
-  - title: Validate rows against the schema
-    detail: required fields, types, and sane per-row error messages
-  - title: Export the validated rows as JSON
-    detail: stable key order; gzip when the payload is large

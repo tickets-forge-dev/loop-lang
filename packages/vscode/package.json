@@ -1,7 +1,7 @@
 {
   "name": "loop-vscode",
   "displayName": "LoopFlow",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "Syntax, formatting, best-practice templates, completion, and ▶ Run / Claude-session buttons for the LoopFlow (.loop) DSL.",
   "license": "Apache-2.0",
   "publisher": "loop-lang",
@@ -9,20 +9,47 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Programming Languages"],
-  "keywords": ["loop", "agent", "claude", "ai", "workflow", "dsl", "loop-engineering"],
-  "galleryBanner": { "color": "#0d9488", "theme": "dark" },
-  "repository": { "type": "git", "url": "https://github.com/tickets-forge-dev/loop-lang.git", "directory": "packages/vscode" },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "loop",
+    "agent",
+    "claude",
+    "ai",
+    "workflow",
+    "dsl",
+    "loop-engineering"
+  ],
+  "galleryBanner": {
+    "color": "#0d9488",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tickets-forge-dev/loop-lang.git",
+    "directory": "packages/vscode"
+  },
   "homepage": "https://github.com/tickets-forge-dev/loop-lang/tree/master/packages/vscode#readme",
-  "bugs": { "url": "https://github.com/tickets-forge-dev/loop-lang/issues" },
+  "bugs": {
+    "url": "https://github.com/tickets-forge-dev/loop-lang/issues"
+  },
   "main": "./dist/extension.js",
-  "activationEvents": ["onLanguage:loop", "onCommand:loop.newFromTemplate"],
+  "activationEvents": [
+    "onLanguage:loop",
+    "onCommand:loop.newFromTemplate"
+  ],
   "contributes": {
     "languages": [
       {
         "id": "loop",
-        "aliases": ["LoopFlow", "loop"],
-        "extensions": [".loop"],
+        "aliases": [
+          "LoopFlow",
+          "loop"
+        ],
+        "extensions": [
+          ".loop"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -44,14 +71,30 @@
         "title": "LoopFlow: Run in a Claude Code session",
         "category": "LoopFlow"
       },
-      { "command": "loop.newFromTemplate", "title": "LoopFlow: New from template" }
+      {
+        "command": "loop.newFromTemplate",
+        "title": "New Loop from template…",
+        "category": "LoopFlow"
+      }
     ],
+    "menus": {
+      "file/newFile": [
+        { "command": "loop.newFromTemplate", "group": "loop" }
+      ],
+      "explorer/context": [
+        { "command": "loop.newFromTemplate", "when": "explorerResourceIsFolder", "group": "navigation@20" }
+      ]
+    },
     "configuration": {
       "title": "LoopFlow",
       "properties": {
         "loop.runMode": {
           "type": "string",
-          "enum": ["ask", "session", "output"],
+          "enum": [
+            "ask",
+            "session",
+            "output"
+          ],
           "enumDescriptions": [
             "Ask each time which way to run.",
             "Open a Claude Code session in the integrated terminal and run the loop there (interactive — you watch every step and answer gates in chat).",
@@ -80,13 +123,14 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
-    "build": "tsc -p tsconfig.json && npm run bundle",
+    "sync:templates": "node scripts/sync-templates.mjs",
+    "build": "npm run sync:templates && tsc -p tsconfig.json && npm run bundle",
     "bundle": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --target=node18 --minify",
     "package": "npx --yes @vscode/vsce@latest package --no-dependencies",
     "test": "node --test test/*.test.mjs"
   },
   "devDependencies": {
-    "@loop-lang/parser": "0.1.0",
+    "@loop-lang/parser": "0.2.0",
     "@types/vscode": "1.85.0"
   }
 }

@@ -1,0 +1,93 @@
+# =============================================================================
+# story-template.loop — the per-story checklist (brownfield / spec-driven)
+# =============================================================================
+#
+# WHAT THIS IS
+#   A `pipeline` is an epic; each `stage` is one story-sized step that runs as a
+#   self-correcting loop. This particular pipeline is a *template*: it does NOT
+#   hard-code which story to build. Instead it is run once per story by a `flow`
+#   (see load-spec.loop), and the current story's text — its epic, title, and
+#   acceptance criteria from sprint.yaml — arrives as the run's CONTEXT. The
+#   three stages below are the SAME quality gates for every story, so you author
+#   the checklist once and the spec drives the rest.
+#
+# WHO RUNS IT
+#   - load-spec.loop:  for each story in "sprint.yaml": run "story-template.loop"
+#     (brownfield: a plan already exists; deliver it story by story).
+#   - greenfield-app.loop ALSO references this file as its per-story checklist,
+#     after its discover/design stages have written the sprint. Same template,
+#     two front-ends — that is the point of keeping the checklist standalone.
+#
+# THE SHAPE
+#   implement (write code, tests must pass)
+#        -> security (no high-severity findings)
+#             -> manual (a human confirms it actually works)
+#   A failing stage halts the rest of the pipeline for that story, so a broken
+#   story never sails past the gate into "security" or "manual".
+# =============================================================================
+
+pipeline "story":
+
+  # ---------------------------------------------------------------------------
+  # STAGE 1 — implement: turn the story's acceptance criteria into working code.
+  # This is the heavy loop: plan -> act -> observe, re-planning on every failure
+  # until the test suite goes green (or the thrash guard trips).
+  # ---------------------------------------------------------------------------
+  stage implement:
+    goal: implement the story described in the provided context, matching its acceptance criteria
+
+    # Scope the agent to the existing codebase so it makes the SMALLEST change
+    # that satisfies the story instead of writing greenfield code. "and the last
+    # failure" feeds the previous cycle's test output back into the next plan.
+    # TODO: replace `src` with the real directories this sprint touches
+    #       (e.g. src/api, src/db, web/components).
+    look at: src, and the last failure
+
+    # Action policy: let the agent edit freely, but STOP for anything
+    # irreversible. Migrations mutate the schema; pushes leave the machine.
+    # Both deserve a human glance before they happen.
+    allow edits automatically, but ask me before migrations or pushes
+
+    each cycle: plan, then act, then observe
+
+    # The real definition of done: a fast, deterministic test command, exit 0.
+    # TODO: swap "pnpm test" for THIS repo's command, and prefer to scope it to
+    #       the story's area so the loop's check stays fast
+    #       (e.g. "pnpm test auth", "pytest tests/auth", "go test ./auth/...").
+    done when "pnpm test" passes
+
+    # Self-correction: a green->red diff usually broke one layer (api / db / ui).
+    # Naming the layer makes the next plan a targeted fix, not a fresh guess.
+    when it fails: reflect on which layer broke, then plan again
+
+    # Thrash guard: never spin forever. After 6 honest attempts, stop and warn a
+    # human so they can unstick it instead of burning tokens in a loop.
+    after 6 tries: stop and warn "thrashing on this story"
+
+  # ---------------------------------------------------------------------------
+  # STAGE 2 — security: the code works, but did it open a hole? Static analysis
+  # gate. "finds nothing" means the command must produce EMPTY output to pass.
+  # ---------------------------------------------------------------------------
+  stage security:
+    goal: no high or critical vulnerabilities introduced by this story
+    each cycle: plan, then act, then observe
+
+    # TODO: keep semgrep, or substitute your scanner (npm audit, bandit, gosec,
+    #       trivy). The check passes only when it reports nothing at this severity.
+    done when "semgrep --config auto --severity=high" finds nothing
+
+    # Security fixes can stall on genuinely hard calls — guard this loop too.
+    after 4 tries: stop and warn "security needs a human"
+
+  # ---------------------------------------------------------------------------
+  # STAGE 3 — manual: tests and scanners are necessary, not sufficient. A human
+  # confirms the story actually behaves end-to-end before it is called done.
+  # No automated `done when` here on purpose — the gate IS the human.
+  # ---------------------------------------------------------------------------
+  stage manual:
+    goal: the story works end-to-end when a human tries it
+    each cycle: observe
+
+    # Hard human gate: the pipeline will not finish this story until a person
+    # reviews the result and approves.
+    a human reviews before stopping

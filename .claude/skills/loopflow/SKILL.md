@@ -82,6 +82,13 @@ it in front of them. Never silently guess the loop; interview first, then author
 one topic at a time, and always offer a default so a confident user can accept it all
 in one reply.
 
+**Check the template library first.** If the repo has a `templates/` directory (see
+`templates/README.md`), and the user's request matches one — a bug fix, a feature, a
+brownfield change, a CI/security/architecture gate, delivering an existing spec, building
+a greenfield app — start from that template instead of a blank file: read it, copy it, and
+fill in its `# TODO` lines with the user's specifics. Still interview them for the goal,
+the real `done when`, and what to gate; the template is the skeleton, not the answer.
+
 ### Step 0 — scope the purpose first (ask this before anything else)
 
 Open with **"What do you want the loop to accomplish?"** and show the range, so the
@@ -103,8 +110,12 @@ into a scoped loop and teaches the three top-level forms at once.
 Ask **"Do you have a spec, plan, ticket, or epic already?"**
 - **Yes** → point `look at:` at it; if it's an epic / story list, turn each story into a
   `stage` of a `pipeline` (or `for each` over the plan file).
-- **No, and it's medium/large** → begin the flow with a **discovery loop** whose
-  `done when` is "the plan file exists and validates" — it interviews them, writes the plan.
+- **No, and it's medium/large** → invoke `superpowers:brainstorming` **before** writing any `.loop`. The brainstorming skill explores project context, asks clarifying questions one at a time (offering a browser visual when a design choice benefits from it), proposes 2-3 approaches, gets user approval, and produces a spec doc at `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`. Once the spec is approved and saved:
+  - The approved goal → `goal:` in the loop
+  - The spec file → `look at: docs/superpowers/specs/<name>.md`
+  - Sub-tasks in the spec → `stage`s in a `pipeline`, or `for each <var> in "plan.yaml"`
+
+  This replaces the old "discovery loop" pattern — brainstorming handles the interview natively in-session and produces a richer, visually-validated artifact.
 - **No, and it's small** → skip planning; go straight to the loop.
 
 ### Step 2 — which quality passes? (offer the menu — don't wait to be asked)
@@ -177,6 +188,81 @@ For a **pipeline**, list the stages in order and mark 👤 gates; for a **flow**
 show the file chain (`a.loop → b.loop → …`). `loop ls` lists every loop in the repo.
 
 ---
+
+## Live browser dashboard
+
+A live animated schematic in the browser — the active cycle node pulses, flow steps
+highlight as they execute, and a for-each (sprint) progress bar fills item by item, so the
+user always sees **where in the loop / where in the plan** the run currently is.
+
+### Gate it on `loop.config` (in-session runs)
+
+The in-session dashboard is **opt-in via repo config** — off by default so a normal
+`/loopflow` run stays entirely in the chat. Before running a loop in this session, read
+`loop.config` at the repo root and look for a `live=` line:
+
+- **`live=false`, or the line/file is absent** → **do not** start the dashboard. Run
+  normally, narrating the trace in chat (the *Running a .loop* section below). Do not ask.
+- **`live=true`** → start the dashboard and drive it as you narrate (mechanism below). You
+  may still mention you're opening it.
+
+(`loop.config` is written by `loop init` with `live=false`; the user flips it to `live=true`
+to turn the dashboard on. The headless `loop-run run <file> --live` flag is independent of
+this config.)
+
+### How the in-session dashboard works
+
+You (the skill) **are** the engine in-session — so you spin up a tiny server, point the
+browser at it, and push an event for each step you narrate. The browser renders in real
+time. Three pieces, all via the `loop-run` CLI:
+
+1. **Start the server (background) and grab its port:**
+   ```bash
+   loop-run live <file.loop>      # opens the browser automatically
+   ```
+   Run it in the **background** (don't block on it). Read its first stdout line —
+   `LOOP_LIVE_PORT=<port>` — and keep `<port>` for the rest of the run. The server renders
+   the loop's schematic and stays up until you stop it (or the user hits Ctrl-C).
+
+2. **Push an event as you reach each step** — one `emit` per narrated step:
+   ```bash
+   loop-run emit <port> '<event-json>'
+   ```
+   `emit` is best-effort (never blocks your narration if the browser is closed). Push the
+   same events the engine would emit; the key ones to keep the view truthful:
+
+   | When you… | Push |
+   |-----------|------|
+   | start a flow | `{"type":"flow-start","name":"<flow>"}` |
+   | enter a flow step | `{"type":"flow-step-start","name":"<step>","ref":"<file>"}` |
+   | finish a flow step | `{"type":"flow-step-end","name":"<step>","satisfied":true}` |
+   | start a `for each` | `{"type":"foreach-start","var":"<var>","source":"<file>","count":<N>,"labels":["<title 1>","<title 2>",…]}` — pass `labels` (one short title per item, e.g. each story's title) so the dashboard lists the real items instead of "story 1..N" |
+   | start item i (0-based) | `{"type":"foreach-item-start","var":"<var>","index":<i>,"total":<N>}` |
+   | finish item i | `{"type":"foreach-item-end","var":"<var>","index":<i>,"satisfied":true}` |
+   | begin a cycle step | `{"type":"node-enter","node":"plan","attempt":<n>}` (then `act`, `observe`) |
+   | finish a cycle step | `{"type":"node-exit","node":"plan","attempt":<n>,"ok":true}` |
+   | run the done-when check | `{"type":"observe","passed":true,"output":"<first line>"}` |
+   | reflect on failure | `{"type":"reflect","text":"<why>"}` then loop-back `{"type":"loop-back","to":"plan"}` |
+   | start a pipeline stage | `{"type":"stage-start","name":"<stage>"}` |
+   | stop | `{"type":"stop","reason":"done"}` then `{"type":"loop-end","name":"<loop>","satisfied":true}` |
+
+3. **At the end**, leave the server running so the user can review the final state. Mention
+   they can Ctrl-C the `loop-run live` process to close it.
+
+The dashboard renders the loop's **actual structure** as a turn-by-turn route (Waze-style):
+the real stages / flow steps / for-each items, with a "you are here", the steps ahead, and
+human gates flagged. So a sprint (`for each story in "sprint.yaml"`) lists each story by title
+with N/total progress, a check on finished stories, and a plan/act/observe tracker on the one
+you're working now — exactly "where are we in the loop / in the plan".
+
+### CLI-only alternative (headless)
+
+If the user would rather run it headless (gates answered in the terminal, not chat):
+```bash
+loop-run run <file.loop> --live
+```
+The engine itself emits every event to the browser — no manual `emit` needed. Use this only
+when the user explicitly wants the headless runner.
 
 ## Running a .loop (in this session)
 
