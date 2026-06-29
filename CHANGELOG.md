@@ -17,7 +17,9 @@ Versions track the `@loop-lang/loop` installer package.
   multi-file `greenfield-app`/`load-spec` flows), synced from the repo's
   `templates/` at build (single source of truth) — replacing the stale
   `bmad`/`foreach` bundles. Tutorial now states what the extension gives you and
-  lists the latest vocabulary it understands.
+  lists the latest vocabulary it understands. *New Loop from template* is now
+  reachable from **File ▸ New File…** and an Explorer folder **right-click** (drops
+  the template straight into that folder), not just the Command Palette.
 - A manual `Publish VS Code extension` workflow (`workflow_dispatch`) publishes
   the extension on its own, decoupled from the tag-driven npm release.
 

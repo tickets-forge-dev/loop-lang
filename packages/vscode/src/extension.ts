@@ -26,7 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
       if (!target) return void vscode.window.showErrorMessage("Loop: no .loop file to run.");
       runInSession(target);
     }),
-    vscode.commands.registerCommand("loop.newFromTemplate", () => newFromTemplate(context))
+    vscode.commands.registerCommand("loop.newFromTemplate", (uri?: vscode.Uri) => newFromTemplate(context, uri))
   );
 
   // Live parse diagnostics (red squiggles) — debounced.
@@ -67,7 +67,7 @@ const TEMPLATES: Tmpl[] = [
   { file: "review-diff.loop", label: "review-diff", blurb: "Review + clean the current branch diff" },
 ];
 
-async function newFromTemplate(context: vscode.ExtensionContext): Promise<void> {
+async function newFromTemplate(context: vscode.ExtensionContext, folder?: vscode.Uri): Promise<void> {
   const fs = await import("node:fs/promises");
   const { join } = await import("node:path");
   const templatesDir = join(context.extensionPath, "templates");
@@ -78,17 +78,23 @@ async function newFromTemplate(context: vscode.ExtensionContext): Promise<void> 
   );
   if (!pick) return;
 
-  const ws = vscode.workspace.workspaceFolders?.[0];
-  if (!ws) { vscode.window.showErrorMessage("Loop: open a folder first."); return; }
-
-  const sub = await vscode.window.showInputBox({
-    prompt: "Copy into which folder (relative to the workspace)?",
-    value: ".",
-  });
-  if (sub === undefined) return;
-
-  const destDir = join(ws.uri.fsPath, sub);
+  // Right-clicked an Explorer folder → drop it there, no prompt. Otherwise ask,
+  // relative to the workspace root.
+  let destDir: string;
+  if (folder) {
+    destDir = folder.fsPath;
+  } else {
+    const ws = vscode.workspace.workspaceFolders?.[0];
+    if (!ws) { vscode.window.showErrorMessage("Loop: open a folder first."); return; }
+    const sub = await vscode.window.showInputBox({
+      prompt: "Copy into which folder (relative to the workspace)?",
+      value: ".",
+    });
+    if (sub === undefined) return;
+    destDir = join(ws.uri.fsPath, sub);
+  }
   await fs.mkdir(destDir, { recursive: true });
+  const where = vscode.workspace.asRelativePath(destDir);
 
   const files = [pick.tmpl.file, ...(pick.tmpl.deps ?? [])];
   let copied = 0;
@@ -98,7 +104,7 @@ async function newFromTemplate(context: vscode.ExtensionContext): Promise<void> 
     let exists = false;
     try { await fs.access(dest); exists = true; } catch { /* missing → copy */ }
     if (exists) {
-      const ans = await vscode.window.showWarningMessage(`${f} already exists in ${sub}. Overwrite?`, "Overwrite", "Skip");
+      const ans = await vscode.window.showWarningMessage(`${f} already exists in ${where}. Overwrite?`, "Overwrite", "Skip");
       if (ans !== "Overwrite") { skipped++; continue; }
     }
     try {
@@ -109,7 +115,7 @@ async function newFromTemplate(context: vscode.ExtensionContext): Promise<void> 
     }
   }
 
-  vscode.window.showInformationMessage(`Loop: copied ${copied} file(s) to ${sub}${skipped ? `, skipped ${skipped}` : ""}. Edit the # TODO lines before running.`);
+  vscode.window.showInformationMessage(`Loop: copied ${copied} file(s) to ${where}${skipped ? `, skipped ${skipped}` : ""}. Edit the # TODO lines before running.`);
 
   // Open the entry .loop so the user lands on the thing to run.
   const doc = await vscode.workspace.openTextDocument(join(destDir, pick.tmpl.file));
