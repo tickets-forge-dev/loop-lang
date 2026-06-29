@@ -196,15 +196,20 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
     <li><a href="#vsbuiltins">vs /loop &amp; /goal</a></li>
     <li class="grp">Get started</li>
     <li><a href="#start">Install + first loop</a></li>
+    <li class="grp">Core syntax · the five decisions</li>
     <li><a href="#donewhen">done when — verify</a></li>
     <li><a href="#cycle">The cycle + reflect</a></li>
     <li><a href="#humans">Human gates</a></li>
+    <li class="grp">The rest of the syntax</li>
     <li><a href="#pipelines">Composing</a></li>
+    <li><a href="#beyond">The rest of the syntax</a></li>
     <li class="grp">In practice</li>
     <li><a href="#workflows">Real workflows</a></li>
     <li><a href="#byrole">LoopFlow by role</a></li>
     <li><a href="#templates">Starter templates</a></li>
-    <li><a href="#running">Running it</a></li>
+    <li class="grp">Run it</li>
+    <li><a href="#running">Running a loop</a></li>
+    <li><a href="#running-vscode">In VS Code</a></li>
     <li><a href="#live">Live dashboard</a></li>
     <li><a href="#library">Your global library</a></li>
     <li class="grp">Go deeper</li>
@@ -217,21 +222,35 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
 
 <main>
 <header class="hero">
-  <h1>LoopFlow, the tutorial</h1>
-  <div class="lede">Stop tuning prompts. Start editing the <em>loop</em>. <a href="workshop.html" style="color:var(--fwd);font-weight:700;">Hands-on? → Workshop 🛠️</a> · <a href="game.html" style="color:var(--gate);font-weight:700;">Or play → LoopFlow Lab 🎮</a></div>
+  <h1>Stop babysitting the agent.</h1>
+  <div class="lede">Write the goal <em>once</em> — the loop plans, acts, reflects on red, and stops only when the check is green, at the gates you set.</div>
   <p class="sub">LoopFlow is a small natural-language DSL for <strong>loop engineering</strong>. A <code class="inl">.loop</code> file describes a self-correcting, human-gated coding workflow — its objective, the context it may read, the actions it may take, how it verifies itself, and when it stops. This page teaches the whole language from the first line to full A-to-Z pipelines, every section grounded in a real example you can run.</p>
 
-  <div class="compare">
-    <div class="pane bad term">
-      <div class="ph">a claude session<span class="dots">● ● ●</span></div>
-      <div class="termbody" id="agentterm"></div>
+  <div class="pane term" style="margin-top:18px">
+    <div class="ph">/loopflow run rate-limit.loop<span class="dots">● ● ●</span></div>
+    <div class="termbody" style="height:auto">
+      <div class="ln tl-u">❯ /loopflow run rate-limit.loop</div>
+      <div class="ln tl-dim">  goal: requests are rate-limited per API key</div>
+      <div class="ln tl-plan">↻ cycle 1 · plan → act → observe</div>
+      <div class="ln tl-tool">● Bash  pnpm test rate-limit</div>
+      <div class="ln tl-bad">   ✗ 2 failing: resets-after-window, per-key-isolation</div>
+      <div class="ln tl-plan">~ reflect: the window resets per key, not globally</div>
+      <div class="ln tl-tool">● Edit src/api/limiter.ts</div>
+      <div class="ln tl-plan">↻ cycle 2 · plan → act → observe</div>
+      <div class="ln tl-tool">● Bash  pnpm test rate-limit</div>
+      <div class="ln tl-ok">   ✓ all green — done-when satisfied</div>
+      <div class="ln tl-tool">● Bash  git checkout -b rate-limiting</div>
+      <div class="ln tl-gate">⛐ gate: open a pull request?  ▸ approved</div>
+      <div class="ln tl-tool">● Bash  git push origin rate-limiting · gh pr create</div>
+      <div class="ln tl-ok">◼ done — PR #128 opened, never touched main</div>
+      <div class="ln tl-dim">— you wrote the goal once; the loop did the rest.</div>
     </div>
-    <div class="pane good">
-      <div class="ph">…or one loop</div>
-      <pre><code class="loop"># run in chat:  /loopflow run rate-limit.loop
-# (the agent knows LoopFlow from AGENTS.md — your repo's memory)
+  </div>
+  <p class="cap" style="margin:10px 0 6px;text-align:center">↓ the one <code class="inl">.loop</code> that drove the run above — the whole job, written once</p>
 
-git:
+  <div class="pane good">
+    <div class="ph">rate-limit.loop</div>
+    <pre><code class="loop">git:
   work on a branch
   commit when the goal is met
   open a pull request
@@ -245,10 +264,8 @@ loop "add API rate limiting":
   also: run a security check
   when it fails: reflect, then plan again
   after 6 tries: stop and warn "thrashing"</code></pre>
-      <div class="pfoot">Skill: <b>/loopflow</b> runs it · Memory: AGENTS.md + reflect · Git: branch + commit + PR, never main</div>
-    </div>
+    <div class="pfoot">Skill: <b>/loopflow</b> runs it · Memory: AGENTS.md + reflect · Git: branch + commit + PR, never main</div>
   </div>
-  <p class="sub" style="margin-top:12px">Left: a dozen messages, and it still pushed to main. Right: the whole job, written once — it runs, verifies, and stops only when it's really done.</p>
 </header>
 
 <!-- first 5 minutes -->
@@ -272,6 +289,7 @@ loop "add API rate limiting":
     <tr><td>Verification</td><td><code class="inl">done when</code></td><td>How do we <em>know</em> it worked?</td></tr>
     <tr><td>Stopping</td><td><code class="inl">when… / after N tries</code></td><td>When do we stop — done, or thrashing?</td></tr>
   </table>
+  <p>These five are the <strong>core syntax</strong> — the engine. Everything else in the language either <em>composes</em> loops into bigger workflows (<a href="#pipelines">pipeline, flow, for each</a>) or <em>configures</em> a run (<a href="#beyond">the rest of the syntax</a>) — you'll meet those after the core.</p>
   <p>Here are all five decisions as one real loop — every line is one of the rows above:</p>
   <pre><code class="loop">loop "fix the failing test":                       # the work
   goal: the cart total is correct with a coupon    # Objective
@@ -370,7 +388,7 @@ loop "add API rate limiting":
 <section id="start">
   <h2>Getting started <span class="badge b-basic">setup</span></h2>
   <p class="sub" style="font-size:14px;margin-top:0">That's the <em>why</em>. From here down is the <strong>deep dive</strong> — set LoopFlow up once, then learn the language line by line.</p>
-  <p><b>Prerequisites:</b> <strong>Node 18+</strong>, the <a href="https://docs.anthropic.com/en/docs/claude-code">Claude Code</a> CLI (LoopFlow drives it), and a <strong>git repo</strong> to work in. <strong>The primary way to use LoopFlow is a Claude Code chat</strong> — type <code class="inl">/loopflow</code> and the assistant writes and runs the loop with you, watching every step and answering gates inline. (Prefer to write <code class="inl">.loop</code> files by hand? The VS Code extension is there too — see <a href="#vscode-optional">below</a> — but the chat is the recommended path.) One command installs everything:</p>
+  <p><b>Prerequisites:</b> <strong>Node 18+</strong>, the <a href="https://docs.anthropic.com/en/docs/claude-code">Claude Code</a> CLI (LoopFlow drives it), and a <strong>git repo</strong> to work in. <strong>The primary way to use LoopFlow is a Claude Code chat</strong> — type <code class="inl">/loopflow</code> and the assistant writes and runs the loop with you, watching every step and answering gates inline. (Prefer to write <code class="inl">.loop</code> files by hand? The VS Code extension is there too — see <a href="#running-vscode">Running a loop ▸ In VS Code</a> — but the chat is the recommended path.) One command installs everything:</p>
 
   <h3>1 · Install with npm</h3>
   <p>From your repo, run the installer. In one step it writes the <code class="inl">/loopflow</code> skill <em>and</em> <code class="inl">AGENTS.md</code> (the full language reference) into the project:</p>
@@ -412,16 +430,7 @@ loop "fix the failing auth test":
   when it fails: reflect, then plan again
   after 6 tries: stop and warn "stuck"</code></pre>
 
-  <h3 id="vscode-optional">Optional · author by hand in VS Code <span class="badge b-basic">if you prefer an editor</span></h3>
-  <p>The chat above is the main way to use LoopFlow. If you'd rather <em>write <code class="inl">.loop</code> files by hand</em>, the optional <strong>LoopFlow</strong> VS&nbsp;Code extension helps — <em>Extensions ▸ search “LoopFlow” ▸ Install</em> — then open any <code class="inl">.loop</code> file:</p>
-  <ul>
-    <li><strong>Syntax highlighting</strong> for the whole language — <code class="inl">goal</code>, <code class="inl">done when</code>, gates, <code class="inl">flow</code>, <code class="inl">for each</code>, <code class="inl">git:</code>.</li>
-    <li><strong>Completion + formatting</strong> — keyword snippets so you type a loop from muscle memory, not a cheat sheet.</li>
-    <li><strong>A ▶ Run button</strong> on every loop (the <em>LoopFlow: Run this loop</em> CodeLens) — and you choose <em>where</em> it runs via the <code class="inl">loop.runMode</code> setting: open an interactive <strong>Claude Code session</strong>, or a headless <strong>output-panel</strong> trace.</li>
-    <li><strong>New from template</strong> (command palette → <em>LoopFlow: New from template</em>) — scaffold a ready-to-edit <code class="inl">.loop</code> bundle.</li>
-    <li><strong>A soft linter</strong> that nudges, never blocks — "this loop has no way to verify it's done", "add a thrash guard".</li>
-  </ul>
-  <p>Same file, same engine: prompt the agent to generate a loop, or open VS Code and write the <code class="inl">.loop</code> yourself. The chat is the first-class way to <em>run</em>; the extension is the first-class way to <em>author by hand</em>.</p>
+  <p>Prefer to write <code class="inl">.loop</code> files by hand in an editor? The optional <strong>LoopFlow VS&nbsp;Code extension</strong> — highlighting, completion, a ▶ Run button, and <em>New from template</em> — is covered under <a href="#running-vscode">Running a loop ▸ In VS Code</a>. The chat is the first-class way to <em>run</em>; the extension is the first-class way to <em>author by hand</em>.</p>
   <div class="note"><b>Safe from the first run:</b> with no <code class="inl">git:</code> block, LoopFlow works on a branch and commits when the goal is met, and <strong>never pushes to <code class="inl">main</code>/<code class="inl">master</code></strong> — see the <a href="keywords/git.html">git</a> keyword.</div>
 
   <h3>Rather learn hands-on?</h3>
@@ -553,6 +562,29 @@ when blocked: ask a human            # unblock when the agent is stuck</code></p
   </figure>
 
   <p>The full grammar — pipelines, <code class="inl">flow</code> chains, and <code class="inl">for each</code> iteration, with worked examples — is in the <a href="MANUAL.md">manual</a> and the <a href="keywords/index.html">keyword reference</a>.</p>
+</section>
+
+<!-- the rest of the syntax -->
+<section id="beyond">
+  <h2>The rest of the syntax <span class="badge b-inter">beyond the core</span></h2>
+  <p>The five decisions (plus the cycle) are the whole engine. Everything else in the language either <strong>composes</strong> loops into bigger workflows or <strong>configures</strong> a run — none of it changes how a single loop thinks. Here's the rest at a glance; each construct links to its <a href="keywords/index.html">keyword reference</a> page.</p>
+  <table>
+    <tr><th>Construct</th><th>What it does</th></tr>
+    <tr><td colspan="2" style="background:var(--panel);color:var(--fwd);font-weight:700;letter-spacing:.4px">Compose — scale one loop into many</td></tr>
+    <tr><td><code class="inl"><a href="keywords/pipeline.html">pipeline</a></code> · <code class="inl">stage</code></td><td>Run stages in order; a failing stage halts the rest. An epic → a pipeline, a story → a stage. <a href="#pipelines">More ↑</a></td></tr>
+    <tr><td><code class="inl"><a href="keywords/flow.html">flow</a></code> · <code class="inl">run</code> / <code class="inl">then run</code></td><td>Chain whole <code class="inl">.loop</code> files; each step's summary carries forward (<code class="inl">with the result of</code> picks a specific earlier step).</td></tr>
+    <tr><td><code class="inl"><a href="keywords/for-each.html">for each</a> … in</code></td><td>Run a template loop once per item in a YAML/Markdown plan — A-to-Z over every story.</td></tr>
+    <tr><td colspan="2" style="background:var(--panel);color:var(--fwd);font-weight:700;letter-spacing:.4px">Augment a loop</td></tr>
+    <tr><td><code class="inl"><a href="keywords/use-skills.html">use skills:</a></code></td><td>Named skills the loop may invoke during plan/act — coordinate proven skills instead of one mega-prompt.</td></tr>
+    <tr><td><code class="inl"><a href="keywords/remember-in.html">remember in</a></code></td><td>Cross-run memory: read past lessons on start, append the run's outcome on stop, so the loop improves over time.</td></tr>
+    <tr><td><code class="inl"><a href="keywords/also.html">also:</a></code></td><td>Extra finishing passes run after the goal is met (skipped on failure).</td></tr>
+    <tr><td><code class="inl"><a href="keywords/plan-from.html">plan from "file"</a></code></td><td>Execute a plan you wrote instead of one the agent generates.</td></tr>
+    <tr><td colspan="2" style="background:var(--panel);color:var(--fwd);font-weight:700;letter-spacing:.4px">Ops &amp; reuse — configure the run</td></tr>
+    <tr><td><code class="inl"><a href="keywords/git.html">git:</a></code></td><td>Version-control policy — branch / commit cadence / push / PR. Never pushes to <code class="inl">main</code> by default.</td></tr>
+    <tr><td><code class="inl"><a href="keywords/models.html">models:</a></code></td><td>Tier the model by phase — a fast model to plan/reflect, a strong one to act.</td></tr>
+    <tr><td><code class="inl"><a href="keywords/use-method.html">use the X method</a></code></td><td>Import a reusable preset (its own <code class="inl">.loop</code>) that another repo can share.</td></tr>
+    <tr><td><code class="inl"><a href="keywords/schedule.html">schedule:</a></code> · <code class="inl"><a href="keywords/target.html">target:</a></code> · <code class="inl"><a href="keywords/notify.html">notify:</a></code></td><td>The config tier — when it runs, where it runs, and who to tell when it's done.</td></tr>
+  </table>
 </section>
 
 <!-- 11 -->
@@ -704,7 +736,14 @@ pipeline "forge sandbox runner":
 
 <!-- 17 -->
 <section id="running">
-  <h2>Running a loop <span class="badge b-inter">intermediate</span></h2>
+  <h2>Running a loop <span class="badge b-inter">how to run</span></h2>
+  <p>Three ways to work with a <code class="inl">.loop</code> — write it, then run it. Same file, same engine:</p>
+  <table>
+    <tr><th>What you want</th><th>Use</th><th>How</th></tr>
+    <tr><td><strong>1 · Write the loop by hand</strong></td><td>the <a href="#running-vscode">VS Code extension</a> — syntax highlighting, completion, a soft linter</td><td>open a <code class="inl">.loop</code> in VS Code</td></tr>
+    <tr><td><strong>2 · Run it in Claude Code</strong> <span class="badge b-basic" style="margin-left:6px">recommended</span></td><td>the <code class="inl">/loopflow</code> skill — watch every step, answer gates inline</td><td><code class="inl">/loopflow run &lt;file&gt;</code></td></tr>
+    <tr><td><strong>3 · Run it headless</strong></td><td>the CLI — CI, scripts, cron, no chat in the loop</td><td><code class="inl">loop-run run &lt;file&gt;</code></td></tr>
+  </table>
   <p>Every command below runs the same kind of file — here's the one referenced throughout this section:</p>
   <pre><code class="loop"># examples/fix_test.loop
 loop "fix the failing checkout tax test":
@@ -718,6 +757,17 @@ loop "fix the failing checkout tax test":
   <pre class="sh"><code>/loopflow "fix the failing checkout tax test"   # write a .loop from a request
 /loopflow run examples/fix_test.loop            # run it, right here in the chat</code></pre>
   <p>You stay in the chat the whole time: you watch each step, you answer the gate, and the loop ends on a <em>real</em> green test — not the assistant saying "done". This is the only mode where a long interactive discovery works, because the human is already in the loop.</p>
+
+  <h3 id="running-vscode">In VS Code <span class="badge b-basic">optional — author by hand</span></h3>
+  <p>Reach for the extension when you'd rather <strong>write <code class="inl">.loop</code> files by hand</strong> in an editor. Install it from <em>Extensions ▸ search "LoopFlow" ▸ Install</em>, then open any <code class="inl">.loop</code> file:</p>
+  <ul>
+    <li>Syntax highlighting, hover docs, and context-aware tab-completion for every construct — including the latest vocabulary (<code class="inl">use skills</code>, <code class="inl">remember in</code>, <code class="inl">flow</code>, <code class="inl">for each</code>, and <code class="inl">done when the skill "…" approves / scores N or more</code>).</li>
+    <li>A <strong>▶ Run</strong> CodeLens above each definition. You choose <em>where</em> it runs via <code class="inl">loop.runMode</code>: <code class="inl">ask</code> (prompt each time), <code class="inl">session</code> (open a Claude Code session in the integrated terminal — watch every step, answer gates in chat), or <code class="inl">output</code> (headless, streamed into the VS Code output panel with native gate dialogs).</li>
+    <li>A soft linter that nudges, never blocks: "this loop has no way to verify it's done", "add a thrash guard".</li>
+    <li><strong>New Loop from template</strong> — from <em>File ▸ New File…</em>, an Explorer folder right-click, or the Command Palette — scaffolds a best-practice loop (bugfix, feature, security, … the full library) into your workspace, <code class="inl"># TODO</code> lines marked.</li>
+  </ul>
+  <p class="sub">Same file, same engine: the chat is the first-class way to <em>run</em>; the extension is the first-class way to <em>author by hand</em>.</p>
+
   <h3>Headless CLI</h3>
   <pre class="sh"><code>loop-run run   examples/ship_feature.loop  # drive Claude Code, glyph trace
 loop-run run   examples/ship_feature.loop --live  # …plus a live browser dashboard
@@ -735,15 +785,6 @@ loop-run viz   examples/ship_flow.loop     # write a self-contained HTML schemat
   <pre class="sh"><code># loop.config
 live=true            # /loopflow shows the live dashboard during in-session runs</code></pre>
   <p>The page streams over Server-Sent Events (each event carries an id; the server replays on connect and dedupes on reconnect), is self-contained — no external assets — and binds to <code class="inl">127.0.0.1</code> only.</p>
-
-  <h3>In VS Code <span class="badge b-basic">optional — for hand-authoring</span></h3>
-  <p>Secondary to the chat — reach for the extension only when you want to write <code class="inl">.loop</code> files by hand in an editor. It turns a plain text file into a real authoring surface: it knows the grammar, catches a loop that can't finish before you run it, lets you launch a run without leaving the editor, and drops in a ready-made best-practice loop to start from. What you get:</p>
-  <ul>
-    <li>Syntax highlighting, hover docs, and context-aware tab-completion for every construct — including the latest vocabulary (<code class="inl">use skills</code>, <code class="inl">remember in</code>, <code class="inl">flow</code>, <code class="inl">for each</code>, and <code class="inl">done when the skill "…" approves / scores N or more</code>).</li>
-    <li>A <strong>▶ Run</strong> CodeLens above each definition. When you click it, you choose <em>where</em> it runs (the <code class="inl">loop.runMode</code> setting): <strong>open a Claude Code session</strong> — an interactive run in the integrated terminal where you watch every step and answer gates in chat — or the <strong>VS Code output panel</strong> (headless, with a live trace and native gate dialogs). Set <code class="inl">loop.runMode</code> to <code class="inl">ask</code> (prompt each time), <code class="inl">session</code>, or <code class="inl">output</code>.</li>
-    <li>A soft linter that nudges (never blocks): "this loop has no way to verify it's done", "add a thrash guard".</li>
-    <li><strong>New Loop from template</strong> — reachable from <em>File ▸ New File…</em>, an Explorer folder <em>right-click</em>, or the Command Palette — scaffolds a ready-to-edit, best-practice loop into your workspace in one pick, from the same library <code class="inl">loop init</code> ships: <code class="inl">bugfix</code>, <code class="inl">feature</code>, <code class="inl">brownfield-feature</code>, <code class="inl">refactor</code>; <code class="inl">cicd-check</code>, <code class="inl">security</code>, <code class="inl">clean-architecture</code>, <code class="inl">test-coverage</code>, <code class="inl">review-diff</code>; and the multi-file flows <code class="inl">greenfield-app</code> and <code class="inl">load-spec</code> (which pull in their supporting <code class="inl">discover</code>/<code class="inl">design</code>/<code class="inl">story-template</code> + <code class="inl">sprint.yaml</code>). Each lands with its <code class="inl"># TODO</code> lines marked for you to fill in.</li>
-  </ul>
 
   <h3>Troubleshooting</h3>
   <table>
@@ -787,7 +828,7 @@ live=true            # /loopflow shows the live dashboard during in-session runs
     <li>A saved loop carries its <code class="inl">done when</code> check, its reflect-and-retry, its gates, and its <code class="inl">look at</code> scope <em>with it</em>. Running it re-applies all of that, identically, anywhere. It's a reusable <strong>guarantee</strong> you built once — not a prompt you re-type and re-trust.</li>
   </ul></div>
 
-  <div class="note"><strong>Claude is the first-class home for LoopFlow.</strong> The library and every <code class="inl">/loopflow</code> command live in the chat — that's where you watch each step and answer gates as the loop runs. <a href="#running">VS&nbsp;Code</a> is the second seat: handy for <em>editing</em> a <code class="inl">.loop</code> with highlighting and a ▶ Run button, but the loop still runs through Claude. If you only ever use one surface, use the chat.</div>
+  <div class="note"><strong>Claude is the first-class home for LoopFlow.</strong> The library and every <code class="inl">/loopflow</code> command live in the chat — that's where you watch each step and answer gates as the loop runs. <a href="#running-vscode">VS&nbsp;Code</a> is the second seat: handy for <em>editing</em> a <code class="inl">.loop</code> with highlighting and a ▶ Run button, but the loop still runs through Claude. If you only ever use one surface, use the chat.</div>
 </section>
 
 <!-- skills & memory -->
@@ -888,60 +929,6 @@ live=true            # /loopflow shows the live dashboard during in-session runs
     });
   }, {rootMargin:"-15% 0px -75% 0px"});
   document.querySelectorAll("section[id]").forEach(function(s){ obs.observe(s); });
-})();
-
-// ---- animated agent terminal: human types, agent streams ----
-(function(){
-  var el=document.getElementById('agentterm'); if(!el) return;
-  var T=[
-    {c:'tl-dim',t:'$ claude'},
-    {c:'tl-u',t:'❯ add rate limiting to the API'},
-    {c:'tl-tool',t:'● Edit src/api/limiter.ts'},
-    {c:'tl-dim',t:'   + token-bucket limiter, 100 req/min'},
-    {c:'tl-ok',t:'✓ Done — added a limiter.'},
-    {c:'tl-u',t:'❯ did you add tests?'},
-    {c:'tl-tool',t:'● Write tests/limiter.test.ts'},
-    {c:'tl-ok',t:'✓ Added 3 tests.'},
-    {c:'tl-u',t:'❯ run them'},
-    {c:'tl-tool',t:'● Bash  pnpm test rate-limit'},
-    {c:'tl-bad',t:'   ✗ 2 failing: resets-after-window, per-key-isolation'},
-    {c:'tl-u',t:'❯ fix them, then re-run'},
-    {c:'tl-tool',t:'● Edit src/api/limiter.ts'},
-    {c:'tl-tool',t:'● Bash  pnpm test rate-limit'},
-    {c:'tl-ok',t:'   ✓ 5 passing'},
-    {c:'tl-u',t:'❯ now the whole suite — do not break anything'},
-    {c:'tl-tool',t:'● Bash  pnpm test'},
-    {c:'tl-bad',t:'   ✗ 1 failing: checkout.spec.ts (shared middleware)'},
-    {c:'tl-u',t:'❯ ugh. fix that too'},
-    {c:'tl-tool',t:'● Edit src/middleware/index.ts'},
-    {c:'tl-tool',t:'● Bash  pnpm test'},
-    {c:'tl-ok',t:'   ✓ all green'},
-    {c:'tl-u',t:'❯ now the security scan'},
-    {c:'tl-tool',t:'● Bash  semgrep --severity=high'},
-    {c:'tl-bad',t:'   ✗ 1 high: unbounded map → memory DoS'},
-    {c:'tl-u',t:'❯ fix it. and do NOT push to main'},
-    {c:'tl-tool',t:'● Edit src/api/limiter.ts'},
-    {c:'tl-tool',t:'● Bash  git commit -am "rate limiting"'},
-    {c:'tl-tool',t:'● Bash  git push origin main'},
-    {c:'tl-bad',t:'⚠ pushed to main.'},
-    {c:'tl-u',t:'❯ you literally said DO NOT push to main'},
-    {c:'tl-dim',t:'— and tomorrow, you type all of this again.'}
-  ];
-  var i=0, cur;
-  function restart(){ el.innerHTML=''; i=0; startLine(); }
-  function blockCursor(){ var c=document.createElement('span'); c.className='tcur'; return c; }
-  function startLine(){
-    if(i>=T.length){ setTimeout(restart, 5000); return; }
-    cur=document.createElement('div'); cur.className='ln '+T[i].c; el.appendChild(cur);
-    if(T[i].c==='tl-u'){ var cursor=blockCursor(); cur.appendChild(cursor); typeOut(T[i].t, 0, cursor); }
-    else { cur.textContent=T[i].t; el.scrollTop=el.scrollHeight; i++; setTimeout(startLine, 430); }
-  }
-  function typeOut(text, j, cursor){
-    if(j>=text.length){ cursor.remove(); el.scrollTop=el.scrollHeight; i++; setTimeout(startLine, 780); return; }
-    cursor.insertAdjacentText('beforebegin', text.charAt(j)); el.scrollTop=el.scrollHeight;
-    setTimeout(function(){ typeOut(text, j+1, cursor); }, 58);
-  }
-  startLine();
 })();
 
 </script>

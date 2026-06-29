@@ -42,6 +42,7 @@ code.inl{background:var(--panel2); border:1px solid var(--line); border-radius:6
 .badge{display:inline-block; font-family:var(--ui); font-weight:700; font-size:10px; letter-spacing:1.4px;
   text-transform:uppercase; padding:3px 10px; border-radius:20px; vertical-align:middle;}
 .cat-structure{color:var(--blue); border:1px solid color-mix(in srgb,var(--blue) 50%,transparent);}
+.cat-core{color:var(--fwd); border:1px solid color-mix(in srgb,var(--fwd) 50%,transparent);}
 .cat-definition{color:var(--fwd); border:1px solid color-mix(in srgb,var(--fwd) 50%,transparent);}
 .cat-flow{color:var(--reflect); border:1px solid color-mix(in srgb,var(--reflect) 50%,transparent);}
 .cat-human{color:var(--gate); border:1px solid color-mix(in srgb,var(--gate) 50%,transparent);}
@@ -69,8 +70,11 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
 footer a{color:var(--muted);} footer a:hover{color:var(--ink);}
 
 /* index grid */
+.tierhdr{font-family:var(--display); font-weight:700; font-size:22px; letter-spacing:-.2px; color:var(--ink);
+  margin:38px 0 2px; padding-bottom:8px; border-bottom:1px solid var(--line);}
+.tierhdr .sub{display:block; font-family:var(--ui); font-weight:400; font-size:13px; color:var(--muted); letter-spacing:0; margin-top:3px;}
 .grouphdr{font-family:var(--ui); font-weight:700; letter-spacing:1.6px; text-transform:uppercase; font-size:11px;
-  color:var(--fwd); margin:30px 0 10px;}
+  color:var(--fwd); margin:22px 0 10px;}
 .kwgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px;}
 .kwcard{display:block; border:1px solid var(--line); border-radius:13px; padding:14px 15px; background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012));
   transition:border-color .15s, transform .1s;}

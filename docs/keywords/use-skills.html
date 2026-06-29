@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"/><link rel="icon" type="image/svg+xml" href="/gyro-icon.svg"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>also — LoopFlow keyword</title><meta name="description" content="Finishing passes after the goal is met."/>
+<title>use skills — LoopFlow keyword</title><meta name="description" content="Named skills the loop may invoke during plan and act."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="style.css"/></head><body>
@@ -18,17 +18,22 @@
   <a class="nav lab" href="../game.html">🎮 LoopFlow Lab</a>
 </div>
 <main>
-<div class="crumb"><a href="index.html">Keywords</a> / also</div>
-<h1><code>also</code></h1>
-<div class="lede">Finishing passes after the goal is met. <span class="badge cat-flow">Augment</span></div>
+<div class="crumb"><a href="index.html">Keywords</a> / use skills</div>
+<h1><code>use skills</code></h1>
+<div class="lede">Named skills the loop may invoke during plan and act. <span class="badge cat-flow">Augment</span></div>
 <h2>Syntax</h2>
-<pre class="syntax"><code><span class="tok-kw">also</span>: &lt;pass&gt;, &lt;pass&gt;</code></pre>
+<pre class="syntax"><code><span class="tok-kw">use skills</span>: &lt;skill-a&gt;, &lt;skill-b&gt;</code></pre>
 <h2>What it does</h2>
-<p>Lightweight passes that run <b>only after the goal is met</b>, in order — and are skipped if the loop failed. Use it for chores (polish, security, docs). If a pass needs its own pass/fail check, promote it to a real stage instead.</p>
+<p>Lists skills the agent is allowed to call while it works — so the loop coordinates proven, reusable skills instead of one mega-prompt. Pair it with <code class="inl">done when the skill "&lt;name&gt;" approves</code> to let a review skill decide the verdict.</p>
 <h2>Example</h2>
-<pre><code><span class="tok-kw">also</span>: polish the code, <span class="tok-kw">run</span> a security check, update the docs</code></pre><span class="cap">finishing passes</span>
+<pre><code><span class="tok-kw">loop</span> <span class="tok-str">"harden the upload endpoint"</span>:
+  <span class="tok-kw">goal</span>: no high-severity findings in the upload path
+  <span class="tok-kw">use skills</span>: security-review, code-review
+  <span class="tok-kw">done when</span> the skill <span class="tok-str">"security-review"</span> approves
+  <span class="tok-kw">each cycle</span>: plan, then act, then observe
+  <span class="tok-kw">when</span> it fails: reflect, then plan again</code></pre><span class="cap">a loop that drives two named skills</span>
 
 <h2>Related</h2>
-<div class="related"><a href="each-cycle.html"><code>each cycle</code></a><a href="done-when.html"><code>done when</code></a></div>
+<div class="related"><a href="done-when.html"><code>done when</code></a><a href="remember-in.html"><code>remember in</code></a><a href="reflect.html"><code>reflect</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../tutorial.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>
 </main></body></html>
