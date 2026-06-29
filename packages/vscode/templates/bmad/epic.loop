@@ -1,7 +1,0 @@
-# A-to-Z, run in conversation: /loopflow run epic.loop
-# discover (interview) -> design (approve) -> run the checklist for each story.
-flow "epic: authentication":
-  run "discover.loop"
-  then run "design.loop"
-  then for each story in "sprint.yaml":
-    run "story-template.loop"

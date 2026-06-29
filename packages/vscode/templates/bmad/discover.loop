@@ -1,9 +1,0 @@
-# Interactive discovery — run in conversation (/loopflow run). The agent interviews you
-# and writes sprint.yaml. It is DONE when sprint.yaml exists (the artifact check),
-# NOT when the chat goes quiet. Point the check at a real validator for stricter gating.
-loop "discover":
-  goal: interview the team and capture the epic as a sprint.yaml with a stories list
-  look at: docs, and the last failure
-  allow edits automatically
-  each cycle: plan, then act, then observe
-  done when "test -s sprint.yaml" passes

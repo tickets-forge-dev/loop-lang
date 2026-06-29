@@ -1,5 +1,0 @@
-# The whole point of `for each`: run the same checklist for every item in a plan,
-# without naming each one. Edit plan.yaml to change the work; this file stays put.
-flow "deliver":
-  for each item in "plan.yaml":
-    run "item-template.loop"

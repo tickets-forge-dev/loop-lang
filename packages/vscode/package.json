@@ -1,7 +1,7 @@
 {
   "name": "loop-vscode",
   "displayName": "LoopFlow",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Syntax, formatting, best-practice templates, completion, and ▶ Run / Claude-session buttons for the LoopFlow (.loop) DSL.",
   "license": "Apache-2.0",
   "publisher": "loop-lang",
@@ -73,9 +73,18 @@
       },
       {
         "command": "loop.newFromTemplate",
-        "title": "LoopFlow: New from template"
+        "title": "New Loop from template…",
+        "category": "LoopFlow"
       }
     ],
+    "menus": {
+      "file/newFile": [
+        { "command": "loop.newFromTemplate", "group": "loop" }
+      ],
+      "explorer/context": [
+        { "command": "loop.newFromTemplate", "when": "explorerResourceIsFolder", "group": "navigation@20" }
+      ]
+    },
     "configuration": {
       "title": "LoopFlow",
       "properties": {
@@ -114,7 +123,8 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
-    "build": "tsc -p tsconfig.json && npm run bundle",
+    "sync:templates": "node scripts/sync-templates.mjs",
+    "build": "npm run sync:templates && tsc -p tsconfig.json && npm run bundle",
     "bundle": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --target=node18 --minify",
     "package": "npx --yes @vscode/vsce@latest package --no-dependencies",
     "test": "node --test test/*.test.mjs"
