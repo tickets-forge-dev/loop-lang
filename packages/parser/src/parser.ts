@@ -6,18 +6,34 @@ import {
   Flow,
   FlowStep,
   GitPolicy,
+  Hook,
+  HookPoint,
   Loop,
   LoopContext,
   LoopFile,
   LOOP_VERSION,
   ModelPolicy,
+  ParseDefaults,
   ParseError,
   Pipeline,
   Policy,
   Predicate,
+  Rigor,
   Stage,
   Transition,
 } from "./types.js";
+
+const RIGOR_LEVELS: Rigor[] = ["vibe coding", "structured ai-assisted", "agentic engineering"];
+
+const HOOK_POINTS: Record<string, HookPoint> = {
+  "before each cycle": "before-cycle",
+  "after plan": "after-plan",
+  "after act": "after-act",
+  "after observe": "after-observe",
+  "on commit": "on-commit",
+  "on push": "on-push",
+  "on stop": "on-stop",
+};
 
 interface Line {
   indent: number;
@@ -115,13 +131,17 @@ function parsePredicate(s: string, lineNo: number): Predicate {
   m = text.match(/^a human confirms\s+"([^"]+)"$/i);
   if (m) return { type: "human", description: m[1] };
 
-  // the skill "X" scores N or more  -> skill verdict with a numeric threshold
-  m = text.match(/^the skill\s+"([^"]+)"\s+scores\s+(\d+)(?:\s+or more)?$/i);
-  if (m) return { type: "skill", skill: m[1], expect: "approve", minScore: parseInt(m[2], 10) };
+  // An eval predicate may name its subject: `on the output` (default) or `on the trajectory`.
+  const subj = (s: string | undefined): { subject?: "output" | "trajectory" } =>
+    s ? { subject: s.toLowerCase() as "output" | "trajectory" } : {};
 
-  // the skill "X" approves  -> skill verdict (approved / not)
-  m = text.match(/^the skill\s+"([^"]+)"\s+approves$/i);
-  if (m) return { type: "skill", skill: m[1], expect: "approve" };
+  // the skill "X" scores N or more [on the output|trajectory]  -> eval with a numeric threshold
+  m = text.match(/^the skill\s+"([^"]+)"\s+scores\s+(\d+)(?:\s+or more)?(?:\s+on the (output|trajectory))?$/i);
+  if (m) return { type: "skill", skill: m[1], expect: "approve", minScore: parseInt(m[2], 10), ...subj(m[3]) };
+
+  // the skill "X" approves [on the output|trajectory]  -> eval (approved / not)
+  m = text.match(/^the skill\s+"([^"]+)"\s+approves(?:\s+on the (output|trajectory))?$/i);
+  if (m) return { type: "skill", skill: m[1], expect: "approve", ...subj(m[2]) };
 
   throw new ParseError(`could not understand "done when ${text}"`, lineNo);
 }
@@ -179,9 +199,21 @@ function parseWhenCondition(cond: string, lineNo: number): Pick<Transition, "on"
   const c = cond.trim().toLowerCase();
   if (/^it passes and (the )?goal is met$/.test(c)) return { on: "pass", requireGoalMet: true };
   if (/^it passes$/.test(c)) return { on: "pass" };
-  if (/^it fails$/.test(c)) return { on: "fail" };
-  if (/^(it is )?blocked$/.test(c)) return { on: "blocked" };
+  if (/^it (fails|breaks)$/.test(c)) return { on: "fail" };
+  if (/^(it is |it gets )?(blocked|stuck)$/.test(c)) return { on: "blocked" };
   throw new ParseError(`unknown condition "when ${cond}"`, lineNo);
+}
+
+// ---------- hooks (`hooks:` block — deterministic checks at lifecycle points) ----------
+
+function parseHook(text: string, lineNo: number): Hook {
+  const m = text.match(/^(before each cycle|after plan|after act|after observe|on commit|on push|on stop):\s*(.+)$/i);
+  if (!m) throw new ParseError(`unrecognized hook "${text}" (expected e.g. \`on commit: "cmd" finds nothing\`)`, lineNo);
+  const pred = parsePredicate(m[2], lineNo);
+  if (pred.type !== "command" && pred.type !== "test") {
+    throw new ParseError(`a hook must be a deterministic check (a command or test), not "${m[2]}"`, lineNo);
+  }
+  return { at: HOOK_POINTS[m[1].toLowerCase()], predicate: pred };
 }
 
 // ---------- cycle (`each cycle: plan, then act, then observe`) ----------
@@ -281,7 +313,7 @@ interface LoopBodyResult {
   gate: { message: string } | null;
 }
 
-function interpretLoopBody(name: string | null, body: Line[]): LoopBodyResult {
+function interpretLoopBody(name: string | null, body: Line[], defaults?: ParseDefaults): LoopBodyResult {
   const loop: Loop = { kind: "loop", name, goal: "", cycle: [] };
   let gate: { message: string } | null = null;
   let sawGoal = false;
@@ -300,6 +332,18 @@ function interpretLoopBody(name: string | null, body: Line[]): LoopBodyResult {
       i = next;
       continue;
     }
+    if (/^hooks:?$/i.test(t)) {
+      const hooks: Hook[] = [];
+      let j = i + 1;
+      while (j < body.length && body[j].indent > ln.indent) {
+        hooks.push(parseHook(body[j].text, body[j].lineNo));
+        j++;
+      }
+      if (hooks.length === 0) throw new ParseError(`'hooks:' block is empty`, ln.lineNo);
+      loop.hooks = hooks;
+      i = j;
+      continue;
+    }
     if ((m = t.match(/^models:\s*(.+)$/i))) {
       loop.models = parseModelsLine(m[1], ln.lineNo);
       i++; continue;
@@ -310,11 +354,36 @@ function interpretLoopBody(name: string | null, body: Line[]): LoopBodyResult {
       i++; continue;
     }
     if ((m = t.match(/^done when\s+(.+)$/i))) {
-      loop.doneWhen = parsePredicate(m[1], ln.lineNo);
+      const pred = parsePredicate(m[1], ln.lineNo);
+      // An optional indented `the bar:` rubric line attaches to a skill eval.
+      const childBar = body[i + 1];
+      if (childBar && childBar.indent > ln.indent) {
+        const bm = childBar.text.match(/^the bar:\s*(.+)$/i);
+        if (bm) {
+          if (pred.type !== "skill") {
+            throw new ParseError(`'the bar:' applies to a skill eval, not "${m[1].trim()}"`, childBar.lineNo);
+          }
+          pred.bar = bm[1].trim();
+          i++; // consume the bar line
+        }
+      }
+      (loop.doneWhen ??= []).push(pred);
       i++; continue;
     }
-    if ((m = t.match(/^look at:\s*(.+)$/i))) {
+    // `look at:` and its friendly synonyms (`in:`, `look in:`, `files:`, `context:`).
+    if ((m = t.match(/^(?:look at|look in|files|context|in):\s*(.+)$/i))) {
       loop.context = parseContext(m[1]);
+      i++; continue;
+    }
+    // Friendly `check:` / `verify:` — sugar for a `done when` check. A bare value is a shell
+    // command (`check: npm test`); a predicate phrase (`check: the skill "x" approves`) is parsed as-is.
+    if ((m = t.match(/^(?:check|verify):\s*(.+)$/i))) {
+      const val = m[1].trim();
+      const isPhrase = /^(the test|the skill|a human)\b/i.test(val) || /^".*"\s+(passes|succeeds|finds nothing)$/i.test(val);
+      const pred: Predicate = isPhrase
+        ? parsePredicate(val, ln.lineNo)
+        : { type: "command", command: val.replace(/^"|"$/g, ""), expect: "exit-zero" };
+      (loop.doneWhen ??= []).push(pred);
       i++; continue;
     }
     if (/^allow\b/i.test(t) || /^ask me before\b/i.test(t)) {
@@ -338,6 +407,21 @@ function interpretLoopBody(name: string | null, body: Line[]): LoopBodyResult {
         .split(/,|\band\b/)
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
+      i++; continue;
+    }
+    // MCP: name servers whose tools the loop may use (`use tools from the "github" server`).
+    if ((m = t.match(/^use tools from (?:the\s+)?"([^"]+)"(?:\s+server)?$/i))) {
+      (loop.tools ??= []).push(m[1].trim());
+      i++; continue;
+    }
+    // The 6th context part — reference patterns to imitate.
+    if ((m = t.match(/^examples?:\s*(.+)$/i))) {
+      (loop.context ??= {}).examples = splitItems(m[1]);
+      i++; continue;
+    }
+    // Read-only reference material the agent must not edit.
+    if ((m = t.match(/^knowledge:\s*(.+)$/i))) {
+      (loop.context ??= {}).knowledge = splitItems(m[1]);
       i++; continue;
     }
     if ((m = t.match(/^(?:remember|keep a memory)\s+in\s+"([^"]+)"$/i))) {
@@ -376,8 +460,28 @@ function interpretLoopBody(name: string | null, body: Line[]): LoopBodyResult {
   }
 
   if (!sawGoal) throw new ParseError(`loop "${name ?? "(anonymous)"}" is missing a goal`, body[0]?.lineNo ?? 0);
-  if (!sawCycle) loop.cycle = ["plan", "act", "observe"]; // sensible default
+  // Cascade (lowest wins): per-loop `each cycle:` > config-tier default > built-in plan/act/observe.
+  if (!sawCycle) loop.cycle = defaults?.cycle?.length ? [...defaults.cycle] : ["plan", "act", "observe"];
+
+  // rigor: structured/agentic loops are born with a back-edge and a thrash guard unless the
+  // author set their own — the "sensible defaults" that keep a loop safe without boilerplate.
+  // `vibe coding` (and no rigor at all) injects nothing, so existing files are unchanged.
+  if (defaults?.rigor === "structured ai-assisted" || defaults?.rigor === "agentic engineering") {
+    const has = (on: Transition["on"]) => (loop.transitions ?? []).some((t) => t.on === on);
+    if (loop.doneWhen?.length && !has("fail")) {
+      (loop.transitions ??= []).push({ on: "fail", do: [{ action: "reflect" }, { action: "plan" }] });
+    }
+    if (has("fail") && !has("attempts")) {
+      (loop.transitions ??= []).push({ on: "attempts", threshold: 8, do: [{ action: "stop", warn: "thrashing" }] });
+    }
+  }
+
   return { loop, gate };
+}
+
+/** Split a comma/"and"-separated list into trimmed items (shared by examples:/knowledge:). */
+function splitItems(s: string): string[] {
+  return s.split(",").map((x) => x.replace(/^and\s+/i, "").trim()).filter(Boolean);
 }
 
 function parseContext(s: string): LoopContext {
@@ -413,7 +517,7 @@ function mergePolicy(loop: Loop, line: string) {
 
 // ---------- pipeline / stage ----------
 
-function parseStage(lines: Line[], start: number): { stage: Stage; next: number } {
+function parseStage(lines: Line[], start: number, defaults?: ParseDefaults): { stage: Stage; next: number } {
   const header = lines[start];
   const m = header.text.match(/^stage\s+(.+?):\s*$/i);
   if (!m) throw new ParseError(`expected "stage <name>:"`, header.lineNo);
@@ -422,22 +526,40 @@ function parseStage(lines: Line[], start: number): { stage: Stage; next: number 
   const name = quoted(raw) ?? raw;
   const { body, next } = childrenOf(lines, start + 1, header.indent);
   if (body.length === 0) throw new ParseError(`stage "${name}" has no body`, header.lineNo);
-  const { loop, gate } = interpretLoopBody(null, body);
+  const { loop, gate } = interpretLoopBody(null, body, defaults);
   return { stage: { name, gate, loop }, next };
 }
 
-function parsePipeline(lines: Line[], start: number): { pipeline: Pipeline; next: number } {
+function parsePipeline(lines: Line[], start: number, defaults?: ParseDefaults): { pipeline: Pipeline; next: number } {
   const header = lines[start];
   const name = quoted(header.text) ?? header.text.replace(/^pipeline\s+/i, "").replace(/:$/, "").trim();
   const { body, next } = childrenOf(lines, start + 1, header.indent);
   const stages: Stage[] = [];
   let i = 0;
+  let group = 0;
   // body is a slice; re-walk by indentation relative to the stage headers
   while (i < body.length) {
+    // `stages in parallel:` — the indented stages beneath it share a parallel-group id.
+    if (/^stages in parallel:?$/i.test(body[i].text)) {
+      group++;
+      const groupIndent = body[i].indent;
+      let j = i + 1;
+      while (j < body.length && body[j].indent > groupIndent) {
+        if (!/^stage\b/i.test(body[j].text)) {
+          throw new ParseError(`expected a "stage" inside the parallel group in pipeline "${name}"`, body[j].lineNo);
+        }
+        const { stage, next: sn } = parseStage(body, j, defaults);
+        stage.parallelGroup = group;
+        stages.push(stage);
+        j = sn;
+      }
+      i = j;
+      continue;
+    }
     if (!/^stage\b/i.test(body[i].text)) {
       throw new ParseError(`expected a "stage" inside pipeline "${name}"`, body[i].lineNo);
     }
-    const { stage, next: sn } = parseStage(body, i);
+    const { stage, next: sn } = parseStage(body, i, defaults);
     stages.push(stage);
     i = sn;
   }
@@ -445,11 +567,11 @@ function parsePipeline(lines: Line[], start: number): { pipeline: Pipeline; next
   return { pipeline: { kind: "pipeline", name, stages }, next };
 }
 
-function parseLoopDef(lines: Line[], start: number): { loop: Loop; next: number } {
+function parseLoopDef(lines: Line[], start: number, defaults?: ParseDefaults): { loop: Loop; next: number } {
   const header = lines[start];
   const name = quoted(header.text);
   const { body, next } = childrenOf(lines, start + 1, header.indent);
-  const { loop } = interpretLoopBody(name, body);
+  const { loop } = interpretLoopBody(name, body, defaults);
   return { loop, next };
 }
 
@@ -544,28 +666,57 @@ function parseConfigLine(config: Config, ln: Line): boolean {
     config.notify = m[1].trim();
     return true;
   }
+  if ((m = t.match(/^rigor:\s*(.+)$/i))) {
+    const level = m[1].trim().toLowerCase();
+    if (!RIGOR_LEVELS.includes(level as Rigor)) {
+      throw new ParseError(`unknown rigor "${m[1].trim()}" (expected: ${RIGOR_LEVELS.join(", ")})`, ln.lineNo);
+    }
+    config.rigor = level as Rigor;
+    return true;
+  }
+  if ((m = t.match(/^mode:\s*(conductor|orchestrator)$/i))) {
+    config.mode = m[1].trim().toLowerCase() as "conductor" | "orchestrator";
+    return true;
+  }
+  if ((m = t.match(/^runs as:\s*(.+)$/i))) {
+    config.runsAs = m[1].trim();
+    return true;
+  }
   return false;
 }
 
 // ---------- entry ----------
 
-export function parse(src: string): LoopFile {
+/**
+ * Parse a `.loop` source into a LoopFile.
+ *
+ * `opts.defaultCycle` seeds the cycle cascade from outside the file — e.g. a
+ * project-level `loop.config`. Precedence (lowest wins): a per-loop `each cycle:`
+ * > the file's config-tier `each cycle:` > `opts.defaultCycle` > built-in plan/act/observe.
+ */
+export function parse(src: string, opts?: { defaultCycle?: CycleStep[]; defaultRigor?: Rigor }): LoopFile {
   const lines = tokenizeLines(src);
   const config: Config = {};
   const definitions: Definition[] = [];
   let i = 0;
+  // Defaults threaded into every definition (config tier wins over the external project defaults).
+  const defaults = (): ParseDefaults => ({
+    cycle: config.cycle ?? opts?.defaultCycle,
+    rigor: config.rigor ?? opts?.defaultRigor,
+  });
 
   while (i < lines.length) {
     const ln = lines[i];
+    let m: RegExpMatchArray | null;
     if (ln.indent !== 0) {
       throw new ParseError(`unexpected indentation at top level: "${ln.text}"`, ln.lineNo);
     }
     if (/^loop\b/i.test(ln.text)) {
-      const { loop, next } = parseLoopDef(lines, i);
+      const { loop, next } = parseLoopDef(lines, i, defaults());
       definitions.push(loop);
       i = next;
     } else if (/^pipeline\b/i.test(ln.text)) {
-      const { pipeline, next } = parsePipeline(lines, i);
+      const { pipeline, next } = parsePipeline(lines, i, defaults());
       definitions.push(pipeline);
       i = next;
     } else if (/^flow\b/i.test(ln.text)) {
@@ -578,6 +729,40 @@ export function parse(src: string): LoopFile {
       i = next;
     } else if (/^models:\s*.+$/i.test(ln.text)) {
       config.models = parseModelsLine(ln.text.replace(/^models:\s*/i, ""), ln.lineNo);
+      i++;
+    } else if (/^observe:?$/i.test(ln.text)) {
+      const obs: import("./types.js").ObservePolicy = {};
+      let j = i + 1;
+      while (j < lines.length && lines[j].indent > ln.indent) {
+        const o = lines[j].text;
+        if (/^trace( every cycle)?$/i.test(o)) obs.trace = true;
+        else if (/^meter (tokens and cost|cost|tokens)$/i.test(o)) obs.meter = true;
+        else if ((m = o.match(/^stop and warn if cost exceeds\s+"?([^"]+)"?$/i))) obs.costCap = m[1].trim();
+        else throw new ParseError(`unrecognized observe line "${o}"`, lines[j].lineNo);
+        j++;
+      }
+      config.observe = obs;
+      i = j;
+    } else if (/^sandbox:?$/i.test(ln.text)) {
+      const sb: import("./types.js").SandboxPolicy = {};
+      let j = i + 1;
+      while (j < lines.length && lines[j].indent > ln.indent) {
+        const o = lines[j].text;
+        if (/^no network( access)?$/i.test(o)) sb.network = "none";
+        else if ((m = o.match(/^allow egress to\s+"([^"]+)"(?:\s+only)?$/i))) { sb.network = "allowlist"; (sb.egress ??= []).push(m[1]); }
+        else if (/^cap\b/i.test(o)) {
+          const cpu = o.match(/cpu (?:at )?([\w. ]+?)(?:,|$| cores)/i); if (cpu) sb.cpu = cpu[1].trim();
+          const mem = o.match(/memory (?:at )?([\w.]+)/i); if (mem) sb.memory = mem[1].trim();
+          const time = o.match(/time (?:at )?([\w.]+)/i); if (time) sb.time = time[1].trim();
+        } else if (/^cannot reach\b/i.test(o)) { /* informational — accepted */ }
+        else throw new ParseError(`unrecognized sandbox line "${o}"`, lines[j].lineNo);
+        j++;
+      }
+      config.sandbox = sb;
+      i = j;
+    } else if ((m = ln.text.match(/^each cycle:\s*(.+)$/i))) {
+      // Config-tier default cycle — applies to every loop without its own `each cycle:`.
+      config.cycle = parseCycle(m[1], ln.lineNo);
       i++;
     } else if (parseConfigLine(config, ln)) {
       i++;

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-import { appendFileSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
+import { appendFileSync, readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { dirname, resolve, relative, basename } from "node:path";
 import { createInterface } from "node:readline";
 import { parse } from "@loop-lang/parser";
+import type { Config, LoopFile } from "@loop-lang/parser";
 import { resolvePreset } from "@loop-lang/stdlib";
 import { run } from "./engine.js";
 import { ShellVerifier } from "./verify.js";
@@ -11,7 +12,7 @@ import { ClaudeCodeRunner } from "./runners/claudeCode.js";
 import { IpcHumanIO } from "./ipc.js";
 import { ShellGitIO } from "./runners/shellGit.js";
 import type { LoopEvent } from "./types.js";
-import { summarizeModels, formatModelSummary } from "./summary.js";
+import { summarizeModels, formatModelSummary, summarizeOpex, formatOpexSummary } from "./summary.js";
 
 const GLYPH: Partial<Record<LoopEvent["type"], string>> = {
   "pipeline-start": "▶ pipeline",
@@ -85,6 +86,54 @@ function render(e: LoopEvent): string {
   }
 }
 
+/** Project-level config filenames, in priority order. Written in config-tier `.loop` syntax. */
+const PROJECT_CONFIG_NAMES = ["loop.config", ".looprc"];
+
+/**
+ * Walk up from `startDir` looking for a project config file (`loop.config` / `.looprc`).
+ * It is parsed with the same grammar as a `.loop` file but holds only a config tier
+ * (e.g. `each cycle:`, `models:`, a `git:` block). Returns its config, or null.
+ */
+function findProjectConfig(startDir: string): { path: string; config: Config } | null {
+  let dir = startDir;
+  while (true) {
+    for (const name of PROJECT_CONFIG_NAMES) {
+      const p = resolve(dir, name);
+      if (existsSync(p)) {
+        try {
+          const cfg = parse(readFileSync(p, "utf8")).config;
+          if (cfg) return { path: p, config: cfg };
+        } catch (err) {
+          console.error(`⚠ ignoring ${p}: ${String((err as Error)?.message ?? err)}`);
+        }
+        return null; // a config file exists here but is empty/invalid — stop the search
+      }
+    }
+    const parent = dirname(dir);
+    if (parent === dir) return null; // reached the filesystem root
+    dir = parent;
+  }
+}
+
+/** File config wins over project defaults (lowest tier). Shallow per key — a `git:`/`models:` block in the file replaces the project's. */
+function withProjectDefaults(fileConfig: Config | null, project: Config): Config {
+  return { ...project, ...(fileConfig ?? {}) };
+}
+
+/**
+ * Read and parse a `.loop` file, folding in any project-level `loop.config` as the lowest
+ * cascade tier. `cycle` resolves at parse time (so it is passed in as `defaultCycle`); the
+ * remaining config keys resolve at runtime and are merged onto the result.
+ */
+function loadLoopFile(absPath: string): LoopFile {
+  const project = findProjectConfig(dirname(absPath));
+  const file = parse(readFileSync(absPath, "utf8"), {
+    defaultCycle: project?.config.cycle,
+    defaultRigor: project?.config.rigor,
+  });
+  return project ? { ...file, config: withProjectDefaults(file.config, project.config) } : file;
+}
+
 /** Walk a dir for *.loop files, skipping noise. */
 function findLoops(dir: string, acc: string[] = [], depth = 0): string[] {
   if (depth > 6) return acc;
@@ -117,7 +166,14 @@ async function main() {
   if (cmd === "show") {
     if (!fileArg) { console.error("usage: loop-run show <file.loop>"); process.exit(2); }
     const { renderFile } = await import("./show.js");
-    console.log(renderFile(parse(readFileSync(resolve(process.cwd(), fileArg), "utf8"))));
+    console.log(renderFile(loadLoopFile(resolve(process.cwd(), fileArg))));
+    return;
+  }
+  // `loop explain <file>` — describe the loop in plain English (the friendly view).
+  if (cmd === "explain") {
+    if (!fileArg) { console.error("usage: loop-run explain <file.loop>"); process.exit(2); }
+    const { explainFile } = await import("./show.js");
+    console.log(explainFile(loadLoopFile(resolve(process.cwd(), fileArg))));
     return;
   }
   // `loop ls` — list every .loop under the current dir with its one-line shape.
@@ -159,7 +215,7 @@ async function main() {
   }
 
   if (!cmd || (cmd !== "run" && cmd !== "parse" && cmd !== "viz" && cmd !== "live") || !fileArg) {
-    console.error("usage: loop-run <run|parse|viz|live|show|ls|emit> <file.loop>  [--model <alias>] [--live] [--events] [--out <path>]");
+    console.error("usage: loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop>  [--model <alias>] [--live] [--events] [--out <path>]");
     process.exit(2);
   }
 
@@ -171,8 +227,7 @@ async function main() {
     Promise.resolve(readFileSync(resolve(dir, ref), "utf8"));
   const writeText = (ref: string, content: string, dir: string) =>
     Promise.resolve(appendFileSync(resolve(dir, ref), content, "utf8"));
-  const src = readFileSync(path, "utf8");
-  let file = parse(src);
+  let file = loadLoopFile(path);
 
   // If the file is a config that selects a preset, resolve and run the preset.
   if (file.definitions.length === 0 && file.config?.use) {
@@ -302,6 +357,10 @@ async function main() {
 
   const outcomes = await run(file, { ...baseOpts, onEvent: onTrace });
   reportSummary();
+  // Observability: when `observe:` is on, print the OpEx report (token burn made visible).
+  if (file.config?.observe?.trace || file.config?.observe?.meter) {
+    console.error(formatOpexSummary(summarizeOpex(traceEvents)));
+  }
   const ok = outcomes.every((o) => o.satisfied);
   process.exit(ok ? 0 : 1);
 }

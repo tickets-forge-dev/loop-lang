@@ -1,0 +1,7 @@
+# The friendly surface — plain-English shorthands, all desugaring to the full grammar.
+loop "fix the cart total":
+  goal: the cart total is correct with tax
+  in: src/cart, src/tax
+  check: pnpm test cart
+  when it breaks: reflect, then plan again
+  after 6 tries: stop and warn "stuck"

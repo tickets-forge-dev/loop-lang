@@ -21,6 +21,42 @@ export interface GitPolicy {
   openPr?: boolean;
 }
 
+/**
+ * Where a loop sits on the vibe-coding → agentic-engineering spectrum. A config-tier dial
+ * that expands to bundled defaults (reflect-on-fail, a thrash guard) over every loop in the
+ * file. `vibe coding` = no injected defaults (fast/disposable); `structured ai-assisted` and
+ * `agentic engineering` = born with a back-edge + a guard unless the loop sets its own.
+ */
+export type Rigor = "vibe coding" | "structured ai-assisted" | "agentic engineering";
+
+/** Run-isolation policy (`sandbox:` block): where code runs and what it cannot reach. */
+export interface SandboxPolicy {
+  /** Network posture: "none" (no egress) or "allowlist" (only `egress` hosts). */
+  network?: "none" | "allowlist";
+  /** Allowed egress hosts when network is "allowlist". */
+  egress?: string[];
+  /** Resource caps, as written (e.g. cpu "2 cores", memory "4g", time "10m"). */
+  cpu?: string;
+  memory?: string;
+  time?: string;
+}
+
+/** Observability policy (`observe:` block): trace, cost metering, and an optional spend cap. */
+export interface ObservePolicy {
+  /** Emit a per-cycle trace and a stop-time OpEx report. */
+  trace?: boolean;
+  /** Meter tokens and cost per cycle (requires a provider that reports usage). */
+  meter?: boolean;
+  /** Stop and warn if spend exceeds this (e.g. "$5"). Enforced when the runner reports cost. */
+  costCap?: string;
+}
+
+/** External defaults threaded into loop parsing (from the config tier or a project loop.config). */
+export interface ParseDefaults {
+  cycle?: CycleStep[];
+  rigor?: Rigor;
+}
+
 export type ModelTier = "fast" | "strong";
 export type ModelPhase = "plan" | "act" | "reflect" | "also";
 export interface ModelPolicy {
@@ -37,6 +73,22 @@ export interface Config {
   notify?: string;
   git?: GitPolicy;
   models?: ModelPolicy;
+  /**
+   * File-level default cycle (`each cycle: …` at the config tier). Applies to every
+   * loop that doesn't declare its own `each cycle:`. A per-loop `each cycle:` overrides
+   * it; with neither, the built-in default is plan → act → observe. Lowest wins, like git.
+   */
+  cycle?: CycleStep[];
+  /** The spectrum dial (`rigor: …`) — bundles best-practice defaults over every loop in the file. */
+  rigor?: Rigor;
+  /** Supervision posture (`mode: …`): conductor = in-session/synchronous; orchestrator = async/reviews-outcomes. */
+  mode?: "conductor" | "orchestrator";
+  /** Observability (`observe:` block): trace + cost metering + an optional spend cap. */
+  observe?: ObservePolicy;
+  /** Run isolation (`sandbox:` block): where code runs and what it cannot reach. */
+  sandbox?: SandboxPolicy;
+  /** Identity the run executes as (`runs as: …`) — an auditable principal for unattended runs. */
+  runsAs?: string;
 }
 
 export interface OverrideEntry {
@@ -55,13 +107,20 @@ export interface Stage {
   name: string;
   gate?: { message: string } | null;
   loop: Loop;
+  /** Stages sharing a parallel-group id run concurrently (`stages in parallel:`). */
+  parallelGroup?: number;
 }
 
 export interface Loop {
   kind: "loop";
   name: string | null;
   goal: string;
-  doneWhen?: Predicate | null;
+  /**
+   * Verification conditions — ALL must pass (a conjunction). A test/command predicate is a
+   * deterministic check (a TEST); a skill predicate is an eval (an EVAL).
+   * Each `done when …` line appends one. Empty/absent = no machine check (stop via a human path).
+   */
+  doneWhen?: Predicate[];
   context?: LoopContext;
   policy?: Policy;
   cycle: CycleStep[];
@@ -69,9 +128,13 @@ export interface Loop {
   also?: string[];
   /** Named execution skills the loop may invoke during plan/act (e.g. ["check-weather"]). */
   skills?: string[];
+  /** MCP servers whose tools the loop may use (`use tools from the "github" server`). */
+  tools?: string[];
   /** A markdown file the loop reads on start and appends to on stop — cross-run memory. */
   memory?: LoopMemory;
   planSource?: PlanSource;
+  /** Deterministic checks bound to lifecycle points (`hooks:`). A failing hook blocks. */
+  hooks?: Hook[];
   humanPlan?: boolean;
   humanReviewBeforeStop?: boolean;
   transitions?: Transition[];
@@ -81,10 +144,23 @@ export interface Loop {
 
 export type CycleStep = "plan" | "act" | "observe";
 
+/** A lifecycle point a `hooks:` check binds to. */
+export type HookPoint = "before-cycle" | "after-plan" | "after-act" | "after-observe" | "on-commit" | "on-push" | "on-stop";
+
+/** A deterministic check bound to a lifecycle point — a failing hook blocks. */
+export interface Hook {
+  at: HookPoint;
+  predicate: Predicate;
+}
+
 export interface LoopContext {
   files?: string[];
   docs?: string[];
   includeLastFailure?: boolean;
+  /** Read-only reference material (`knowledge:`) — docs/diagrams the agent reads but must not edit. */
+  knowledge?: string[];
+  /** Reference patterns to imitate (`examples:`) — "build it like these". */
+  examples?: string[];
 }
 
 export interface Policy {
@@ -112,7 +188,13 @@ export type Predicate =
   | { type: "test"; target: string }
   | { type: "command"; command: string; expect?: "exit-zero" | "empty" }
   | { type: "human"; description: string }
-  | { type: "skill"; skill: string; expect: "approve"; minScore?: number };
+  /**
+   * An eval: a review skill judges the goal (approve / score). `subject` selects what it
+   * inspects — the produced `output` (default) or the `trajectory` (the path and tool calls
+   * the agent took to get there). `bar` is an optional inline rubric (`the bar:`) naming the
+   * conditions the judge scores against.
+   */
+  | { type: "skill"; skill: string; expect: "approve"; minScore?: number; subject?: "output" | "trajectory"; bar?: string };
 
 export interface Transition {
   on: "pass" | "fail" | "blocked" | "attempts";

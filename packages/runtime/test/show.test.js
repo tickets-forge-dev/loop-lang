@@ -41,3 +41,16 @@ test("oneLine gives a terse shape per definition kind", () => {
   const loop = parse(`loop "y":\n  goal: g\n  done when "t" passes\n  each cycle: plan, then act, then observe\n  when it fails: reflect, then plan again\n`).definitions[0];
   assert.match(oneLine(loop), /loop "y" · plan→act→observe, reflect, done-when/);
 });
+
+test("explain: plain-English description of a loop", async () => {
+  const { explainFile } = await import("../dist/show.js");
+  const file = parse(
+    'loop "fix the cart test":\n  goal: the cart total is correct\n  check: pnpm test cart\n' +
+      '  when it fails: reflect, then plan again\n  after 6 tries: stop and warn "stuck"'
+  );
+  const prose = explainFile(file);
+  assert.match(prose, /works toward: the cart total is correct/);
+  assert.match(prose, /done when running `pnpm test cart` succeeds/);
+  assert.match(prose, /reflects on why and tries again/);
+  assert.match(prose, /gives up after 6 tries/);
+});

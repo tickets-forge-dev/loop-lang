@@ -212,6 +212,14 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
     <li><a href="#running-vscode">In VS Code</a></li>
     <li><a href="#live">Live dashboard</a></li>
     <li><a href="#library">Your global library</a></li>
+    <li class="grp">The full system</li>
+    <li><a href="#evals">Tests &amp; evals</a></li>
+    <li><a href="#material">Context &amp; knowledge</a></li>
+    <li><a href="#config">Config &amp; project defaults</a></li>
+    <li><a href="#rigor">Rigor, defaults &amp; mode</a></li>
+    <li><a href="#hooks">Hooks</a></li>
+    <li><a href="#observe">Observe &amp; sandbox</a></li>
+    <li><a href="#friendly">Friendly syntax</a></li>
     <li class="grp">Go deeper</li>
     <li><a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md">📖 Full manual →</a></li>
     <li><a href="keywords/index.html">📖 Keyword reference →</a></li>
@@ -839,6 +847,179 @@ live=true            # /loopflow shows the live dashboard during in-session runs
 
 <!-- 18 -->
 
+<!-- tests & evals -->
+<section id="evals">
+  <h2>Tests &amp; evals — verify both halves <span class="badge b-inter">verification</span></h2>
+  <p>A loop is only as trustworthy as its check. You can list <strong>several <code class="inl">done when</code> lines, and all must pass</strong> (a conjunction) — which lets you combine the two kinds of verification.</p>
+  <table>
+    <tr><th>Kind</th><th>What it checks</th><th>How</th></tr>
+    <tr><td><strong>Tests</strong></td><td>The deterministic parts — a given input reliably produces a given output.</td><td>A command or named test, checked by code.</td></tr>
+    <tr><td><strong>Evals</strong></td><td>The non-deterministic parts — did it meet the quality bar?</td><td>A review <em>skill</em> acting as a rubric / LM judge, returning approve or a score.</td></tr>
+  </table>
+  <p>An eval names its <strong>subject</strong>: <code class="inl">on the output</code> (the default — judges <em>what</em> was produced) or <code class="inl">on the trajectory</code> (judges <em>how</em> the agent got there — its path and tool calls). An indented <code class="inl">the bar:</code> line states the conditions the judge scores against.</p>
+  <pre><code class="loop">loop "add the refund endpoint":
+  goal: POST /refunds reverses a charge and is safe to ship
+  in: api/refunds.ts, api/charges.ts
+  done when "pnpm test refunds" passes                              # a TEST (deterministic)
+  done when the skill "api-review" scores 8 or more on the output   # an OUTPUT eval
+  done when the skill "path-review" approves on the trajectory       # a TRAJECTORY eval
+    the bar: did not weaken a test to go green; no writes outside api/
+  when it breaks: reflect on whether the test or the path failed, then plan again
+  after 6 tries: stop and warn "cannot satisfy the test and the evals"</code></pre>
+  <div class="note"><b>Why a trajectory eval?</b> A green test isn't always proof — an agent can pass a test by <em>weakening it</em>, a failure that looks right. A trajectory eval inspects the actual path (it sees the edit to the spec file) and rejects it against <code class="inl">the bar:</code>. Pair a test with an eval when "done" means both <em>it works</em> and <em>it was built the right way</em>.</div>
+</section>
+
+<!-- context & knowledge -->
+<section id="material">
+  <h2>Context &amp; knowledge — what the agent reads <span class="badge b-inter">context</span></h2>
+  <p>Give the agent the right material before it plans. Each input carries a distinct intent, so the agent knows what it may change and what it must only learn from.</p>
+  <table>
+    <tr><th>Line</th><th>Intent</th></tr>
+    <tr><td><code class="inl">look at:</code> <span style="color:var(--muted)">(alias <code class="inl">in:</code>)</span></td><td>Files it reads <em>and may edit</em>. Add <code class="inl">and the last failure</code> to feed the previous error forward.</td></tr>
+    <tr><td><code class="inl">knowledge:</code></td><td>Read-only reference (docs, diagrams) it must <em>not</em> edit.</td></tr>
+    <tr><td><code class="inl">examples:</code></td><td>Reference patterns to <em>imitate</em> — "build it like these".</td></tr>
+    <tr><td><code class="inl">use skills:</code></td><td>Named skills it may invoke while planning/acting.</td></tr>
+    <tr><td><code class="inl">use tools from the "x" server</code></td><td>An MCP server whose tools it may use.</td></tr>
+  </table>
+  <pre><code class="loop">loop "add the webhooks endpoint":
+  goal: POST /webhooks matches the house style
+  look at: routes/
+  knowledge: docs/webhooks-spec.md, the architecture diagram
+  examples: routes/payments.ts, routes/users.ts
+  use tools from the "github" server
+  check: pnpm test webhooks</code></pre>
+</section>
+
+<!-- config & loop.config -->
+<section id="config">
+  <h2>Config tier &amp; project defaults <span class="badge b-inter">don't repeat yourself</span></h2>
+  <p>Lines at the <strong>top of the file</strong>, before any definition, set defaults for every loop in it. Write the common stuff once.</p>
+  <pre><code class="loop">each cycle: plan, then act, then observe   # default cycle for every loop below
+models: fast haiku, strong opus            # routing: plan/reflect → fast, act → strong
+git:
+  work on a branch
+  commit when the goal is met</code></pre>
+  <h3>Project defaults — <code class="inl">loop.config</code></h3>
+  <p>To avoid repeating config across <em>files</em>, drop a <code class="inl">loop.config</code> (or <code class="inl">.looprc</code>) at your project root. It is written in the <strong>same config-tier syntax</strong> as a <code class="inl">.loop</code> file — just the config, no definitions — and the runner reads it before every run, walking up from the <code class="inl">.loop</code> file until it finds one (like <code class="inl">.gitignore</code> discovery).</p>
+  <pre><code class="loop"># loop.config — sits at the repo root, applies to every .loop in the project
+each cycle: plan, then act, then observe
+models: fast haiku, strong opus
+rigor: structured ai-assisted
+git:
+  work on a branch
+  commit when the goal is met</code></pre>
+  <p>With that in place, your everyday loops stay tiny — they inherit the cycle, model routing, rigor defaults, and git policy automatically:</p>
+  <pre><code class="loop"># any .loop in the repo — inherits everything from loop.config
+loop "fix the cart total":
+  goal: the cart total is correct with tax
+  in: src/cart, src/tax
+  check: pnpm test cart</code></pre>
+  <div class="key"><span class="kt">Cascade — lowest wins</span>
+    <ul>
+      <li><code class="inl">loop.config</code> → a file's own config tier → a per-loop directive. Each layer overrides the one below it, key by key.</li>
+      <li>So a single loop can still override the project default — e.g. its own <code class="inl">each cycle: act, then observe</code> or a stricter <code class="inl">rigor: agentic engineering</code> — without touching <code class="inl">loop.config</code>.</li>
+      <li>The same rule already governs <code class="inl">git:</code>, <code class="inl">models:</code>, <code class="inl">each cycle:</code>, and <code class="inl">rigor:</code>.</li>
+    </ul>
+  </div>
+  <div class="note"><b>One place to set the bar for a whole repo.</b> Put <code class="inl">rigor: agentic engineering</code> in <code class="inl">loop.config</code> and every loop in the project is born with a reflect-on-fail back-edge, a thrash guard, and the tests-and-evals nudge — your team's verification posture, encoded once.</div>
+</section>
+
+<!-- rigor & mode -->
+<section id="rigor">
+  <h2>Rigor, sensible defaults &amp; mode <span class="badge b-inter">the dial</span></h2>
+  <p>One knob places a loop on the speed-vs-reliability spectrum and bundles best-practice defaults — so a careful loop needs no boilerplate.</p>
+  <table>
+    <tr><th>Level</th><th>What it bundles</th></tr>
+    <tr><td><code class="inl">vibe coding</code></td><td>Nothing injected — fast and disposable.</td></tr>
+    <tr><td><code class="inl">structured ai-assisted</code></td><td>Every loop is born with a reflect-on-fail back-edge and a thrash guard (unless it sets its own).</td></tr>
+    <tr><td><code class="inl">agentic engineering</code></td><td>The same defaults, plus a lint nudging you toward <em>both</em> a test and an eval.</td></tr>
+  </table>
+  <pre><code class="loop">rigor: agentic engineering
+
+loop "harden the auth module":
+  goal: auth handles malformed tokens safely
+  in: src/auth
+  done when "pnpm test auth" passes
+  done when the skill "security-review" approves on the trajectory
+    the bar: no secrets logged; rejects malformed tokens without crashing</code></pre>
+  <div class="note">That loop never wrote a <code class="inl">when it fails</code> or an <code class="inl">after N tries</code> — yet <code class="inl">loop-run show</code> reveals a full back-edge and an <code class="inl">after 8 tries</code> guard, supplied by the dial. A companion knob, <code class="inl">mode: conductor | orchestrator</code>, names the supervision posture — in-session and synchronous, vs. async and opening a PR.</div>
+</section>
+
+<!-- hooks -->
+<section id="hooks">
+  <h2>Hooks — checks at lifecycle points <span class="badge b-adv">guardrails</span></h2>
+  <p>A <code class="inl">hooks:</code> block binds a <strong>deterministic check</strong> to a point in the loop's life. A failing hook blocks.</p>
+  <pre><code class="loop">loop "refactor the token logic":
+  goal: extract the token logic with behavior unchanged
+  in: src/auth
+  done when "pnpm test auth" passes
+  hooks:
+    before each cycle: "pnpm typecheck" passes
+    after act:         "pnpm lint" finds nothing
+    on commit:         "semgrep --severity=high" finds nothing</code></pre>
+  <p>Points: <code class="inl">before each cycle</code>, <code class="inl">after plan</code>, <code class="inl">after act</code>, <code class="inl">after observe</code>, <code class="inl">on commit</code>, <code class="inl">on push</code>, <code class="inl">on stop</code>.</p>
+  <div class="key"><span class="kt">Where does a check belong?</span>
+    <ul>
+      <li>A success criterion → <code class="inl">done when</code>.</li>
+      <li>A recurring blocking checkpoint → <code class="inl">hooks:</code>.</li>
+      <li>A one-time polish after the goal is met → <code class="inl">also:</code>.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- observe & sandbox -->
+<section id="observe">
+  <h2>Observability &amp; sandbox <span class="badge b-adv">production substrate</span></h2>
+  <p>An <code class="inl">observe:</code> block makes a run's cost and shape visible. On stop, the CLI prints an <strong>OpEx report</strong> — cycles run, reflects (back-edges) taken, first-pass success, and outcome.</p>
+  <pre><code class="loop">observe:
+  trace every cycle
+  meter tokens and cost
+  stop and warn if cost exceeds "$5"
+
+loop "port the reports module":
+  goal: reports render identically under the v2 API
+  in: src/reports
+  models: fast haiku, strong opus
+  check: pnpm test reports</code></pre>
+  <h3>Run isolation &amp; identity</h3>
+  <p>For runs of agent-written code, declare isolation as config — where code runs and what it cannot reach — plus an auditable identity for unattended runs.</p>
+  <pre><code class="loop">sandbox:
+  no network access
+  allow egress to "registry.npmjs.org" only
+  cap cpu at 2 cores, memory at 4g, time at 10m
+  cannot reach the host filesystem or cloud metadata
+runs as: ci-bot
+
+loop "run the agent-written migration":
+  goal: the generated migration applies cleanly against a scratch db
+  check: pnpm test:migration
+  each cycle: act, then observe</code></pre>
+</section>
+
+<!-- friendly -->
+<section id="friendly">
+  <h2>Friendly syntax &amp; <code class="inl">explain</code> <span class="badge b-basic">easy mode</span></h2>
+  <p>Plain-English shorthands read naturally and <strong>desugar to the full grammar</strong> — nothing is lost, and experts can drop down to the full syntax anytime.</p>
+  <table>
+    <tr><th>Shorthand</th><th>Same as</th></tr>
+    <tr><td><code class="inl">check: pnpm test</code></td><td><code class="inl">done when "pnpm test" passes</code> (a bare value is a command)</td></tr>
+    <tr><td><code class="inl">check: the skill "x" approves</code></td><td>a predicate phrase is parsed as-is</td></tr>
+    <tr><td><code class="inl">in:</code> · <code class="inl">files:</code> · <code class="inl">look in:</code></td><td><code class="inl">look at:</code></td></tr>
+    <tr><td><code class="inl">when it breaks:</code></td><td><code class="inl">when it fails:</code></td></tr>
+    <tr><td><code class="inl">when it gets stuck:</code></td><td><code class="inl">when blocked:</code></td></tr>
+  </table>
+  <p>A complete, friendly loop can be just a few lines:</p>
+  <pre><code class="loop">loop "fix the cart total":
+  goal: the cart total is correct with tax
+  in: src/cart, src/tax
+  check: pnpm test cart</code></pre>
+  <p>And you can always read a loop back in plain English to confirm it does what you intend:</p>
+  <pre class="sh"><code class="sh">loop-run explain fix.loop
+# → "Loop 'fix the cart total' works toward: the cart total is correct with tax.
+#    Each round it plans the change, makes the change, then checks the result.
+#    It's done when running `pnpm test cart` succeeds. …"</code></pre>
+</section>
+
 <!-- go deeper -->
 <section id="godeeper">
   <h2>Go deeper</h2>
@@ -877,6 +1058,11 @@ live=true            # /loopflow shows the live dashboard during in-session runs
     "a human approves before","a human approves first","a human confirms","ask a human","ask me before"
   ];
   var KW = [
+    "stages in parallel","stop and warn if cost exceeds","meter tokens and cost","allow egress to",
+    "before each cycle","use tools from","trace every cycle","no network access","on the trajectory",
+    "on the output","when it gets stuck","when it breaks","then plan again","after observe","after act",
+    "after plan","on commit","on push","on stop","runs as","the bar","the skill","rigor","mode","hooks",
+    "sandbox","knowledge","examples","check","verify","scores","approves","models","cap","egress",
     "with the result of","the last failure","finds nothing","each cycle","done when","look at",
     "for each","plan from","run with","use the","the test","pull request","open a pull request",
     "work on a branch","work in a worktree","work in place","push when done","do not push",

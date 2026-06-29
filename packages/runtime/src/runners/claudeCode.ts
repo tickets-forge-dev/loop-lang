@@ -144,9 +144,11 @@ function resultText(content: unknown): string {
 export class ClaudeCodeRunner implements Runner {
   constructor(private opts: ClaudeCodeRunnerOptions = {}) {}
 
-  private run(prompt: string, flags: string[], baseDir: string, node: AgentNode, model?: string): Promise<string> {
+  private run(prompt: string, flags: string[], baseDir: string, node: AgentNode, model?: string, capture?: string[]): Promise<string> {
     const bin = this.opts.bin ?? "claude";
-    const stream = !!this.opts.onActivity;
+    // Stream when there's a live display OR a caller capturing the trajectory (tool calls
+    // are only parsed in stream mode), so trajectory evals work even without `onActivity`.
+    const stream = !!this.opts.onActivity || !!capture;
     const args = ["-p", prompt, ...claudeArgs({ stream, baseDir, model: model ?? this.opts.model, maxTurns: this.opts.maxTurns, flags })];
 
     return new Promise((resolve, reject) => {
@@ -165,7 +167,7 @@ export class ClaudeCodeRunner implements Runner {
           const line = buf.slice(0, nl);
           buf = buf.slice(nl + 1);
           const r = interpretStreamLine(line);
-          for (const a of r.activities) this.opts.onActivity!(node, a);
+          for (const a of r.activities) { this.opts.onActivity?.(node, a); capture?.push(a); }
           if (r.result !== undefined) {
             lastResult = r.result;
             streamed = r.result;
@@ -206,14 +208,18 @@ export class ClaudeCodeRunner implements Runner {
       ...(input.skills?.length ? [`You may use these skills: ${input.skills.join(", ")}.`] : []),
       `Only use the capabilities you have been granted.`,
     ].join("\n");
+    // Capture the act's trajectory (its tool calls, with inputs) so a trajectory eval can judge
+    // the path, not just the result. interpretStreamLine already decodes tool_use blocks.
+    const trajectory: string[] = [];
     const summary = await this.run(
       prompt,
       ["--permission-mode", mode, "--allowedTools", ...tools],
       input.baseDir,
       "act",
-      input.model
+      input.model,
+      trajectory
     );
-    return { summary };
+    return { summary, trajectory: trajectory.join("\n") };
   }
 
   async reflect(input: ReflectInput): Promise<string> {
@@ -221,6 +227,7 @@ export class ClaudeCodeRunner implements Runner {
       `Goal: ${input.goal}.`,
       `The verification did not pass. Output was:`,
       input.output || "(no output)",
+      ...(input.trajectory ? [`The path you took this cycle (tool calls):`, input.trajectory] : []),
       input.focus ? `Reflect specifically on: ${input.focus}.` : `Reflect on why it failed.`,
       `In 2-4 sentences, explain the likely cause and what to change next. Do not edit files.`,
     ].join("\n");
@@ -232,11 +239,16 @@ export class ClaudeCodeRunner implements Runner {
       input.minScore !== undefined
         ? `End with a line exactly "SCORE: N" where N is 0-10. It passes when N >= ${input.minScore}.`
         : `End with a line exactly "VERDICT: APPROVED" or "VERDICT: REJECTED".`;
+    const isTrajectory = input.subject === "trajectory";
+    const whatToReview = isTrajectory
+      ? `The agent's TRAJECTORY — the steps and tool calls it took. Judge HOW it got there (right path, right tools; e.g. it must not have weakened a test to go green), not just the end result:`
+      : `What to review (the produced OUTPUT):`;
     const prompt = [
       `Use the "${input.skill}" skill to review this against the goal.`,
       `Goal: ${input.goal}.`,
-      `What to review:`,
-      input.context || "(no output captured)",
+      ...(input.bar ? [`The bar — it passes only if all of these hold: ${input.bar}.`] : []),
+      whatToReview,
+      input.context || "(no context captured)",
       verdictLine,
     ].join("\n");
     const out = await this.run(

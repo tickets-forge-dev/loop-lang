@@ -92,6 +92,17 @@ plan from "<file>"        (read the plan from a file you control instead of gene
 
 use the <method> method   schedule: <when>   runner: <agent>   target: <dir>   (config tier)
 models: fast <model>, strong <model>   model tiering: plan/reflect/also→fast, act→strong (cascades; override e.g. `act fast`, `all strong`)
+each cycle: plan, then act, then observe   (config tier: the default cycle for every loop in the file; a loop's own `each cycle:` overrides it)
+rigor: vibe coding | structured ai-assisted | agentic engineering   (the spectrum dial; structured/agentic give every loop a back-edge + thrash guard for free)
+mode: conductor | orchestrator   (supervision posture: in-session/sync vs async/opens-a-PR)
+runs as: <identity>   (an auditable principal for unattended runs)
+observe:   (block) trace every cycle / meter tokens and cost / stop and warn if cost exceeds "$N"
+sandbox:   (block) no network access / allow egress to "host" only / cap cpu at … memory at … time at …
+hooks:     (loop body block) before each cycle | after act | on commit | on stop : "<cmd>" passes|finds nothing   (a failing hook blocks)
+examples: <files>      (reference patterns to imitate — context engineering's 6th part)
+knowledge: <files>     (read-only reference the agent must not edit)
+use tools from the "<server>" server   (MCP: name servers whose tools the loop may use)
+stages in parallel:    (inside a pipeline: the indented stages run concurrently)
 ```
 
 ### Predicates (`done when …`)
@@ -101,12 +112,31 @@ done when the test "billing.spec.ts::apostrophe" passes   # a named test
 done when "pnpm test" passes                               # a shell command, exit 0
 done when "semgrep --severity=high" finds nothing          # a shell command, empty output
 done when a human confirms "looks right at 375px"          # a human check
-done when the skill "email-review" approves                # a review skill: approved / not
-done when the skill "email-review" scores 8 or more        # a review skill: numeric threshold
+done when the skill "email-review" approves                # an eval: approved / not
+done when the skill "email-review" scores 8 or more        # an eval: numeric threshold
+done when the skill "api-review" scores 8 or more on the output       # an eval of WHAT was produced
+done when the skill "path-review" approves on the trajectory          # an eval of HOW the agent got there
+  the bar: didn't weaken a test to go green; no writes outside api/   # the rubric the judge scores against
 ```
 
 The command in a predicate runs in the user's shell with their privileges (like an npm
 script). It IS meant to be a real command. Prefer a fast, deterministic check.
+
+### Tests vs evals — list as many `done when` as you need
+
+A loop may have **multiple `done when` lines, and ALL must pass** (a conjunction). Use this to
+combine the two kinds of verification:
+
+- **TESTS** — a `test` / command predicate. Deterministic, checked by code (`"pnpm test" passes`,
+  `"semgrep …" finds nothing`).
+- **EVALS** — a `skill` predicate. A rubric / LM judge for the non-deterministic parts. An eval
+  names its **subject**: `on the output` (the default — judges *what* was produced) or
+  `on the trajectory` (judges *how* the agent got there — the path and tool calls it took). An
+  indented `the bar:` line states the conditions the judge scores against.
+
+A trajectory eval is what catches the failures a green test can't — e.g. an agent that made a test
+pass by weakening it. Pair a test with an eval when "done" means both "it works" and "it was built
+the right way."
 
 The **skill** predicate bridges an abstract goal to a verifiable one: when "done" isn't a
 test or a command (a good email, a sound design), have a review skill return an
@@ -196,6 +226,10 @@ flow "deliver":
   irreversible. Use `ask me before …` for action policy, `a human approves before …`
   for a hard stage gate.
 - Output only valid `.loop` syntax. Comments start with `#`.
+- **Friendly shorthands** (all desugar to the lines above — use freely): `check:` / `verify:`
+  = `done when` (a bare value is a shell command; a predicate phrase parses as-is); `in:` /
+  `look in:` / `files:` / `context:` = `look at:`; `when it breaks` = `when it fails`;
+  `when it gets stuck` = `when blocked`.
 
 ## Example — a single loop
 
@@ -296,6 +330,45 @@ loop "add a healthcheck endpoint":
   after 6 tries: stop and warn "healthcheck stuck"
 ```
 
+## Config defaults & the project config file
+
+Anything in the **config tier** (the top of the file, before any definition) sets a default for
+every loop in that file — so you write it once instead of repeating it per loop. The most common
+repeater is the cycle:
+
+```loop
+each cycle: plan, then act, then observe   # the default for every loop below
+models: fast haiku, strong opus
+
+pipeline "epic: ship it":
+  stage "story: build":
+    goal: it builds
+    done when "pnpm build" passes            # no `each cycle:` — inherits the default
+  stage "story: verify":
+    goal: tests pass
+    each cycle: act, then observe            # overrides just this stage
+    done when "pnpm test" passes
+```
+
+### `loop.config` — defaults for the whole repo
+
+To avoid repeating config across *files*, drop a **`loop.config`** (or `.looprc`) at your project
+root. It is written in the same config-tier syntax — `each cycle:`, `models:`, a `git:` block — and
+the runner reads it before every run, walking up from the `.loop` file to find it. It is the
+**lowest** tier of the cascade, so a file's own config (and a per-loop directive) overrides it.
+
+```loop
+# loop.config — applies to every .loop in the repo
+each cycle: plan, then act, then observe
+models: fast haiku, strong opus
+git:
+  work on a branch
+  commit when the goal is met
+```
+
+**Cascade (lowest wins):** `loop.config` → a file's config tier → a per-loop directive.
+The same rule already governs `git:` and `models:`.
+
 ## Show the flow — every time it changes
 
 Whenever you create or edit a `.loop`, print its flow so the user sees the shape.
@@ -309,6 +382,7 @@ flow, show the file chain. `loop-run ls` lists every loop in the repo.
 - `loop-run run file.loop` — execute it on Claude Code (plan/act/observe, reflect on failure,
   verify with `done when`, pause at human gates).
 - `loop-run show file.loop` — print the loop's flow as compact ASCII (and `loop-run ls` to list them).
+- `loop-run explain file.loop` — describe the loop in plain English (a friendly check of what it will do).
 - `loop-run viz file.loop` — open a visual HTML schematic of the flow.
 
 ### Live visual — opt-in via `loop.config`

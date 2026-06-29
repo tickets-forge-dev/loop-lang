@@ -116,15 +116,16 @@ the thrash guard).
 ## 4. The CLI
 
 ```
-loop-run <run|parse|viz|live|show|ls|emit> <file.loop> [--model <alias>] [--live] [--out <path>]
+loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop> [--model <alias>] [--live] [--out <path>]
 ```
 
 | Command | What it does |
 |---|---|
 | `loop-run run <file>` | Execute the flow on Claude Code (plan/act/observe, reflect, verify, human gates). |
 | `loop-run parse <file>` | Parse to the loop-spec IR and print it as JSON (use to validate syntax). |
+| `loop-run show <file>` | Print the loop's flow as compact ASCII (the "see the shape" view). |
+| `loop-run explain <file>` | Describe the loop in **plain English** — handy for non-experts to check what a `.loop` will actually do. |
 | `loop-run viz <file>` | Write a self-contained HTML schematic of the flow. |
-| `loop-run show <file>` | Print the loop's flow as compact ASCII. |
 | `loop-run ls [dir]` | List every `.loop` under a directory with its one-line shape. |
 | `loop-run live <file>` | Start the live dashboard server (no engine) and stay up; for driving the dashboard from an in-session run. |
 | `loop-run emit <port> '<json>'` | Push one event to a running `live` server (used by the `/loopflow` skill). |
@@ -240,7 +241,7 @@ BMAD flow (discover → design → for each story) as one example method.
 | Line | Meaning |
 |---|---|
 | `goal: <text>` | The objective, in plain language. **Required.** |
-| `done when <predicate>` | How the loop verifies itself (see Predicates). Omit only if a human gate decides completion. |
+| `done when <predicate>` | How the loop verifies itself (see Predicates). **You can list several — all must pass** (a conjunction of tests and evals). Omit only if a human gate decides completion. |
 | `look at: <a>, <b>, and the last failure` | Context the agent reads before acting. Items are file paths or plain-language descriptions (e.g. `the billing form`) — the agent locates the actual files from descriptions before planning. `and the last failure` feeds the previous failure forward. |
 | `allow edits automatically, but ask me before <classes>` | Action policy. Auto classes run unattended; confirm classes pause for you. Classes: `edit`, `migrate`, `push`, `deploy`, `delete`. |
 | `each cycle: plan, then act, then observe` | The repeated steps — any subset of `plan` / `act` / `observe`, in order. |
@@ -255,6 +256,34 @@ BMAD flow (discover → design → for each story) as one example method.
 | `a human reviews before stopping` | A person judges the result before the loop may stop. |
 | `plan from "<file>"` | Read the loop's plan from a file you control (e.g. a hand-written `.md`) instead of having the agent generate it. Omit it and the agent writes the plan (the default). |
 
+### Friendly shorthands
+
+Plain-English synonyms for the lines above — write whichever reads naturally to you. They
+desugar to the exact same loop-spec, so you never lose any power:
+
+| Shorthand | Same as |
+|---|---|
+| `check: pnpm test` | `done when "pnpm test" passes` (a bare value is a shell command) |
+| `check: the skill "review" approves` | `done when the skill "review" approves` (a predicate phrase is parsed as-is) |
+| `verify: …` | same as `check:` |
+| `in: src/cart, src/tax` · `files: …` · `look in: …` · `context: …` | `look at: …` |
+| `when it breaks: …` | `when it fails: …` |
+| `when it gets stuck: …` | `when blocked: …` |
+
+A complete, friendly loop can be as short as:
+
+```loop
+loop "fix the cart total":
+  goal: the cart total is correct with tax
+  in: src/cart, src/tax
+  check: pnpm test cart
+  when it breaks: reflect, then plan again
+  after 6 tries: stop and warn "stuck"
+```
+
+Run `loop-run explain <file>` to read any loop back in plain English and confirm it does
+what you intend.
+
 ### In a stage only
 
 | Line | Meaning |
@@ -268,18 +297,31 @@ done when the test "billing.spec.ts::apostrophe" passes   # a named test
 done when "pnpm test" passes                               # shell command, exit 0 (`succeeds` also works)
 done when "semgrep --severity=high" finds nothing          # shell command, empty stdout
 done when a human confirms "looks right at 375px"          # a human check
-done when the skill "email-review" approves                # a review skill: approved / not
-done when the skill "email-review" scores 8 or more        # a review skill: numeric threshold
+done when the skill "email-review" approves                # an eval: approved / not
+done when the skill "email-review" scores 8 or more        # an eval: numeric threshold
+done when the skill "api-review" scores 8 or more on the output       # an eval of WHAT was produced
+done when the skill "path-review" approves on the trajectory          # an eval of HOW it got there
+  the bar: didn't weaken a test to go green; no writes outside api/   # the rubric the judge scores against
 ```
 
 The command runs in your shell with your privileges (like an npm script). Keep it fast
 and deterministic.
 
-The **skill** predicate bridges an abstract goal to a verifiable one. When "done" isn't a
-test or a command — a good email, a sound design, a sensible go/no-go call — a review skill
-returns an approved/rejected verdict or a 0–10 score, and the loop treats that as its check.
-Build the review skill manually first and confirm it judges well, then wire it in. See
-`examples/skills_memory.loop` and `examples/email_review.loop`.
+#### Tests vs evals
+
+A loop can list **several `done when` lines, and all must pass.** Use this to combine the
+two kinds of verification:
+
+- **Tests** — `test` / command predicates. Deterministic, checked by code.
+- **Evals** — `skill` predicates. A rubric / LM judge for the non-deterministic parts. An
+  eval names its **subject**: `on the output` (the default — judges *what* was produced) or
+  `on the trajectory` (judges *how* the agent got there — its path and tool calls). An
+  indented `the bar:` line states the conditions the judge must score against.
+
+A trajectory eval catches what a green test can't — e.g. an agent that made a test pass by
+weakening it. Pair a test with an eval when "done" means both *it works* and *it was built
+the right way*. Build the review skill manually first and confirm it judges well, then wire
+it in. See `examples/skills_memory.loop` and `examples/email_review.loop`.
 
 ### Config tier (top of file)
 
@@ -289,7 +331,51 @@ run with claude code     # runner / provider (or: `runner claude code`)
 schedule: nightly        # manual · nightly · on push · cron (parsed; run is manual via the CLI)
 target: ./src            # working directory the loop operates in
 notify: slack            # notification destination (reserved)
+each cycle: plan, then act, then observe   # the DEFAULT cycle for every loop in the file
 ```
+
+Anything in the config tier is a **default for every loop in the file**, so you write it
+once instead of repeating it per loop. A `each cycle:` here is inherited by every loop; a
+loop with its own `each cycle:` overrides it. The same lowest-wins cascade governs `git:`
+and `models:`.
+
+#### Project defaults — `loop.config`
+
+To avoid repeating config across *files*, drop a **`loop.config`** (or `.looprc`) at your
+project root. It uses the same config-tier syntax (`each cycle:`, `models:`, a `git:`
+block) and the runner reads it before every run, walking up from the `.loop` file to find
+it. It is the **lowest** tier of the cascade, so a file's own config and a per-loop
+directive both override it.
+
+```loop
+# loop.config — applies to every .loop in the repo
+each cycle: plan, then act, then observe
+models: fast haiku, strong opus
+git:
+  work on a branch
+  commit when the goal is met
+```
+
+**Cascade (lowest wins):** `loop.config` → a file's config tier → a per-loop directive.
+
+### Agentic-engineering features
+
+These add agentic-engineering discipline to Loop. All are optional; a simple loop ignores them.
+
+| Construct | Where | What it does |
+|---|---|---|
+| `rigor: vibe coding \| structured ai-assisted \| agentic engineering` | config tier | The spectrum dial. Under structured/agentic, every loop is **born with** a reflect-on-fail back-edge and a thrash guard unless it sets its own — sensible defaults, no boilerplate. Also enables the "without both [tests and evals]" lint. |
+| `mode: conductor \| orchestrator` | config tier | Supervision posture — conductor (in-session, gates inline) vs orchestrator (async, opens a PR). |
+| `hooks:` block | loop body | Deterministic checks at lifecycle points — `before each cycle` / `after act` / `on commit` / `on push` / `on stop`: `"<cmd>" passes` or `finds nothing`. **A failing hook blocks.** |
+| `observe:` block | config tier | `trace every cycle` / `meter tokens and cost` / `stop and warn if cost exceeds "$N"`. The CLI prints a stop-time **OpEx report** (cycles, reflects, first-pass success). |
+| `sandbox:` block | config tier | Run isolation: `no network access` / `allow egress to "host" only` / `cap cpu at … memory at … time at …`. |
+| `runs as: <identity>` | config tier | An auditable principal for unattended runs. |
+| `examples:` / `knowledge:` | loop body | `examples:` = reference patterns to imitate; `knowledge:` = read-only reference the agent must not edit. With `look at:`/`remember in:`/`use skills:`/`allow…ask`, a loop can declare all six context-engineering parts. |
+| `use tools from the "<server>" server` | loop body | Name MCP servers whose tools the loop may use. |
+| `stages in parallel:` | inside a pipeline | The indented stages run **concurrently** (barrier-join, fail-fast). File-safe parallel edits need a worktree per branch. |
+
+See [`examples/agentic/`](../examples/agentic/) for one file per feature; run `loop-run explain
+<file>` on any of them to read it back in plain English.
 
 ### Git strategy
 

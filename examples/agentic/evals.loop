@@ -1,0 +1,10 @@
+# Tests verify the deterministic parts; evals verify the non-deterministic parts — use both.
+loop "add the refund endpoint":
+  goal: POST /refunds reverses a charge and is safe to ship
+  in: api/refunds.ts, api/charges.ts
+  done when "pnpm test refunds" passes                              # a TEST (deterministic)
+  done when the skill "api-review" scores 8 or more on the output   # an OUTPUT eval
+  done when the skill "path-review" approves on the trajectory       # a TRAJECTORY eval
+    the bar: did not weaken a test to go green; no writes outside api/
+  when it breaks: reflect on whether the test or the path failed, then plan again
+  after 6 tries: stop and warn "cannot satisfy the test and the evals"

@@ -201,14 +201,14 @@ export const VOCABULARY = Object.keys(HOVERS);
 interface LintLoop {
   kind: "loop";
   name: string | null;
-  doneWhen?: unknown;
+  doneWhen?: unknown[];
   humanReviewBeforeStop?: boolean;
   transitions?: Array<{ on: string; threshold?: number; do?: Array<{ action: string }> }>;
 }
 interface LintStage { name: string; loop: LintLoop }
 interface LintPipeline { kind: "pipeline"; name: string; stages: LintStage[] }
 interface LintFlow { kind: "flow"; name: string; steps: unknown[] }
-interface LintFile { definitions: Array<LintLoop | LintPipeline | LintFlow> }
+interface LintFile { definitions: Array<LintLoop | LintPipeline | LintFlow>; config?: { rigor?: string } }
 
 export interface LintWarning {
   line: number; // 0-based source line to attach the squiggle
@@ -226,10 +226,31 @@ function headerLine(lines: string[], kind: "loop" | "stage", name: string | null
   return Math.max(0, j);
 }
 
-function checkLoop(loop: LintLoop, line: number, out: LintWarning[]) {
+function checkLoop(loop: LintLoop, line: number, out: LintWarning[], rigor?: string) {
+  const preds = Array.isArray(loop.doneWhen) ? loop.doneWhen : [];
   // Unverifiable: nothing decides "done" — only a thrash guard or the hard cap can stop it.
-  if (!loop.doneWhen && !loop.humanReviewBeforeStop) {
+  if (!preds.length && !loop.humanReviewBeforeStop) {
     out.push({ line, message: "This loop has no way to verify it's done — add a `done when …` check or `a human reviews before stopping`." });
+  }
+  // "Without both, it is vibe coding": under structured/agentic rigor, a loop that checks one
+  // kind of thing but not the other gets a nudge. (Off by default — only when rigor opts in.)
+  if (rigor === "structured ai-assisted" || rigor === "agentic engineering") {
+    const isEval = (p: unknown): boolean => !!p && typeof p === "object" && (p as any).type === "skill";
+    const hasTest = preds.some((p) => !isEval(p));
+    const hasEval = preds.some((p) => isEval(p));
+    if (hasTest && !hasEval) {
+      out.push({ line, message: "Tests but no eval — add `done when the skill \"…\" approves` (an eval) for the non-deterministic parts." });
+    } else if (hasEval && !hasTest) {
+      out.push({ line, message: "An eval but no test — add a deterministic `done when \"…\" passes` for the parts code can check." });
+    }
+  }
+  // A trajectory eval gates "done" on an LM judging a non-deterministic path; without an explicit
+  // `the bar:` it can wobble run-to-run and cause its own thrash. Nudge toward a rubric.
+  const barlessTrajectoryEval = (Array.isArray(loop.doneWhen) ? loop.doneWhen : []).some(
+    (p): boolean => !!p && typeof p === "object" && (p as any).type === "skill" && (p as any).subject === "trajectory" && !(p as any).bar
+  );
+  if (barlessTrajectoryEval) {
+    out.push({ line, message: "This trajectory eval has no `the bar:` — an LM judging the path can wobble run-to-run; add `the bar: …` with explicit pass conditions." });
   }
   // Self-correcting but unbounded: re-plans on failure with no attempt ceiling.
   const reflects = (loop.transitions ?? []).some((t) => t.on === "fail" && (t.do ?? []).some((d) => d.action === "reflect" || d.action === "plan"));
@@ -242,13 +263,18 @@ function checkLoop(loop: LintLoop, line: number, out: LintWarning[]) {
 /** Structural warnings for a parsed spec. Pure: takes the spec + source lines, returns nudges. */
 export function lint(file: LintFile, lines: string[]): LintWarning[] {
   const out: LintWarning[] = [];
+  const rigor = file.config?.rigor;
+  // The costliest quadrant: an unverified, disposable loop fired off to run unattended.
+  if (rigor === "vibe coding" && (file.config as any)?.mode === "orchestrator") {
+    out.push({ line: 0, message: "`rigor: vibe coding` + `mode: orchestrator` runs an unverified loop unattended — the costliest combo. Add a `done when …` check or raise rigor." });
+  }
   for (const def of file.definitions ?? []) {
     if (def.kind === "pipeline") {
       for (const stage of def.stages ?? []) {
-        checkLoop(stage.loop, headerLine(lines, "stage", stage.name), out);
+        checkLoop(stage.loop, headerLine(lines, "stage", stage.name), out, rigor);
       }
     } else if (def.kind === "loop") {
-      checkLoop(def, headerLine(lines, "loop", def.name), out);
+      checkLoop(def, headerLine(lines, "loop", def.name), out, rigor);
     }
     // flow: nothing to lint here — its referenced stories carry their own checks
   }

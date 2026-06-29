@@ -44,7 +44,52 @@
           "description": "Notification destination (e.g. \"slack\"). Deferred past v1."
         },
         "git": { "$ref": "#/$defs/gitPolicy" },
-        "models": { "$ref": "#/$defs/modelPolicy" }
+        "models": { "$ref": "#/$defs/modelPolicy" },
+        "cycle": {
+          "type": "array",
+          "description": "File-level default cycle (`each cycle: …` at the config tier). Applies to every loop without its own `each cycle:`; a per-loop cycle overrides it. Lowest wins, like git.",
+          "items": {
+            "type": "string",
+            "enum": ["plan", "act", "observe"]
+          },
+          "minItems": 1
+        },
+        "rigor": {
+          "type": "string",
+          "enum": ["vibe coding", "structured ai-assisted", "agentic engineering"],
+          "description": "The spectrum dial — bundles best-practice defaults (a back-edge + thrash guard) over every loop in the file. structured/agentic inject them when a loop omits its own; vibe coding injects nothing."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["conductor", "orchestrator"],
+          "description": "Supervision posture: conductor = in-session/synchronous (gates answered inline); orchestrator = async/reviews-outcomes (opens a PR)."
+        },
+        "observe": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Observability: a per-cycle trace, cost metering, and an optional spend cap.",
+          "properties": {
+            "trace": { "type": "boolean", "description": "Emit a per-cycle trace and a stop-time OpEx report." },
+            "meter": { "type": "boolean", "description": "Meter tokens and cost per cycle (needs a provider that reports usage)." },
+            "costCap": { "type": "string", "description": "Stop and warn if spend exceeds this (e.g. \"$5\")." }
+          }
+        },
+        "sandbox": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Run isolation: where code runs and what it cannot reach.",
+          "properties": {
+            "network": { "type": "string", "enum": ["none", "allowlist"] },
+            "egress": { "type": "array", "items": { "type": "string" } },
+            "cpu": { "type": "string" },
+            "memory": { "type": "string" },
+            "time": { "type": "string" }
+          }
+        },
+        "runsAs": {
+          "type": "string",
+          "description": "Identity the run executes as (`runs as: …`) — an auditable principal for unattended runs."
+        }
       }
     },
     "definitions": {
@@ -108,7 +153,11 @@
             "message": { "type": "string" }
           }
         },
-        "loop": { "$ref": "#/$defs/loop" }
+        "loop": { "$ref": "#/$defs/loop" },
+        "parallelGroup": {
+          "type": "integer",
+          "description": "Stages sharing a parallel-group id run concurrently (`stages in parallel:`)."
+        }
       }
     },
     "loop": {
@@ -126,11 +175,9 @@
           "description": "The objective in plain language."
         },
         "doneWhen": {
-          "description": "The predicate the runtime checks to declare the goal met. Null means the loop relies on a human review to stop.",
-          "oneOf": [
-            { "$ref": "#/$defs/predicate" },
-            { "type": "null" }
-          ]
+          "description": "Verification conditions — ALL must pass (a conjunction of predicates). A test/command predicate is a deterministic check (TESTS); a skill predicate is an eval (EVALS). Empty/absent means the loop relies on a human review to stop.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/predicate" }
         },
         "context": {
           "description": "What the agent may look at before acting (the `look at:` block).",
@@ -143,6 +190,16 @@
               "type": "boolean",
               "description": "Whether \"and the last failure\" was present.",
               "default": false
+            },
+            "knowledge": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Read-only reference material (`knowledge:`) the agent reads but must not edit."
+            },
+            "examples": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Reference patterns to imitate (`examples:`)."
             }
           }
         },
@@ -172,6 +229,11 @@
           },
           "minItems": 1
         },
+        "hooks": {
+          "type": "array",
+          "description": "Deterministic checks bound to lifecycle points (`hooks:`). A failing hook blocks.",
+          "items": { "$ref": "#/$defs/hook" }
+        },
         "also": {
           "type": "array",
           "description": "Extra finishing passes run in order after the goal is met (e.g. \"polish\", \"run a security check\", \"update the docs\"). Lightweight agent passes; promote to a stage when one needs its own verification.",
@@ -180,6 +242,11 @@
         "skills": {
           "type": "array",
           "description": "Named execution skills the loop may invoke during plan/act (e.g. [\"check-weather\", \"analyze-workout\"]). The runner surfaces them as available capabilities to coordinate, instead of one mega-prompt.",
+          "items": { "type": "string" }
+        },
+        "tools": {
+          "type": "array",
+          "description": "MCP servers whose tools the loop may use (`use tools from the \"github\" server`).",
           "items": { "type": "string" }
         },
         "memory": {
@@ -223,6 +290,19 @@
         "models": { "$ref": "#/$defs/modelPolicy" }
       }
     },
+    "hook": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["at", "predicate"],
+      "properties": {
+        "at": {
+          "type": "string",
+          "enum": ["before-cycle", "after-plan", "after-act", "after-observe", "on-commit", "on-push", "on-stop"],
+          "description": "The lifecycle point this check runs at."
+        },
+        "predicate": { "$ref": "#/$defs/predicate" }
+      }
+    },
     "predicate": {
       "type": "object",
       "additionalProperties": false,
@@ -243,6 +323,15 @@
         "minScore": {
           "type": "integer",
           "description": "For type=skill: when present (\"scores N or more\"), the verdict passes only when the skill's numeric score is at least this. Absent means a plain approve/reject."
+        },
+        "subject": {
+          "type": "string",
+          "enum": ["output", "trajectory"],
+          "description": "For type=skill (an eval): what the judge inspects — the produced \"output\" (default) or the \"trajectory\" (the path and tool calls the agent took). Set by `on the output` / `on the trajectory`."
+        },
+        "bar": {
+          "type": "string",
+          "description": "For type=skill (an eval): an inline rubric (`the bar:`) naming the conditions the judge scores against."
         },
         "command": {
           "type": "string",

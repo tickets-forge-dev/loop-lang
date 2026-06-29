@@ -1,0 +1,11 @@
+# Deterministic checks at lifecycle points — a failing hook blocks.
+loop "refactor the token logic":
+  goal: extract the token logic with behavior unchanged
+  in: src/auth
+  done when "pnpm test auth" passes
+  hooks:
+    before each cycle: "pnpm typecheck" passes
+    after act: "pnpm lint" finds nothing
+    on commit: "semgrep --severity=high" finds nothing
+  when it breaks: reflect, then plan again
+  after 6 tries: stop and warn "stuck"

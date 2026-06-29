@@ -87,14 +87,14 @@ test("lint warns on an unverifiable loop (no done when, no human review)", () =>
 
 test("lint warns on a self-correcting loop with no thrash guard", () => {
   const src = 'loop "y":\n  goal: g\n  done when "npm test" passes\n  when it fails: reflect, then plan again';
-  const file = { definitions: [{ kind: "loop", name: "y", doneWhen: { type: "command" }, transitions: [{ on: "fail", do: [{ action: "reflect" }, { action: "plan" }] }] }] };
+  const file = { definitions: [{ kind: "loop", name: "y", doneWhen: [{ type: "command" }], transitions: [{ on: "fail", do: [{ action: "reflect" }, { action: "plan" }] }] }] };
   const w = lint(file, lines(src));
   assert.equal(w.length, 1);
   assert.match(w[0].message, /thrash guard/);
 });
 
 test("lint stays silent on a complete loop", () => {
-  const file = { definitions: [{ kind: "loop", name: "z", doneWhen: { type: "command" }, transitions: [{ on: "fail", do: [{ action: "reflect" }] }, { on: "attempts", threshold: 6, do: [{ action: "stop" }] }] }] };
+  const file = { definitions: [{ kind: "loop", name: "z", doneWhen: [{ type: "command" }], transitions: [{ on: "fail", do: [{ action: "reflect" }] }, { on: "attempts", threshold: 6, do: [{ action: "stop" }] }] }] };
   assert.deepEqual(lint(file, lines('loop "z":')), []);
 });
 
@@ -110,4 +110,42 @@ test("lint produces zero warnings for a flow definition", () => {
   const file = { definitions: [{ kind: "flow", name: "ship", steps: [{ ref: "one.loop", name: "one" }, { ref: "two.loop", name: "two" }] }] };
   const w = lint(file, lines(src));
   assert.deepEqual(w, [], "flow should produce no lint warnings");
+});
+
+test("lint nudges a trajectory eval that lacks `the bar:`", () => {
+  const file = { definitions: [{ kind: "loop", name: "t",
+    doneWhen: [{ type: "skill", skill: "path", subject: "trajectory" }],
+    transitions: [{ on: "attempts", threshold: 5, do: [{ action: "stop" }] }] }] };
+  const w = lint(file, lines('loop "t":'));
+  assert.equal(w.length, 1);
+  assert.match(w[0].message, /the bar:/);
+});
+
+test("lint stays silent on a trajectory eval that has `the bar:`", () => {
+  const file = { definitions: [{ kind: "loop", name: "t",
+    doneWhen: [{ type: "skill", skill: "path", subject: "trajectory", bar: "no test edits" }],
+    transitions: [{ on: "attempts", threshold: 5, do: [{ action: "stop" }] }] }] };
+  assert.deepEqual(lint(file, lines('loop "t":')), []);
+});
+
+test("lint nudges 'without both' under structured/agentic rigor", () => {
+  const file = { config: { rigor: "agentic engineering" },
+    definitions: [{ kind: "loop", name: "x", doneWhen: [{ type: "command" }],
+      transitions: [{ on: "fail", do: [{ action: "reflect" }] }, { on: "attempts", threshold: 6, do: [{ action: "stop" }] }] }] };
+  const w = lint(file, lines('loop "x":'));
+  assert.equal(w.length, 1);
+  assert.match(w[0].message, /Tests but no eval/);
+});
+
+test("lint stays silent on 'without both' when no rigor is set", () => {
+  const file = { definitions: [{ kind: "loop", name: "x", doneWhen: [{ type: "command" }],
+    transitions: [{ on: "fail", do: [{ action: "reflect" }] }, { on: "attempts", threshold: 6, do: [{ action: "stop" }] }] }] };
+  assert.deepEqual(lint(file, lines('loop "x":')), []);
+});
+
+test("lint warns on the vibe+orchestrator quadrant", () => {
+  const file = { config: { rigor: "vibe coding", mode: "orchestrator" }, definitions: [] };
+  const w = lint(file, lines(""));
+  assert.equal(w.length, 1);
+  assert.match(w[0].message, /costliest combo/);
 });

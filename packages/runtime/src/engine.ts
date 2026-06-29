@@ -1,5 +1,5 @@
 import { resolve, dirname, basename } from "node:path";
-import type { Loop, Pipeline, Flow, FlowStep, Definition, Transition, Action, LoopFile } from "@loop-lang/parser";
+import type { Loop, Pipeline, Stage, Flow, FlowStep, Definition, Transition, Action, LoopFile, HookPoint } from "@loop-lang/parser";
 import type { CycleNode, LoopEvent, LoopOutcome, RunOptions, StopReason } from "./types.js";
 import { enumerateItems, labelOf } from "./iterate.js";
 import { resolveGit, isProtected } from "./git.js";
@@ -58,7 +58,12 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
   const eff = resolveModels(opts.modelPolicy, loop.models);
   const pick = (phase: "plan" | "act" | "reflect" | "also") => modelForPhase(eff, phase, opts.cliModel);
 
-  const files = loop.context?.files ?? [];
+  // The agent reads files it may edit plus read-only knowledge and reference examples.
+  const files = [
+    ...(loop.context?.files ?? []),
+    ...(loop.context?.knowledge ?? []).map((k) => `${k} (read-only reference)`),
+    ...(loop.context?.examples ?? []).map((e) => `${e} (a pattern to imitate)`),
+  ];
   const includeLastFailure = loop.context?.includeLastFailure ?? false;
   const autoClasses = loop.policy?.auto ?? [];
   const confirmClasses = loop.policy?.confirm ?? [];
@@ -67,6 +72,8 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
   let lastPlan = "";
   let lastOutput = "";
   let lastActSummary = "";
+  // The captured path of the most recent act — the steps/tool calls a trajectory eval judges.
+  let lastTrajectory = "";
   let attempts = 0;
   // Reflections gathered this run — the last one becomes the memory "lesson".
   const reflections: string[] = [];
@@ -118,11 +125,25 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
       ? ["plan", ...(loop.cycle as CycleNode[])]
       : (loop.cycle as CycleNode[]);
 
+  // Run every hook bound to a lifecycle point. Returns false if any fails (a hook blocks).
+  const runHooks = async (at: HookPoint): Promise<boolean> => {
+    let ok = true;
+    for (const h of loop.hooks ?? []) {
+      if (h.at !== at) continue;
+      const r = await opts.verifier.verify(h.predicate, opts.baseDir);
+      const label = h.predicate.type === "command" ? h.predicate.command : h.predicate.type === "test" ? h.predicate.target : h.predicate.type;
+      emit(opts, { type: "hook", at, detail: label, passed: r.passed });
+      if (!r.passed) ok = false;
+    }
+    return ok;
+  };
+
   const finish = async (satisfied: boolean, reason: StopReason, warn?: string): Promise<LoopOutcome> => {
-    await writeMemory(satisfied, reason);
+    const ok = (await runHooks("on-stop")) && satisfied; // an on-stop hook can veto a clean stop
+    await writeMemory(ok, reason);
     emit(opts, { type: "stop", reason, ...(warn ? { warn } : {}) });
-    emit(opts, { type: "loop-end", name: loop.name, satisfied });
-    return { satisfied, reason, attempts, summary: lastOutput };
+    emit(opts, { type: "loop-end", name: loop.name, satisfied: ok });
+    return { satisfied: ok, reason, attempts, summary: lastOutput };
   };
 
   while (true) {
@@ -130,11 +151,14 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
     if (attempts > hardCap) {
       return finish(false, "hard-cap");
     }
+    // Lifecycle hook: a failing pre-cycle check blocks before any work this round.
+    if (!(await runHooks("before-cycle"))) return finish(false, "blocked", "a before-cycle hook failed");
 
     let blocked = false;
     let passed = false;
     let observeOutput = "";
     let observed = false;
+    let hookBlocked = false;
 
     for (const step of cycleSteps) {
       emit(opts, { type: "node-enter", node: step, attempt: attempts });
@@ -192,46 +216,64 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
           model: pick("act"),
         });
         lastActSummary = res.summary;
+        lastTrajectory = res.trajectory ?? "";
         if (res.blocked) blocked = true;
         emit(opts, { type: "node-exit", node: step, attempt: attempts, ok: !res.blocked, detail: res.summary });
       } else {
-        // observe
-        let v: { passed: boolean; output: string };
-        if (loop.doneWhen?.type === "skill") {
-          // Skill predicate: a review skill judges the goal (approved / score) — the
-          // "bridge the abstract to the verifiable" path, routed to the runner not the shell.
-          if (!opts.runner.runSkill) {
-            throw new Error(
-              `loop "${loop.name ?? ""}" verifies with the skill "${loop.doneWhen.skill}" but the runner has no runSkill`
-            );
+        // observe — every `done when` predicate must pass (a conjunction of TESTS and EVALS).
+        const preds = loop.doneWhen ?? [];
+        let allPassed = preds.length > 0; // no predicate → not satisfiable by a machine check
+        const outputs: string[] = [];
+        for (const pred of preds) {
+          let r: { passed: boolean; output: string };
+          if (pred.type === "skill") {
+            // An eval: a review skill judges the goal (approved / score) — the
+            // "bridge the abstract to the verifiable" path, routed to the runner not the shell.
+            if (!opts.runner.runSkill) {
+              throw new Error(
+                `loop "${loop.name ?? ""}" verifies with the skill "${pred.skill}" but the runner has no runSkill`
+              );
+            }
+            // A trajectory eval judges HOW the agent got there (the captured path);
+            // an output eval judges WHAT it produced (the act summary).
+            const isTrajectory = pred.subject === "trajectory";
+            const sr = await opts.runner.runSkill({
+              skill: pred.skill,
+              goal: loop.goal,
+              context: isTrajectory ? (lastTrajectory || lastActSummary) : lastActSummary,
+              expect: pred.expect,
+              minScore: pred.minScore,
+              subject: pred.subject,
+              bar: pred.bar,
+              baseDir: opts.baseDir,
+            });
+            emit(opts, { type: "skill-verify", skill: pred.skill, passed: sr.passed, detail: sr.detail });
+            r = { passed: sr.passed, output: sr.detail };
+          } else {
+            r = await opts.verifier.verify(pred, opts.baseDir);
           }
-          const r = await opts.runner.runSkill({
-            skill: loop.doneWhen.skill,
-            goal: loop.goal,
-            context: lastActSummary,
-            expect: loop.doneWhen.expect,
-            minScore: loop.doneWhen.minScore,
-            baseDir: opts.baseDir,
-          });
-          emit(opts, { type: "skill-verify", skill: loop.doneWhen.skill, passed: r.passed, detail: r.detail });
-          v = { passed: r.passed, output: r.detail };
-        } else {
-          v = await opts.verifier.verify(loop.doneWhen, opts.baseDir);
+          if (r.output) outputs.push(r.output);
+          if (!r.passed) { allPassed = false; break; } // short-circuit: a conjunction fails on the first miss
         }
         observed = true;
-        passed = v.passed;
-        observeOutput = v.output;
-        lastOutput = v.output;
-        emit(opts, { type: "observe", passed: v.passed, output: v.output });
-        emit(opts, { type: "node-exit", node: step, attempt: attempts, ok: v.passed });
+        passed = allPassed;
+        observeOutput = outputs.join("\n");
+        lastOutput = observeOutput;
+        emit(opts, { type: "observe", passed: allPassed, output: observeOutput });
+        emit(opts, { type: "node-exit", node: step, attempt: attempts, ok: allPassed });
       }
+      // Lifecycle hook: a deterministic check bound to this step. A failure blocks the loop.
+      const afterPoint: HookPoint = step === "plan" ? "after-plan" : step === "act" ? "after-act" : "after-observe";
+      if (!(await runHooks(afterPoint))) { hookBlocked = true; break; }
     }
+    if (hookBlocked) return finish(false, "blocked", `a ${"after"}-step hook failed`);
 
     if (opts.git && resolveGit(opts.gitPolicy, loop.git).commit === "cycle") {
+      if (!(await runHooks("on-commit"))) return finish(false, "blocked", "an on-commit hook failed");
       await gitCommit(opts, `loop: ${loop.name ?? "cycle"} — cycle ${attempts}`);
     }
 
-    const goalMet = loop.doneWhen ? passed : false;
+    const goalMet = loop.doneWhen?.length ? passed : false;
 
     const t = pickTransition(loop.transitions, { blocked, attempts, passed: observed && passed, goalMet });
 
@@ -240,6 +282,7 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
       const stop = await applyActions(t.do, loop, opts, {
         goalMet,
         output: observeOutput,
+        trajectory: lastTrajectory,
         setReflection: (r) => {
           reflection = r;
           reflections.push(r);
@@ -263,7 +306,7 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
       // rejected: keep iterating
       continue;
     }
-    if (!loop.doneWhen && loop.humanPlan && humanPlanApproved) {
+    if (!loop.doneWhen?.length && loop.humanPlan && humanPlanApproved) {
       // plan-only human loop: one approved pass is the deliverable.
       return finish(true, "human-approved");
     }
@@ -279,7 +322,7 @@ async function applyActions(
   actions: Action[],
   loop: Loop,
   opts: RunOptions,
-  ctx: { goalMet: boolean; output: string; setReflection: (r: string) => void }
+  ctx: { goalMet: boolean; output: string; trajectory?: string; setReflection: (r: string) => void }
 ): Promise<LoopOutcome | null> {
   for (const a of actions) {
     switch (a.action) {
@@ -302,6 +345,7 @@ async function applyActions(
           goal: loop.goal,
           focus: a.focus,
           output: ctx.output,
+          trajectory: ctx.trajectory,
           baseDir: opts.baseDir,
           model: modelForPhase(rEff, "reflect", opts.cliModel),
         });
@@ -323,30 +367,53 @@ async function applyActions(
   return null;
 }
 
+/** Run one stage: its gate, its loop, and a story-commit on success. */
+async function runStage(stage: Stage, opts: RunOptions): Promise<LoopOutcome> {
+  emit(opts, { type: "stage-start", name: stage.name });
+  if (stage.gate) {
+    emit(opts, { type: "human", kind: "gate", prompt: stage.gate.message });
+    const ok = await opts.human.gate(stage.gate.message);
+    if (!ok) {
+      emit(opts, { type: "stage-end", name: stage.name, satisfied: false });
+      return { satisfied: false, reason: "blocked", attempts: 0 };
+    }
+  }
+  const outcome = await executeLoopFull(stage.loop, opts);
+  emit(opts, { type: "stage-end", name: stage.name, satisfied: outcome.satisfied });
+  if (outcome.satisfied && opts.git && resolveGit(opts.gitPolicy).commit === "story") {
+    await gitCommit(opts, `loop: story "${stage.name}" satisfied`);
+  }
+  return outcome;
+}
+
 async function executePipeline(pipeline: Pipeline, opts: RunOptions): Promise<LoopOutcome> {
   emit(opts, { type: "pipeline-start", name: pipeline.name });
   let lastAttempts = 0;
-  for (const stage of pipeline.stages) {
-    emit(opts, { type: "stage-start", name: stage.name });
-    if (stage.gate) {
-      emit(opts, { type: "human", kind: "gate", prompt: stage.gate.message });
-      const ok = await opts.human.gate(stage.gate.message);
-      if (!ok) {
-        emit(opts, { type: "stage-end", name: stage.name, satisfied: false });
+  const stages = pipeline.stages;
+  let i = 0;
+  while (i < stages.length) {
+    const grp = stages[i].parallelGroup;
+    // A parallel group (`stages in parallel:`) runs its stages concurrently and barrier-joins.
+    // NOTE: real file-safe parallelism needs a worktree per branch; concurrent edits to one
+    // working tree can collide. The orchestration is here; isolation is the operator's setup.
+    if (grp != null) {
+      const group: Stage[] = [];
+      while (i < stages.length && stages[i].parallelGroup === grp) group.push(stages[i++]);
+      const outcomes = await Promise.all(group.map((s) => runStage(s, opts)));
+      lastAttempts = outcomes[outcomes.length - 1]?.attempts ?? lastAttempts;
+      const failed = outcomes.find((o) => !o.satisfied);
+      if (failed) {
         emit(opts, { type: "pipeline-end", name: pipeline.name, satisfied: false });
-        return { satisfied: false, reason: "blocked", attempts: lastAttempts };
+        return { satisfied: false, reason: failed.reason, attempts: lastAttempts };
       }
-    }
-    const outcome = await executeLoopFull(stage.loop, opts);
-    lastAttempts = outcome.attempts;
-    emit(opts, { type: "stage-end", name: stage.name, satisfied: outcome.satisfied });
-    if (!outcome.satisfied) {
-      // A failing stage halts the rest of the pipeline.
-      emit(opts, { type: "pipeline-end", name: pipeline.name, satisfied: false });
-      return { satisfied: false, reason: outcome.reason, attempts: lastAttempts };
-    }
-    if (opts.git && resolveGit(opts.gitPolicy).commit === "story") {
-      await gitCommit(opts, `loop: story "${stage.name}" satisfied`);
+    } else {
+      const outcome = await runStage(stages[i++], opts);
+      lastAttempts = outcome.attempts;
+      if (!outcome.satisfied) {
+        // A failing stage halts the rest of the pipeline.
+        emit(opts, { type: "pipeline-end", name: pipeline.name, satisfied: false });
+        return { satisfied: false, reason: outcome.reason, attempts: lastAttempts };
+      }
     }
   }
   emit(opts, { type: "pipeline-end", name: pipeline.name, satisfied: true });

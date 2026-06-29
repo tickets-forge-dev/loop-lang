@@ -17,6 +17,7 @@ export type LoopEvent =
   | { type: "memory-read"; file: string; bytes: number }
   | { type: "memory-write"; file: string; bytes: number }
   | { type: "skill-verify"; skill: string; passed: boolean; detail: string }
+  | { type: "hook"; at: string; detail: string; passed: boolean }
   | { type: "human"; kind: "plan" | "review" | "gate" | "confirm" | "ask"; prompt: string; answer?: string }
   | { type: "stop"; reason: StopReason; warn?: string }
   | { type: "loop-end"; name: string | null; satisfied: boolean }
@@ -66,24 +67,32 @@ export interface SkillVerifyInput {
   /** The review skill to invoke. */
   skill: string;
   goal: string;
-  /** The work to judge — typically the last act summary. */
+  /** The work to judge — the act summary for an output eval, the cycle trajectory for a trajectory eval. */
   context: string;
   /** "approve" requires an approving verdict. */
   expect: "approve";
   /** When set, the verdict passes only if the skill's numeric score is at least this. */
   minScore?: number;
+  /** What the eval inspects: the produced "output" (default) or the "trajectory" (path + tool calls). */
+  subject?: "output" | "trajectory";
+  /** Inline rubric (`the bar:`) naming the conditions the judge must score against. */
+  bar?: string;
   baseDir: string;
 }
 
 export interface ActResult {
   summary: string;
   blocked?: boolean;
+  /** The captured trajectory of this act: the steps and tool calls the agent took. Fed to trajectory evals. */
+  trajectory?: string;
 }
 
 export interface ReflectInput {
   goal: string;
   focus?: string;
   output: string;
+  /** The most recent act's trajectory, so a `reflect on the path it took` can see it. */
+  trajectory?: string;
   baseDir: string;
   /** Model alias/id for this call; set by the engine from the model policy. */
   model?: string;

@@ -1,0 +1,22 @@
+# Orchestrator mode — multi-agent, multi-file parallel work.
+mode: orchestrator
+git:
+  work on a branch
+  open a pull request
+
+pipeline "epic: customer refunds":
+  stage "discovery":
+    goal: capture intent as spec.md
+    check: test -s spec.md
+    a human approves before building
+  stage "build":
+    goal: the refunds endpoint works
+    plan from "spec.md"
+    check: pnpm test refunds
+  stages in parallel:
+    stage "docs":
+      goal: docs match the endpoint
+      check: pnpm docs:check
+    stage "perf":
+      goal: p95 under 200ms
+      check: pnpm bench refunds

@@ -118,7 +118,7 @@ function chip(x,y,text,color){var w=7.2*text.length+14;
   return [V("rect",{x:x,y:y,width:w,height:17,rx:8.5,fill:"none",stroke:color,"stroke-width":1})
    +E("text",{x:x+w/2,y:y+12,"text-anchor":"middle",class:"chip",fill:color},esc(text)),w];
 }
-function doneLabel(dw){if(!dw)return "awaiting human";if(dw.type==="test")return "test "+dw.target;if(dw.type==="command")return (dw.expect==="empty"?"empty: ":"")+dw.command;if(dw.type==="skill")return "skill "+dw.skill+(dw.minScore!==undefined?" ≥"+dw.minScore:"");return "human: "+(dw.description||"");}
+function doneLabel(dw){if(!dw)return "awaiting human";if(dw.type==="test")return "test "+dw.target;if(dw.type==="command")return (dw.expect==="empty"?"empty: ":"")+dw.command;if(dw.type==="skill")return "eval "+dw.skill+(dw.minScore!==undefined?" ≥"+dw.minScore:"")+(dw.subject&&dw.subject!=="output"?" ("+dw.subject+")":"");return "human: "+(dw.description||"");}
 function loopRow(loop,ox,oy){
   var s="",cyc=loop.cycle&&loop.cycle.length?loop.cycle:["plan","act","observe"],xs=[],i;
   for(i=0;i<cyc.length;i++)xs.push(ox+i*(NW+GAP));
@@ -128,7 +128,8 @@ function loopRow(loop,ox,oy){
   s+=fwd(xs[cyc.length-1]+NW,midY,stopX);
   s+=E("text",{x:(xs[cyc.length-1]+NW+stopX)/2,y:midY-9,"text-anchor":"middle",class:"sub",fill:"var(--stop)"},"goal met");
   s+=node(stopX,oy,"stop","var(--stop)");
-  s+=E("text",{x:stopX+NW/2,y:oy+NH+15,"text-anchor":"middle",class:"sub"},esc(trunc("done when "+doneLabel(loop.doneWhen),24)));
+  var dw=loop.doneWhen&&loop.doneWhen.length?loop.doneWhen:null,dwMore=dw&&dw.length>1?" +"+(dw.length-1):"";
+  s+=E("text",{x:stopX+NW/2,y:oy+NH+15,"text-anchor":"middle",class:"sub"},esc(trunc("done when "+doneLabel(dw&&dw[0])+dwMore,24)));
   for(i=0;i<cyc.length;i++)s+=node(xs[i],oy,cyc[i],COL[cyc[i]]||"var(--node-br)",cyc[i]);
   var ai=cyc.indexOf("act");
   if(ai>=0&&loop.policy){var px=xs[ai],py=oy+NH+12,a;
