@@ -77,6 +77,8 @@ code.inl{background:var(--panel2); border:1px solid var(--line); border-radius:6
 pre{background:rgba(3,6,12,.55); border:1px solid var(--line); border-left:2px solid var(--fwd);
   border-radius:12px; padding:15px 17px; overflow-x:auto; margin:14px 0; font-size:13px; line-height:1.62; backdrop-filter:blur(6px);}
 pre.sh{border-left-color:var(--muted);}
+pre.tree{border-left-color:var(--reflect); background:rgba(3,6,12,.55); backdrop-filter:blur(6px);}
+pre.tree code{color:var(--ink);} pre.tree .cm{color:var(--muted);}
 /* .loop blocks as standout code cards (titlebar + traffic lights) */
 pre:has(code.loop){position:relative; background:linear-gradient(#0f141d 0 30px, #0a0e16 30px); border:1px solid color-mix(in srgb,var(--fwd) 24%,var(--line)); border-radius:12px; padding:40px 17px 16px; box-shadow:0 16px 40px -22px rgba(0,0,0,.92); backdrop-filter:none;}
 pre:has(code.loop)::before{content:""; position:absolute; top:11px; left:16px; width:10px; height:10px; border-radius:50%; background:#ff5f56; box-shadow:16px 0 #ffbd2e, 32px 0 #27c93f;}
@@ -374,6 +376,25 @@ loop "add API rate limiting":
   <p>From your repo, run the installer. In one step it writes the <code class="inl">/loopflow</code> skill <em>and</em> <code class="inl">AGENTS.md</code> (the full language reference) into the project:</p>
   <pre class="sh"><code>npx @loop-lang/loop init            # install into this repo
 npx @loop-lang/loop init --global   # or: install the /loopflow skill for every repo</code></pre>
+
+  <p>That writes a handful of plain files into your repo &mdash; nothing hidden, all yours to read and edit:</p>
+  <pre class="tree"><code>your-repo/
+&#9500;&#9472; AGENTS.md                     <span class="cm"># the Loop language reference &mdash; every agent reads it</span>
+&#9500;&#9472; CLAUDE.md                     <span class="cm"># pointer so Claude Code knows this repo uses Loop</span>
+&#9500;&#9472; loop.config                   <span class="cm"># settings &mdash; live=false (dashboard off until you opt in)</span>
+&#9500;&#9472; .claude/skills/loopflow/
+&#9474;  &#9492;&#9472; SKILL.md                  <span class="cm"># the /loopflow skill &mdash; author + run loops in chat</span>
+&#9500;&#9472; examples/
+&#9474;  &#9492;&#9472; fix_test.loop             <span class="cm"># a starter loop to run</span>
+&#9492;&#9472; templates/                    <span class="cm"># best-practice starter loops &mdash; copy &amp; edit</span>
+   &#9500;&#9472; README.md                  <span class="cm"># index of the templates</span>
+   &#9500;&#9472; bugfix.loop  feature.loop  brownfield-feature.loop  refactor.loop
+   &#9500;&#9472; cicd-check.loop  security.loop  clean-architecture.loop
+   &#9500;&#9472; test-coverage.loop  review-diff.loop
+   &#9500;&#9472; greenfield-app.loop  load-spec.loop  <span class="cm"># (+ discover, design, story-template)</span>
+   &#9492;&#9472; sprint.yaml  plan.md       <span class="cm"># starter spec data to replace with yours</span></code></pre>
+  <p class="sub" style="margin-top:6px;font-size:13px"><code class="inl">--global</code> puts the skill in <code class="inl">~/.claude/skills/</code> instead (every repo); add <code class="inl">--cursor</code> / <code class="inl">--copilot</code> for those agents' pointer files, or <code class="inl">--no-templates</code> / <code class="inl">--no-example</code> to skip. Nothing is overwritten on re-run unless you pass <code class="inl">--force</code>.</p>
+
   <p>That gives you two things at once. <code class="inl">/loopflow</code> is now available in a Claude Code chat here. And <code class="inl">AGENTS.md</code> sits at the repo root — it <em>travels with the project</em>, so any agent that opens the repo already knows the LoopFlow language; it's the project's persistent memory of how to write a <code class="inl">.loop</code>. (Methods are shared the same way: <code class="inl">use the &lt;X&gt; method</code> pulls in a <code class="inl">.loop</code> preset another repo can reuse.)</p>
 
   <h3>2 · Run your first loop — in a Claude Code chat <span class="badge b-basic">the main way</span></h3>
