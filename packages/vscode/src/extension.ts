@@ -47,27 +47,33 @@ export function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {}
 
+// The bundled best-practice library (synced from the repo's /templates at build).
+// `deps` are the shared support files a multi-file flow needs alongside its entry.
+interface Tmpl { file: string; label: string; blurb: string; deps?: string[] }
+const TEMPLATES: Tmpl[] = [
+  // Spec-driven — a whole app / a written backlog
+  { file: "greenfield-app.loop", label: "greenfield-app", blurb: "Build an app A→Z: discover → design → per-story", deps: ["discover.loop", "design.loop", "story-template.loop", "sprint.yaml", "plan.md"] },
+  { file: "load-spec.loop", label: "load-spec", blurb: "Deliver an existing backlog story by story", deps: ["story-template.loop", "sprint.yaml", "plan.md"] },
+  // Change — build / fix / restructure
+  { file: "feature.loop", label: "feature", blurb: "Ship one feature: build → regression → security → 👤 review" },
+  { file: "brownfield-feature.loop", label: "brownfield-feature", blurb: "Add a feature to an existing codebase without breaking it" },
+  { file: "bugfix.loop", label: "bugfix", blurb: "Fix one bug, proven by a named test" },
+  { file: "refactor.loop", label: "refactor", blurb: "Improve structure, behavior unchanged" },
+  // Quality gates — drive existing checks to green
+  { file: "cicd-check.loop", label: "cicd-check", blurb: "Make every CI check pass locally" },
+  { file: "security.loop", label: "security", blurb: "Security pass before shipping: sast → deps → 👤 secrets" },
+  { file: "clean-architecture.loop", label: "clean-architecture", blurb: "Enforce architecture boundaries — deps point inward" },
+  { file: "test-coverage.loop", label: "test-coverage", blurb: "Raise coverage to a threshold with real tests" },
+  { file: "review-diff.loop", label: "review-diff", blurb: "Review + clean the current branch diff" },
+];
+
 async function newFromTemplate(context: vscode.ExtensionContext): Promise<void> {
   const fs = await import("node:fs/promises");
   const { join } = await import("node:path");
   const templatesDir = join(context.extensionPath, "templates");
 
-  let names: string[];
-  try {
-    const ents = await fs.readdir(templatesDir, { withFileTypes: true });
-    names = ents.filter((d) => d.isDirectory()).map((d) => d.name);
-  } catch {
-    vscode.window.showErrorMessage("Loop: no templates bundled with the extension.");
-    return;
-  }
-  if (names.length === 0) { vscode.window.showErrorMessage("Loop: no templates found."); return; }
-
-  const blurbs: Record<string, string> = {
-    foreach: "Generic: iterate a plan, run a checklist per item",
-    bmad: "BMAD A-to-Z: discover → design → per-story checklist",
-  };
   const pick = await vscode.window.showQuickPick(
-    names.map((n) => ({ label: n, description: blurbs[n] ?? "" })),
+    TEMPLATES.map((t) => ({ label: t.label, description: t.blurb, tmpl: t })),
     { placeHolder: "Choose a Loop template" }
   );
   if (!pick) return;
@@ -76,16 +82,15 @@ async function newFromTemplate(context: vscode.ExtensionContext): Promise<void> 
   if (!ws) { vscode.window.showErrorMessage("Loop: open a folder first."); return; }
 
   const sub = await vscode.window.showInputBox({
-    prompt: "Copy the template into which folder (relative to the workspace)?",
-    value: pick.label,
+    prompt: "Copy into which folder (relative to the workspace)?",
+    value: ".",
   });
   if (sub === undefined) return;
 
-  const srcDir = join(templatesDir, pick.label);
   const destDir = join(ws.uri.fsPath, sub);
   await fs.mkdir(destDir, { recursive: true });
 
-  const files = await fs.readdir(srcDir);
+  const files = [pick.tmpl.file, ...(pick.tmpl.deps ?? [])];
   let copied = 0;
   let skipped = 0;
   for (const f of files) {
@@ -96,18 +101,19 @@ async function newFromTemplate(context: vscode.ExtensionContext): Promise<void> 
       const ans = await vscode.window.showWarningMessage(`${f} already exists in ${sub}. Overwrite?`, "Overwrite", "Skip");
       if (ans !== "Overwrite") { skipped++; continue; }
     }
-    await fs.copyFile(join(srcDir, f), dest);
-    copied++;
+    try {
+      await fs.copyFile(join(templatesDir, f), dest);
+      copied++;
+    } catch {
+      vscode.window.showWarningMessage(`Loop: template file "${f}" is missing from the extension bundle.`);
+    }
   }
 
-  vscode.window.showInformationMessage(`Loop: copied ${copied} file(s) to ${sub}${skipped ? `, skipped ${skipped}` : ""}.`);
+  vscode.window.showInformationMessage(`Loop: copied ${copied} file(s) to ${sub}${skipped ? `, skipped ${skipped}` : ""}. Edit the # TODO lines before running.`);
 
   // Open the entry .loop so the user lands on the thing to run.
-  const entry = files.find((f) => /^(epic|deliver)\.loop$/.test(f)) ?? files.find((f) => f.endsWith(".loop"));
-  if (entry) {
-    const doc = await vscode.workspace.openTextDocument(join(destDir, entry));
-    await vscode.window.showTextDocument(doc);
-  }
+  const doc = await vscode.workspace.openTextDocument(join(destDir, pick.tmpl.file));
+  await vscode.window.showTextDocument(doc);
 }
 
 /** ▶ Run lens above every loop/pipeline definition. */

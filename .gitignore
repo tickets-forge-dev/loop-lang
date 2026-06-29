@@ -12,3 +12,6 @@ packages/cli/assets/
 packages/cli/AGENTS.md
 packages/cli/.claude/
 .vercel
+
+# Synced from the repo template library at build (single source of truth: /templates)
+packages/vscode/templates/

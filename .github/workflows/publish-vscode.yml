@@ -1,0 +1,27 @@
+name: Publish VS Code extension
+
+# Manual, vscode-only publish — decoupled from the tag-driven npm release so it
+# never tries to republish the @loop-lang/* libs (which fail on a duplicate
+# version). Bump packages/vscode/package.json `version`, then run this from the
+# Actions tab. Uses the same VSCE_PAT secret as release.yml.
+on:
+  workflow_dispatch:
+
+jobs:
+  vscode:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build           # build all workspaces so parser/runtime/viz types exist
+      - run: npm run build -w loop-vscode   # syncs the template library + bundles
+      - run: npx --yes @vscode/vsce@latest publish --no-dependencies
+        working-directory: packages/vscode
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
