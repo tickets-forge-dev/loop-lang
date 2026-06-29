@@ -223,12 +223,28 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
 <main>
 <header class="hero">
   <h1>Stop babysitting the agent.</h1>
-  <div class="lede">Write the goal <em>once</em> — the loop plans, acts, reflects on red, and stops only when the check is green, at the gates you set. <a href="workshop.html" style="color:var(--fwd);font-weight:700;">Hands-on? → Workshop 🛠️</a> · <a href="game.html" style="color:var(--gate);font-weight:700;">Or play → LoopFlow Lab 🎮</a></div>
+  <div class="lede">Write the goal <em>once</em> — the loop plans, acts, reflects on red, and stops only when the check is green, at the gates you set.</div>
   <p class="sub">LoopFlow is a small natural-language DSL for <strong>loop engineering</strong>. A <code class="inl">.loop</code> file describes a self-correcting, human-gated coding workflow — its objective, the context it may read, the actions it may take, how it verifies itself, and when it stops. This page teaches the whole language from the first line to full A-to-Z pipelines, every section grounded in a real example you can run.</p>
 
   <div class="pane term" style="margin-top:18px">
     <div class="ph">/loopflow run rate-limit.loop<span class="dots">● ● ●</span></div>
-    <div class="termbody" id="agentterm"></div>
+    <div class="termbody" style="height:auto">
+      <div class="ln tl-u">❯ /loopflow run rate-limit.loop</div>
+      <div class="ln tl-dim">  goal: requests are rate-limited per API key</div>
+      <div class="ln tl-plan">↻ cycle 1 · plan → act → observe</div>
+      <div class="ln tl-tool">● Bash  pnpm test rate-limit</div>
+      <div class="ln tl-bad">   ✗ 2 failing: resets-after-window, per-key-isolation</div>
+      <div class="ln tl-plan">~ reflect: the window resets per key, not globally</div>
+      <div class="ln tl-tool">● Edit src/api/limiter.ts</div>
+      <div class="ln tl-plan">↻ cycle 2 · plan → act → observe</div>
+      <div class="ln tl-tool">● Bash  pnpm test rate-limit</div>
+      <div class="ln tl-ok">   ✓ all green — done-when satisfied</div>
+      <div class="ln tl-tool">● Bash  git checkout -b rate-limiting</div>
+      <div class="ln tl-gate">⛐ gate: open a pull request?  ▸ approved</div>
+      <div class="ln tl-tool">● Bash  git push origin rate-limiting · gh pr create</div>
+      <div class="ln tl-ok">◼ done — PR #128 opened, never touched main</div>
+      <div class="ln tl-dim">— you wrote the goal once; the loop did the rest.</div>
+    </div>
   </div>
   <p class="cap" style="margin:10px 0 6px;text-align:center">↓ the one <code class="inl">.loop</code> that drove the run above — the whole job, written once</p>
 
@@ -913,43 +929,6 @@ live=true            # /loopflow shows the live dashboard during in-session runs
     });
   }, {rootMargin:"-15% 0px -75% 0px"});
   document.querySelectorAll("section[id]").forEach(function(s){ obs.observe(s); });
-})();
-
-// ---- animated agent terminal: human types, agent streams ----
-(function(){
-  var el=document.getElementById('agentterm'); if(!el) return;
-  var T=[
-    {c:'tl-u',t:'❯ /loopflow run rate-limit.loop'},
-    {c:'tl-dim',t:'  goal: requests are rate-limited per API key'},
-    {c:'tl-plan',t:'↻ cycle 1 · plan → act → observe'},
-    {c:'tl-tool',t:'● Bash  pnpm test rate-limit'},
-    {c:'tl-bad',t:'   ✗ 2 failing: resets-after-window, per-key-isolation'},
-    {c:'tl-plan',t:'~ reflect: the window resets per key, not globally'},
-    {c:'tl-tool',t:'● Edit src/api/limiter.ts'},
-    {c:'tl-plan',t:'↻ cycle 2 · plan → act → observe'},
-    {c:'tl-tool',t:'● Bash  pnpm test rate-limit'},
-    {c:'tl-ok',t:'   ✓ all green — done-when satisfied'},
-    {c:'tl-tool',t:'● Bash  git checkout -b rate-limiting'},
-    {c:'tl-gate',t:'⛐ gate: open a pull request?  ▸ approved'},
-    {c:'tl-tool',t:'● Bash  git push origin rate-limiting · gh pr create'},
-    {c:'tl-ok',t:'◼ done — PR #128 opened, never touched main'},
-    {c:'tl-dim',t:'— you wrote the goal once; the loop did the rest.'}
-  ];
-  var i=0, cur;
-  function restart(){ el.innerHTML=''; i=0; startLine(); }
-  function blockCursor(){ var c=document.createElement('span'); c.className='tcur'; return c; }
-  function startLine(){
-    if(i>=T.length){ setTimeout(restart, 5000); return; }
-    cur=document.createElement('div'); cur.className='ln '+T[i].c; el.appendChild(cur);
-    if(T[i].c==='tl-u'){ var cursor=blockCursor(); cur.appendChild(cursor); typeOut(T[i].t, 0, cursor); }
-    else { cur.textContent=T[i].t; el.scrollTop=el.scrollHeight; i++; setTimeout(startLine, 430); }
-  }
-  function typeOut(text, j, cursor){
-    if(j>=text.length){ cursor.remove(); el.scrollTop=el.scrollHeight; i++; setTimeout(startLine, 780); return; }
-    cursor.insertAdjacentText('beforebegin', text.charAt(j)); el.scrollTop=el.scrollHeight;
-    setTimeout(function(){ typeOut(text, j+1, cursor); }, 58);
-  }
-  startLine();
 })();
 
 </script>
