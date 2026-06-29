@@ -6,7 +6,17 @@ Versions track the `@loop-lang/loop` installer package.
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-06-29
+
+> `@loop-lang/loop` 0.6.0 · `@loop-lang/{parser,runtime,stdlib,viz}` 0.3.0 · `loop-vscode` 0.4.0
+
 ### Added
+- **Agentic-engineering constructs** — new `.loop` vocabulary for rigor and
+  observability: trajectory `evals` (with a `the bar:` threshold), an `observe:` block
+  that prints an OpEx token-burn report after a run, and `rigor` levels
+  (structured / agentic), with worked example loops under `examples/agentic/`. New
+  `loop-run explain <file>` prints a plain-English view of a loop. The tutorial and the
+  keyword reference document the additions.
 - `demo.loop` — a copy-and-edit sample pipeline (plan → implement → ship) at the
   repo root for the README/tutorial.
 
