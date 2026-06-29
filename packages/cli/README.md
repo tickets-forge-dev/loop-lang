@@ -80,7 +80,8 @@ place, never duplicated.
 - **Claude Code:** open a chat in the repo → `/loopflow run examples/fix_test.loop`, or just
   describe the work and let the skill write the `.loop`.
 - **Any agent:** it reads `AGENTS.md` and authors + runs loops the same way.
-- **Headless:** install the full runtime to run loops from the CLI with `loop run <file>`.
+- **Headless:** install the full runtime to run loops from the CLI with `loop run <file>`
+  (add `--live` for a real-time browser dashboard of the run).
 
 ## Learn more
 

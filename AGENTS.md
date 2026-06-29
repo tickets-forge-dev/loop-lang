@@ -38,6 +38,23 @@ high-leverage questions and offering defaults for the rest: (1) the **goal**;
 never push to `main`; ask if they want a PR or a worktree). Offer the defaults
 inline so a confident user can accept everything at once.
 
+### Start from a template when one fits
+
+This repo ships a library of **best-practice starter loops** in [`templates/`](./templates/)
+(see [`templates/README.md`](./templates/README.md)). When the user's request matches one,
+**reach for it first** — copy it, fill in its `# TODO` lines (test commands, paths), and
+adapt — instead of authoring from a blank file. They cover the everyday jobs:
+
+- **Spec-driven:** `greenfield-app.loop` (whole app, A-to-Z), `load-spec.loop` (deliver an
+  existing `plan.md` + `sprint.yaml` backlog story by story) — with `discover.loop`,
+  `design.loop`, `story-template.loop`, and starter `sprint.yaml`/`plan.md`.
+- **Change:** `feature.loop`, `brownfield-feature.loop`, `bugfix.loop`, `refactor.loop`.
+- **Quality gates:** `cicd-check.loop`, `security.loop`, `clean-architecture.loop`,
+  `test-coverage.loop`, `review-diff.loop`.
+
+Each is heavily commented and verified to parse. Still interview the user for the specifics
+(goal, the real `done when`, what to gate) — the template is the skeleton, not the answer.
+
 ## Vocabulary (the whole language)
 
 ```
@@ -293,6 +310,25 @@ flow, show the file chain. `loop-run ls` lists every loop in the repo.
   verify with `done when`, pause at human gates).
 - `loop-run show file.loop` — print the loop's flow as compact ASCII (and `loop-run ls` to list them).
 - `loop-run viz file.loop` — open a visual HTML schematic of the flow.
+
+### Live visual — opt-in via `loop.config`
+
+The in-session dashboard is **off by default**. Before running a loop **in this session**,
+read `loop.config` at the repo root: only if it has `live=true` do you start the dashboard
+and drive it as you narrate. With `live=false` (the default written by `loop init`) or no
+config, run normally in the chat — don't open anything, don't ask. (The headless
+`loop-run run <file> --live` flag below is independent of this config.) When enabled:
+
+- `loop-run live file.loop` — start the dashboard server (opens the browser, prints
+  `LOOP_LIVE_PORT=<port>`), run it in the **background**, keep the port.
+- `loop-run emit <port> '<event-json>'` — push one event per narrated step so the browser
+  animates in real time: the active cycle node pulses, flow steps light up, and a
+  `for each` (sprint) progress bar fills item by item — the user always sees where in the
+  loop and where in the plan the run is.
+- `loop-run run file.loop --live` — headless alternative: the engine itself streams every
+  event to the browser (no manual `emit`), gates answered in the terminal.
+
+The `/loopflow` skill has the full event cheat-sheet for the in-session push protocol.
 
 ## Authoring checklist
 

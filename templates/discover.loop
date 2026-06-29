@@ -1,0 +1,69 @@
+# ============================================================================
+# discover.loop — STEP 1 of the greenfield A-to-Z build (see greenfield-app.loop)
+# ============================================================================
+#
+# WHAT THIS IS
+#   The first loop in building a whole app from nothing. Its job is to turn a
+#   vague idea in someone's head into a concrete, machine-readable backlog:
+#   a `sprint.yaml` with a `stories:` list that the rest of the flow iterates.
+#
+# HOW "DISCOVERY" ACTUALLY HAPPENS  (read this — it's the non-obvious part)
+#   Discovery is an IN-CHAT INTERVIEW. When you run this loop in conversation
+#   (/loopflow run), the agent asks you questions — what are we building, who
+#   is it for, what are the must-have stories, what's out of scope — and writes
+#   your answers into sprint.yaml. The conversation is the "act"; the file is
+#   the product.
+#
+#   The loop is DONE when the ARTIFACT EXISTS, not when the chat goes quiet.
+#   `done when "test -s sprint.yaml" passes` checks that sprint.yaml is a
+#   non-empty file on disk. That artifact check — not the vibe of the
+#   conversation — is what flips this loop to "done". A long, friendly chat
+#   that never writes the file is NOT done; a terse one that produces a good
+#   sprint.yaml IS. Point the check at a real schema validator (see the TODO
+#   below) if you want stricter gating than "the file is non-empty".
+#
+# WHY A LOOP AND NOT A ONE-SHOT PROMPT
+#   Interviews don't converge on the first try. You'll add a story, cut one,
+#   re-scope an acceptance criterion. The loop lets the agent re-plan after each
+#   round (reflect-on-fail) and keeps asking until the backlog is real and the
+#   file is written — without spinning forever (the thrash guard stops it).
+
+loop "discover":
+  # The objective, in plain language. The agent reads this as its north star.
+  goal: interview the user about the app, then capture the result as a sprint.yaml with a stories list (each story tagged with its epic, a title, and an acceptance criterion)
+
+  # Context the agent reads before planning each cycle. Start it from whatever
+  # already exists — a brief, notes, a README — so the interview builds on real
+  # input instead of starting cold. "the last failure" feeds the reflect step.
+  # TODO: point this at your real source material (docs/, a brief, a Notion export…).
+  look at: docs, any product brief or notes in the repo, and the last failure
+
+  # Writing a YAML backlog is cheap and fully reversible (it's just a file in
+  # the repo, under version control), so let the agent edit it without gating.
+  allow edits automatically
+
+  # The repeated movement: PLAN the next question / file edit, ACT (ask the
+  # user in chat, then write sprint.yaml), OBSERVE (run the done-when check).
+  each cycle: plan, then act, then observe
+
+  # THE GATE THAT DEFINES DONE: a non-empty sprint.yaml exists on disk.
+  # This is an artifact check, deliberately decoupled from the conversation.
+  # TODO (optional, stricter): swap for a schema check so "done" means a VALID
+  #   backlog, not just a present one, e.g.:
+  #   done when "python -c \"import yaml,sys; d=yaml.safe_load(open('sprint.yaml')); sys.exit(0 if d.get('stories') else 1)\"" passes
+  done when "test -s sprint.yaml" passes
+
+  # Self-correction: if the file is missing/empty/thin, turn that into the next
+  # plan instead of just retrying blind — e.g. ask the missing question.
+  when it fails: reflect on what the backlog is still missing, then plan again
+
+  # A human (you, in the interview) signs off that the captured backlog truly
+  # reflects the intent before discovery hands off to design. Everything
+  # downstream — design.md and every story build — derives from this file, so
+  # it's worth one explicit confirmation here.
+  a human reviews before stopping
+
+  # Thrash guard: never loop forever on an interview. If it can't land a usable
+  # sprint.yaml in a handful of rounds, stop and get a human to unstick it.
+  # TODO: tune the try count to how much back-and-forth your discovery needs.
+  after 5 tries: stop and warn "discovery isn't converging — capture the backlog by hand and re-run from design"

@@ -177,6 +177,21 @@ Describe work and it writes the `.loop`; name a `.loop` file and it runs the loo
 human gates right in the chat. Copy `.claude/skills/loopflow/` to `~/.claude/skills/` to use it
 in any repo (it's already active inside this one).
 
+## Watch it run — live dashboard
+
+A real-time browser view of a run, showing the loop's **actual structure** as a turn-by-turn
+route (Waze-style): where you are, the steps ahead, human gates, and for-each sprints listed
+by item title with live progress.
+
+```
+loop-run run file.loop --live      # headless: engine streams every step to the browser
+/loopflow run file.loop            # in-session: the skill offers the dashboard, then drives it
+```
+
+When you run a loop via `/loopflow`, the skill asks if you want the dashboard and, on yes,
+opens it and updates it as each step happens — pipeline stages, flow steps, and sprint stories
+filling in as the loop progresses.
+
 ## Project layout
 
 | Package | Purpose |
@@ -185,7 +200,7 @@ in any repo (it's already active inside this one).
 | `@loop-lang/runtime` | walks a spec, drives Claude Code, emits a live trace |
 | `@loop-lang/vscode` | highlight, formatter, ▶ Play CodeLens, live gutter trace |
 | `@loop-lang/stdlib` | `BMAD.loop` + starter presets |
-| `@loop-lang/viz` | `loop-run viz file.loop` → self-contained HTML schematic (the cycle + reflect back-edge) |
+| `@loop-lang/viz` | `loop-run viz file.loop` → self-contained HTML schematic; also the live dashboard (`--live`) |
 | `spec/loop-spec.schema.json` | the open IR contract |
 
 ## Is this just another &lt;X&gt;?

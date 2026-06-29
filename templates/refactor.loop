@@ -1,0 +1,55 @@
+# refactor.loop
+# TEACHES: a SAFE refactor — improve the structure of working code while its
+# observable behavior stays exactly the same.
+#
+# The core idea: a refactor has no new feature and no bug fix, so there is
+# nothing new to test. That means the EXISTING test suite is your safety net.
+# If the whole suite was green before and is still green after, behavior is
+# unchanged — that's the no-regression proof. So the finish line here is the
+# FULL suite passing, not one narrow test.
+#
+# Ground rules baked into this loop:
+#   - No new dependencies. A refactor reshapes what's there; it doesn't add libs.
+#   - No behavior change. Same inputs -> same outputs, same side effects.
+#   - Tests are the contract. If a test has to change, the behavior changed —
+#     that's a red flag, so a human reviews before this loop is allowed to stop.
+
+loop "refactor for structure without changing behavior":
+  goal: the target code is cleaner and better-structured, with identical behavior and the full test suite still green
+
+  # THE SAFETY NET: the entire suite must pass (exit 0). Running everything —
+  # not a single test — is what proves the refactor didn't regress a neighbor.
+  # TODO: replace with your project's full test command, e.g.
+  #   "pnpm test" | "npm test" | "yarn test" | "pytest" | "go test ./..." | "cargo test"
+  done when "pnpm test" passes
+
+  # Scope the work to the code being restructured plus its tests, and feed the
+  # last failure back in so the agent learns what its change broke.
+  # TODO: point this at the actual module(s) you're refactoring and their tests.
+  look at: the code being refactored, its tests, and the last failure
+
+  # Let the agent restructure freely, but keep irreversible / scope-expanding
+  # actions human-gated. Adding a dependency is OUT OF BOUNDS for a refactor —
+  # gate it so the loop can't quietly pull in a new package to "simplify" things.
+  allow edits automatically, but ask me before adding dependencies, migrations, or pushes
+
+  each cycle: plan, then act, then observe
+
+  # When the suite goes red, the refactor changed behavior somewhere. Reflect on
+  # WHAT behavior changed (which test broke and what contract it encodes) before
+  # trying again — that's how a structural change gets walked back to green
+  # instead of the loop papering over it.
+  when it fails: reflect on what behavior changed and which test caught it, then plan again
+
+  # Stop only when the goal is met and the whole suite is green.
+  when it passes and the goal is met: stop
+
+  # HUMAN GATE: even with a green suite, a person eyes the diff before stopping.
+  # A refactor should be a pure restructuring — this is where someone confirms
+  # no behavior shifted and no test was loosened to force the green.
+  a human reviews before stopping
+
+  # THRASH GUARD: if six attempts can't land a clean, behavior-preserving
+  # restructure, the refactor is bigger than a loop should swallow — stop and
+  # surface it to a human instead of spinning.
+  after 6 tries: stop and warn "refactor still failing after 6 tries — behavior may have drifted; needs a human"

@@ -1,0 +1,90 @@
+# templates/cicd-check.loop
+# ─────────────────────────────────────────────────────────────────────────────
+# Drive CI to GREEN — a fail-fast pipeline of fast gates that FIXES failures.
+#
+# This is a `pipeline`: a sequence of stages that run IN CI ORDER and fail-fast.
+# Each stage is a self-correcting loop that doesn't just *report* a failing
+# check — it keeps planning, editing, and re-running until that check passes.
+# The next stage only starts once the current one is green, so you never burn
+# tokens type-checking code that doesn't even lint, or testing code that doesn't
+# type-check. Same order your CI runs, cheapest gate first:
+#
+#     lint  →  typecheck  →  test  →  build
+#
+# Why this order? It's the classic fast-feedback ladder: lint is milliseconds,
+# typecheck is seconds, the test suite is slower, and a full build is slowest.
+# Catching a problem at the cheapest stage that can catch it is the whole point
+# of "fail-fast" — and it mirrors what your CI does, so going green here means
+# going green in CI.
+#
+# Each stage shares the same shape:
+#   • each cycle: plan, then act, then observe   — look at the failure, fix it, re-check
+#   • done when "<cmd>" passes                   — the REAL gate: exit 0 = green
+#   • when it fails: reflect on the error output, then plan again  — self-correct
+#   • after N tries: stop and warn "<msg>"       — thrash guard, never spin forever
+#
+# HOW TO USE THIS TEMPLATE:
+#   1. Replace every "# TODO:" command with YOUR project's real CI command.
+#   2. Tune each `look at:` to point at the files/config that stage cares about.
+#   3. Tune the `after N tries` limits to taste (cheap gates can afford more).
+#   4. Validate:  loop-run show templates/cicd-check.loop
+#      Run it:    loop-run run  templates/cicd-check.loop
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Config tier: safe git defaults ──────────────────────────────────────────
+# Work on a branch and commit only once the whole pipeline is green; never push.
+# Pushing/opening a PR is left to you — an autonomous CI-fixer should not be the
+# thing that puts code on a remote. (Loop NEVER pushes to main/master anyway.)
+git:
+  work on a branch           # TODO: or `work in place` if you're already on a fix branch
+  commit when the goal is met
+  do not push                # flip to `push when done` / `open a pull request` only if you trust it
+
+pipeline "ci: drive every check to green":
+
+  # 1. LINT — cheapest gate first. Style, formatting, and lint-rule violations.
+  #    Fix lint errors (and autofixable warnings) until the linter exits clean.
+  #    Edits run automatically; this is low-risk, mechanical cleanup.
+  stage lint:
+    goal: the linter reports zero errors across the codebase
+    look at: the lint config (eslint/ruff/etc.) and the files the linter flags, and the last failure
+    allow edits automatically
+    each cycle: plan, then act, then observe
+    done when "npm run lint" passes              # TODO: your lint command (e.g. eslint . / ruff check . / pnpm lint)
+    when it fails: reflect on the error output, then plan again
+    after 8 tries: stop and warn "lint won't go green — a rule or config likely needs a human"
+
+  # 2. TYPECHECK — now that it lints, make the types sound. Fix type errors
+  #    until the checker is clean. Only runs once lint is green (fail-fast).
+  stage typecheck:
+    goal: the type checker reports no type errors
+    look at: the files named in the type errors and their imports, and the last failure
+    allow edits automatically
+    each cycle: plan, then act, then observe
+    done when "npm run typecheck" passes         # TODO: your typecheck command (e.g. tsc --noEmit / mypy . / pnpm typecheck)
+    when it fails: reflect on the error output, then plan again
+    after 6 tries: stop and warn "typecheck stuck — a type model may need a human decision"
+
+  # 3. TEST — with types sound, drive the test suite green. Fix the code (or the
+  #    test, when the test is wrong) until every test passes. Slower gate, so a
+  #    tighter try-budget keeps it from grinding.
+  stage test:
+    goal: the full test suite passes with no failing tests
+    look at: the failing tests and the code under test, and the last failure
+    allow edits automatically
+    each cycle: plan, then act, then observe
+    done when "npm test" passes                  # TODO: your test command (e.g. jest / vitest run / pytest / pnpm test)
+    when it fails: reflect on the error output, then plan again
+    after 5 tries: stop and warn "tests still failing — needs a human to look at the failure"
+
+  # 4. BUILD — the final, slowest gate. Everything lints, types, and tests; now
+  #    make sure it actually compiles/bundles for production. Fix build errors
+  #    until the build succeeds. Green here means green in CI.
+  stage build:
+    goal: the production build completes successfully with no errors
+    look at: the build config and the files named in build errors, and the last failure
+    allow edits automatically
+    each cycle: plan, then act, then observe
+    done when "npm run build" passes             # TODO: your build command (e.g. vite build / next build / pnpm build / make)
+    when it fails: reflect on the error output, then plan again
+    after 5 tries: stop and warn "build won't complete — needs a human"

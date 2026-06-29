@@ -3,8 +3,11 @@
 // agent can author + run .loop files. Running loops happens in your agent (the
 // /loopflow skill) or headless via the full @loop-lang/runtime CLI.
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { init } from "./init.mjs";
+
+const require = createRequire(import.meta.url);
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ASSETS = join(here, "..", "assets");
@@ -13,6 +16,7 @@ const HELP = `loop — install Loop into your repo so any agent can author + run
 
 usage:
   loop init [options]      scaffold Loop into the current repo
+  loop version             print installed version
   loop help                show this
 
 init options:
@@ -20,6 +24,7 @@ init options:
   --global         install the /loopflow skill into ~/.claude/skills (done automatically on \`npm install -g\`)
   --no-skill       don't install the Claude Code /loopflow skill
   --no-example     don't write examples/fix_test.loop
+  --no-templates   don't write the templates/ starter loops (written by default)
   --no-claude-md   don't write the CLAUDE.md pointer (written by default)
   --cursor         also write .cursor/rules/loop.md
   --copilot        also write .github/copilot-instructions.md
@@ -42,6 +47,12 @@ async function main(argv) {
     return;
   }
 
+  if (cmd === "version" || cmd === "--version" || cmd === "-v") {
+    const { version } = require("../package.json");
+    console.log(`@loop-lang/loop v${version}`);
+    return;
+  }
+
   if (cmd === "init") {
     const agents = [];
     if (flag(argv, "--all-agents")) agents.push("claude", "cursor", "copilot");
@@ -58,6 +69,7 @@ async function main(argv) {
       skill,
       agents,
       example: !flag(argv, "--no-example"),
+      templates: !flag(argv, "--no-templates"),
       force: flag(argv, "--force"),
     }, ASSETS);
 

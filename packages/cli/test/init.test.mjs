@@ -47,9 +47,35 @@ test("init merges into an existing AGENTS.md instead of clobbering it", async ()
 
 test("init respects skill:none and example:false", async () => {
   const dir = await fresh();
-  await init(dir, { skill: "none", agents: [], example: false }, ASSETS);
+  await init(dir, { skill: "none", agents: [], example: false, templates: false }, ASSETS);
   assert.equal(existsSync(join(dir, ".claude")), false, "no skill");
   assert.equal(existsSync(join(dir, "examples")), false, "no example");
+  assert.equal(existsSync(join(dir, "templates")), false, "no templates");
+});
+
+test("init writes the templates/ starter loops by default", async () => {
+  const dir = await fresh();
+  await init(dir, { skill: "none", agents: [], example: false }, ASSETS);
+  assert.ok(existsSync(join(dir, "templates", "README.md")), "templates README");
+  assert.ok(existsSync(join(dir, "templates", "bugfix.loop")), "a starter template");
+  assert.ok(existsSync(join(dir, "templates", "clean-architecture.loop")), "clean-architecture template");
+});
+
+test("init writes loop.config with live=false by default", async () => {
+  const dir = await fresh();
+  await init(dir, { skill: "none", agents: [], example: false }, ASSETS);
+  assert.ok(existsSync(join(dir, "loop.config")), "loop.config written");
+  const cfg = await readFile(join(dir, "loop.config"), "utf8");
+  assert.match(cfg, /^live=false$/m, "live=false default");
+});
+
+test("init does not clobber an edited loop.config (unless --force)", async () => {
+  const dir = await fresh();
+  await writeFile(join(dir, "loop.config"), "live=true\n");
+  await init(dir, { skill: "none", agents: [], example: false }, ASSETS);
+  assert.equal(await readFile(join(dir, "loop.config"), "utf8"), "live=true\n", "user value preserved");
+  await init(dir, { skill: "none", agents: [], example: false, force: true }, ASSETS);
+  assert.match(await readFile(join(dir, "loop.config"), "utf8"), /^live=false$/m, "force resets to default");
 });
 
 test("pointer mentions the skill only when one is installed", () => {

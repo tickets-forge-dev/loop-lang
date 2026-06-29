@@ -1,0 +1,33 @@
+# =============================================================================
+# sprint.yaml — the machine-readable backlog `for each` iterates over
+# =============================================================================
+#
+# This is DATA, not a .loop file — there is nothing to parse with loop-run.
+# load-spec.loop reads the `stories:` list below and runs story-template.loop
+# once per entry; each entry's text (epic + title + acceptance) becomes the
+# context handed to that template — it tells the loop what to build.
+#
+# `for each` iterates ONE level, so there is no nested "epics" tree here:
+# each story carries its own `epic:` field, and that epic name rides into the
+# story's context alongside the title and acceptance criteria.
+#
+# The entries below are a STARTER (an auth-style example). Replace them with the
+# stories from YOUR plan.md — keep the three keys on every story:
+#   epic:        which epic / feature area this story belongs to
+#   title:       the one-line "what" of the story
+#   acceptance:  the testable "done" — phrase it so it maps to a real assertion,
+#                because story-template.loop's `done when` test is what proves it
+# =============================================================================
+
+stories:
+  - epic: Authentication
+    title: User can log in
+    acceptance: a registered user logs in with email + password and receives a session
+
+  - epic: Authentication
+    title: User can sign up
+    acceptance: a new user creates an account and gets a verification email
+
+  - epic: Authentication
+    title: User can reset their password
+    acceptance: user requests a reset, gets a one-time link, and sets a new password

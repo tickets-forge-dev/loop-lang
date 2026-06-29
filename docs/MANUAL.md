@@ -116,7 +116,7 @@ the thrash guard).
 ## 4. The CLI
 
 ```
-loop-run <run|parse|viz> <file.loop> [--model <alias>] [--out <path>]
+loop-run <run|parse|viz|live|show|ls|emit> <file.loop> [--model <alias>] [--live] [--out <path>]
 ```
 
 | Command | What it does |
@@ -124,11 +124,17 @@ loop-run <run|parse|viz> <file.loop> [--model <alias>] [--out <path>]
 | `loop-run run <file>` | Execute the flow on Claude Code (plan/act/observe, reflect, verify, human gates). |
 | `loop-run parse <file>` | Parse to the loop-spec IR and print it as JSON (use to validate syntax). |
 | `loop-run viz <file>` | Write a self-contained HTML schematic of the flow. |
+| `loop-run show <file>` | Print the loop's flow as compact ASCII. |
+| `loop-run ls [dir]` | List every `.loop` under a directory with its one-line shape. |
+| `loop-run live <file>` | Start the live dashboard server (no engine) and stay up; for driving the dashboard from an in-session run. |
+| `loop-run emit <port> '<json>'` | Push one event to a running `live` server (used by the `/loopflow` skill). |
 
 **Flags**
 
 - `--model <alias>` — model for `run` (e.g. `opus`, `sonnet`, `haiku`); passed to Claude
   Code. Omit to use the CLI default.
+- `--live` — for `run`, open a live browser dashboard and stream every step to it as the
+  loop executes (see below).
 - `--out <path>` — for `viz`, the HTML output file (default: the `.loop` name with an
   `.html` extension).
 - `--json` — print the parsed loop-spec JSON before the command's normal work (handy with
@@ -137,6 +143,29 @@ loop-run <run|parse|viz> <file.loop> [--model <alias>] [--out <path>]
 **Config files.** A `.loop` file containing only a config block with `use` (and no
 definitions) resolves the named preset and runs it — e.g. a `project.loop` with
 `use the BMAD method`.
+
+### Live dashboard
+
+A real-time browser view of a run: the loop's **actual structure** as a turn-by-turn route
+(pipeline stages / flow steps / for-each items), with a "you are here" marker, the steps
+ahead, human gates flagged, and for-each sprints listed by item title with N/total progress.
+
+Two ways to drive it:
+
+- **Headless** — `loop-run run <file> --live` opens a browser tab and the engine streams
+  every event to it. The terminal still prints the normal text trace.
+- **In-session** — when you run a loop inside Claude Code via `/loopflow`, the dashboard is
+  **opt-in via `loop.config`**: `loop init` writes `loop.config` with `live=false` (off by
+  default), and the skill only opens the dashboard when you set `live=true`. When enabled it
+  starts `loop-run live <file>` in the background (which prints `LOOP_LIVE_PORT=<port>` and
+  opens the browser) and pushes an event per narrated step with
+  `loop-run emit <port> '<event-json>'`. The headless `--live` flag is independent of this
+  config.
+
+The page connects over Server-Sent Events; each event carries an id and the server replays
+on connect (and dedupes on reconnect via `Last-Event-ID`), so events fired before the browser
+connects are not lost and a transient drop doesn't double-deliver. The dashboard is
+self-contained (no external assets) and binds to `127.0.0.1` only.
 
 ## 5. Language reference
 
