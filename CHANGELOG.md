@@ -6,6 +6,10 @@ Versions track the `@loop-lang/loop` installer package.
 
 ## [Unreleased]
 
+### Added
+- `demo.loop` — a copy-and-edit sample pipeline (plan → implement → ship) at the
+  repo root for the README/tutorial.
+
 ## [0.5.0] — 2026-06-28
 
 > `@loop-lang/loop` 0.5.0 · `@loop-lang/{parser,runtime,stdlib,viz}` 0.2.0
