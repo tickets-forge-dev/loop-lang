@@ -10,6 +10,19 @@ Versions track the `@loop-lang/loop` installer package.
 - `demo.loop` — a copy-and-edit sample pipeline (plan → implement → ship) at the
   repo root for the README/tutorial.
 
+### Changed
+- **`loop-vscode` 0.4.0** — *New from template* now offers the full best-practice
+  library (`bugfix`, `feature`, `brownfield-feature`, `refactor`, `cicd-check`,
+  `security`, `clean-architecture`, `test-coverage`, `review-diff`, plus the
+  multi-file `greenfield-app`/`load-spec` flows), synced from the repo's
+  `templates/` at build (single source of truth) — replacing the stale
+  `bmad`/`foreach` bundles. Tutorial now states what the extension gives you and
+  lists the latest vocabulary it understands. *New Loop from template* is now
+  reachable from **File ▸ New File…** and an Explorer folder **right-click** (drops
+  the template straight into that folder), not just the Command Palette.
+- A manual `Publish VS Code extension` workflow (`workflow_dispatch`) publishes
+  the extension on its own, decoupled from the tag-driven npm release.
+
 ## [0.5.0] — 2026-06-28
 
 > `@loop-lang/loop` 0.5.0 · `@loop-lang/{parser,runtime,stdlib,viz}` 0.2.0

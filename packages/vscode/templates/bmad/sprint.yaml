@@ -1,7 +1,0 @@
-stories:
-  - title: User can log in
-    acceptance: a registered user logs in with email + password
-  - title: User can sign up
-    acceptance: a new user creates an account and gets a verification email
-  - title: User can reset their password
-    acceptance: user requests a reset, gets a link, and sets a new password
