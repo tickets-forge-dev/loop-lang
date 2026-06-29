@@ -6,6 +6,10 @@ Versions track the `@loop-lang/loop` installer package.
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-06-28
+
+> `@loop-lang/loop` 0.5.0 · `@loop-lang/{parser,runtime,stdlib,viz}` 0.2.0
+
 ### Added
 - **Live dashboard** — a real-time browser view of a run that renders the loop's
   *actual* structure (pipeline stages / flow steps / for-each items) as a turn-by-turn

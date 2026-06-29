@@ -1,25 +1,47 @@
 {
   "name": "@loop-lang/runtime",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Executes a loop-spec by driving Claude Code: cycles, the reflect back-edge, policy gates, verification, and human-in-the-loop nodes.",
   "license": "Apache-2.0",
   "type": "module",
-  "publishConfig": { "access": "public" },
-  "keywords": ["loop", "agent", "claude", "ai", "workflow", "dsl", "loop-engineering", "runtime"],
-  "repository": { "type": "git", "url": "https://github.com/tickets-forge-dev/loop-lang.git", "directory": "packages/runtime" },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "loop",
+    "agent",
+    "claude",
+    "ai",
+    "workflow",
+    "dsl",
+    "loop-engineering",
+    "runtime"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tickets-forge-dev/loop-lang.git",
+    "directory": "packages/runtime"
+  },
   "homepage": "https://github.com/tickets-forge-dev/loop-lang/tree/master/packages/runtime#readme",
-  "bugs": { "url": "https://github.com/tickets-forge-dev/loop-lang/issues" },
+  "bugs": {
+    "url": "https://github.com/tickets-forge-dev/loop-lang/issues"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "exports": { ".": "./dist/index.js" },
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "bin": {
     "loop-run": "dist/cli.js"
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "dependencies": {
-    "@loop-lang/parser": "0.1.0",
-    "@loop-lang/stdlib": "0.1.0",
-    "@loop-lang/viz": "0.1.0"
+    "@loop-lang/parser": "0.2.0",
+    "@loop-lang/stdlib": "0.2.0",
+    "@loop-lang/viz": "0.2.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
