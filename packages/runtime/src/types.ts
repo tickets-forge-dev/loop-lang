@@ -30,6 +30,7 @@ export type LoopEvent =
   | { type: "foreach-item-end"; var: string; index: number; satisfied: boolean }
   | { type: "foreach-end"; var: string; satisfied: boolean }
   | { type: "git"; action: "branch"|"worktree"|"commit"|"push"|"pr"; detail: string }
+  | { type: "ctx"; action: "provision" | "topup"; skills: string[]; ok?: boolean; detail?: string }
   | { type: "model"; node: "plan" | "act" | "reflect" | "also"; tier: "fast" | "strong"; model?: string };
 
 export type CycleNode = "plan" | "act" | "observe";
@@ -131,6 +132,28 @@ export interface HumanIO {
   ask(prompt: string): Promise<void>;
 }
 
+/** What a ctx skill-provision call returns. `useSkills` are names to merge into the loop's skills. */
+export interface CtxProvisionResult {
+  /** Skill names ctx recommended + installed; the engine adds them to the loop's skill set. */
+  useSkills: string[];
+  /** Slugs ctx installed this call (informational). */
+  installed?: string[];
+  /** Slugs ctx skipped because already present (informational). */
+  skipped?: string[];
+}
+
+/**
+ * Bridge to an external skill recommender (ctx). The engine calls `provision` once before the
+ * first plan of a loop that opted in (`use skills recommended by ctx`), and `topup` when a
+ * `top up skills from ctx` loop reflects on a failure. A null/throwing adapter degrades to the
+ * loop's hand-named skills — ctx is always optional.
+ */
+export interface CtxAdapter {
+  provision(input: { goal: string; intent?: string; baseDir: string }): Promise<CtxProvisionResult>;
+  topup(input: { goal: string; reflection: string; loaded: string[]; baseDir: string }): Promise<CtxProvisionResult>;
+  close?(): Promise<void>;
+}
+
 export interface RunOptions {
   runner: Runner;
   verifier: Verifier;
@@ -161,6 +184,8 @@ export interface RunOptions {
   modelPolicy?: import("@loop-lang/parser").ModelPolicy;
   /** CLI/extension --model — kill switch that forces all phases to one model. */
   cliModel?: string;
+  /** External skill recommender (ctx). Present when the file opts in; absent = degrade to named skills. */
+  ctx?: CtxAdapter;
 }
 
 export interface LoopOutcome {

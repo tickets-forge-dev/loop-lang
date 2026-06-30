@@ -41,7 +41,8 @@
   "dependencies": {
     "@loop-lang/parser": "0.3.0",
     "@loop-lang/stdlib": "0.3.0",
-    "@loop-lang/viz": "0.3.0"
+    "@loop-lang/viz": "0.3.0",
+    "@modelcontextprotocol/sdk": "^1.29.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

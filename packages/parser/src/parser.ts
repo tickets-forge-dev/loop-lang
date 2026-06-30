@@ -409,6 +409,18 @@ function interpretLoopBody(name: string | null, body: Line[], defaults?: ParseDe
         .filter((s) => s.length > 0);
       i++; continue;
     }
+    // ctx skill discovery: ctx recommends + installs skills for the goal. loopflow bakes the
+    // resolved names into a `use skills:` line at author time; this directive persists so a
+    // headless run re-resolves the bundle from ctx. Optional `for "<intent>"` overrides the goal.
+    if ((m = t.match(/^use skills recommended by ctx(?:\s+for\s+"([^"]+)")?$/i))) {
+      loop.skillDiscovery = m[1] ? { provider: "ctx", intent: m[1].trim() } : { provider: "ctx" };
+      i++; continue;
+    }
+    // ctx run-time top-up: when a step needs more, pull additional skills from ctx mid-loop.
+    if (/^top up skills from ctx(?:\s+when a step needs more)?$/i.test(t)) {
+      loop.skillTopUp = true;
+      i++; continue;
+    }
     // MCP: name servers whose tools the loop may use (`use tools from the "github" server`).
     if ((m = t.match(/^use tools from (?:the\s+)?"([^"]+)"(?:\s+server)?$/i))) {
       (loop.tools ??= []).push(m[1].trim());
@@ -680,6 +692,11 @@ function parseConfigLine(config: Config, ln: Line): boolean {
   }
   if ((m = t.match(/^runs as:\s*(.+)$/i))) {
     config.runsAs = m[1].trim();
+    return true;
+  }
+  // Config tier: declare ctx as this file's skill recommender/installer.
+  if (/^recommend skills with ctx$/i.test(t)) {
+    config.skillSource = { provider: "ctx" };
     return true;
   }
   return false;

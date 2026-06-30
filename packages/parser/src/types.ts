@@ -64,6 +64,22 @@ export interface ModelPolicy {
   phases?: Partial<Record<ModelPhase, ModelTier>>;
 }
 
+/**
+ * Where a file's skills come from (`recommend skills with ctx` at the config tier).
+ * Declares an external recommender that picks + installs skills for each loop's goal,
+ * so `use skills recommended by ctx` lines resolve to real, installed skills.
+ */
+export interface SkillSource {
+  provider: "ctx";
+}
+
+/** A loop's request to have ctx recommend (and install) skills for its goal. */
+export interface SkillDiscovery {
+  provider: "ctx";
+  /** Optional override for what to recommend against; defaults to the loop's goal. */
+  intent?: string;
+}
+
 export interface Config {
   use?: string;
   useOverrides?: OverrideEntry[];
@@ -89,6 +105,8 @@ export interface Config {
   sandbox?: SandboxPolicy;
   /** Identity the run executes as (`runs as: …`) — an auditable principal for unattended runs. */
   runsAs?: string;
+  /** External skill recommender for the whole file (`recommend skills with ctx`). */
+  skillSource?: SkillSource;
 }
 
 export interface OverrideEntry {
@@ -128,6 +146,14 @@ export interface Loop {
   also?: string[];
   /** Named execution skills the loop may invoke during plan/act (e.g. ["check-weather"]). */
   skills?: string[];
+  /**
+   * ctx skill discovery (`use skills recommended by ctx [for "<intent>"]`). At author time
+   * loopflow bakes the resolved names into `skills`; this record persists so a headless run
+   * re-resolves the bundle from ctx for the goal (or the explicit `intent`).
+   */
+  skillDiscovery?: SkillDiscovery;
+  /** Pull more skills from ctx mid-loop when a step needs more (`top up skills from ctx …`). */
+  skillTopUp?: boolean;
   /** MCP servers whose tools the loop may use (`use tools from the "github" server`). */
   tools?: string[];
   /** A markdown file the loop reads on start and appends to on stop — cross-run memory. */

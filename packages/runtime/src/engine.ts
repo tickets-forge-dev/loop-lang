@@ -68,6 +68,18 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
   const autoClasses = loop.policy?.auto ?? [];
   const confirmClasses = loop.policy?.confirm ?? [];
 
+  // The loop's working skill set. Starts from the hand-named `use skills:` list; ctx discovery
+  // and run-time top-ups extend it in place, so plan/act always see the current set.
+  const skills: string[] = [...(loop.skills ?? [])];
+  const mergeSkills = (names: string[] | undefined): string[] => {
+    const added: string[] = [];
+    for (const raw of names ?? []) {
+      const name = raw.trim();
+      if (name && !skills.includes(name)) { skills.push(name); added.push(name); }
+    }
+    return added;
+  };
+
   let reflection: string | null = null;
   let lastPlan = "";
   let lastOutput = "";
@@ -117,6 +129,27 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
 
   // "a human approves the plan first" — gate at the very start.
   let humanPlanApproved = false;
+
+  // ctx skill discovery: when the loop opts in (`use skills recommended by ctx`) and a ctx
+  // adapter is attached, resolve a bundle for the goal once and merge the names in before the
+  // first plan. Degrade quietly if ctx isn't attached or the call fails — the loop still runs
+  // with whatever skills it already names.
+  if (loop.skillDiscovery?.provider === "ctx") {
+    if (opts.ctx) {
+      try {
+        const res = await opts.ctx.provision({
+          goal: loop.goal,
+          intent: loop.skillDiscovery.intent,
+          baseDir: opts.baseDir,
+        });
+        emit(opts, { type: "ctx", action: "provision", skills: mergeSkills(res.useSkills), ok: true });
+      } catch (err) {
+        emit(opts, { type: "ctx", action: "provision", skills: [], ok: false, detail: String((err as Error)?.message ?? err) });
+      }
+    } else {
+      emit(opts, { type: "ctx", action: "provision", skills: [], ok: false, detail: "no ctx adapter attached" });
+    }
+  }
 
   // A `plan from "<file>"` loop loads its plan even when the author omits `plan`
   // from the cycle (the plan comes from the file, the cycle just executes it).
@@ -175,7 +208,7 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
             includeLastFailure,
             reflection,
             upstream: opts.upstream,
-            skills: loop.skills,
+            skills: [...skills],
             memory: memoryIn,
             baseDir: opts.baseDir,
             model: pick("plan"),
@@ -211,7 +244,7 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
           goal: loop.goal,
           plan: lastPlan,
           allowedClasses,
-          skills: loop.skills,
+          skills: [...skills],
           baseDir: opts.baseDir,
           model: pick("act"),
         });
@@ -275,6 +308,8 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
 
     const goalMet = loop.doneWhen?.length ? passed : false;
 
+    // Captured before applyActions runs reflect — lets the ctx top-up below detect a fresh reflection.
+    const reflectionBefore: string | null = reflection;
     const t = pickTransition(loop.transitions, { blocked, attempts, passed: observed && passed, goalMet });
 
     if (t) {
@@ -293,6 +328,17 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
         // so record memory here rather than in finish().
         await writeMemory(stop.satisfied, stop.reason);
         return stop;
+      }
+      // ctx run-time top-up: a fresh reflection means the last cycle missed — ask ctx for more
+      // skills for the next plan. Excludes already-loaded skills; degrades quietly on any error.
+      if (loop.skillTopUp && opts.ctx && reflection && reflection !== reflectionBefore) {
+        try {
+          const res = await opts.ctx.topup({ goal: loop.goal, reflection, loaded: skills, baseDir: opts.baseDir });
+          const added = mergeSkills(res.useSkills);
+          if (added.length) emit(opts, { type: "ctx", action: "topup", skills: added, ok: true });
+        } catch (err) {
+          emit(opts, { type: "ctx", action: "topup", skills: [], ok: false, detail: String((err as Error)?.message ?? err) });
+        }
       }
       continue; // re-enter the cycle (the back-edge)
     }

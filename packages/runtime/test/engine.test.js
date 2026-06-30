@@ -739,3 +739,90 @@ test("parallel stages run concurrently and all must satisfy", async () => {
   });
   assert.equal(outcome.satisfied, true);
 });
+
+// ---- ctx skill provisioning ----
+
+/** Records provision/topup calls; returns scripted skill names. */
+class MockCtxAdapter {
+  constructor({ provisionSkills = [], topupSkills = [] } = {}) {
+    this.provisionCalls = [];
+    this.topupCalls = [];
+    this._p = provisionSkills;
+    this._t = topupSkills;
+  }
+  async provision(input) { this.provisionCalls.push(input); return { useSkills: this._p }; }
+  async topup(input) { this.topupCalls.push(input); return { useSkills: this._t }; }
+}
+
+test("ctx: provision merges recommended skills into the first plan", async () => {
+  const def = parse('loop "x":\n  goal: harden webhooks\n  use skills recommended by ctx for "stripe"\n  done when "t" passes').definitions[0];
+  const runner = new MockRunner();
+  const ctx = new MockCtxAdapter({ provisionSkills: ["webhook-idempotency", "signature-check"] });
+  const { events, onEvent } = collect();
+  const outcome = await runDefinition(def, {
+    runner, verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: process.cwd(), ctx, onEvent,
+  });
+  assert.equal(ctx.provisionCalls.length, 1, "provisioned once before the first plan");
+  assert.equal(ctx.provisionCalls[0].intent, "stripe", "passed the explicit intent");
+  assert.deepEqual(runner.planCalls[0].skills, ["webhook-idempotency", "signature-check"]);
+  const ev = events.find((e) => e.type === "ctx" && e.action === "provision");
+  assert.ok(ev && ev.ok === true, "emitted a successful provision event");
+  assert.deepEqual(ev.skills, ["webhook-idempotency", "signature-check"]);
+  assert.equal(outcome.satisfied, true);
+});
+
+test("ctx: a discovery loop runs without a ctx adapter (degrades)", async () => {
+  const def = parse('loop "x":\n  goal: g\n  use skills recommended by ctx\n  done when "t" passes').definitions[0];
+  const runner = new MockRunner();
+  const { events, onEvent } = collect();
+  const outcome = await runDefinition(def, {
+    runner, verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: process.cwd(), onEvent,
+  });
+  const ev = events.find((e) => e.type === "ctx");
+  assert.ok(ev && ev.ok === false, "emitted a skipped ctx event");
+  assert.deepEqual(runner.planCalls[0].skills, [], "no skills, but the loop still ran");
+  assert.equal(outcome.satisfied, true);
+});
+
+test("ctx: provisioned skills extend the hand-named use skills list (dedup)", async () => {
+  const def = parse('loop "x":\n  goal: g\n  use skills: hand-a\n  use skills recommended by ctx\n  done when "t" passes').definitions[0];
+  const runner = new MockRunner();
+  const ctx = new MockCtxAdapter({ provisionSkills: ["hand-a", "ctx-b"] }); // hand-a is a duplicate
+  await runDefinition(def, {
+    runner, verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: process.cwd(), ctx,
+  });
+  assert.deepEqual(runner.planCalls[0].skills, ["hand-a", "ctx-b"], "deduped against the named skill");
+});
+
+test("ctx: top up pulls more skills after a reflection", async () => {
+  const def = parse(
+    'loop "x":\n  goal: g\n  use skills recommended by ctx\n  top up skills from ctx when a step needs more\n' +
+    '  done when "t" passes\n  when it fails: reflect, then plan again'
+  ).definitions[0];
+  const runner = new MockRunner();
+  const ctx = new MockCtxAdapter({ provisionSkills: ["base"], topupSkills: ["extra"] });
+  const { events, onEvent } = collect();
+  const outcome = await runDefinition(def, {
+    runner, verifier: new SeqVerifier([false, true]), human: new ScriptedHumanIO(), baseDir: process.cwd(), ctx, onEvent,
+  });
+  assert.ok(ctx.topupCalls.length >= 1, "topup fired after the failure");
+  assert.deepEqual(runner.planCalls[0].skills, ["base"], "first plan saw the provisioned base skill");
+  assert.deepEqual(runner.planCalls[1].skills, ["base", "extra"], "second plan saw the topped-up skill");
+  const topupEv = events.find((e) => e.type === "ctx" && e.action === "topup");
+  assert.ok(topupEv && topupEv.ok === true);
+  assert.deepEqual(topupEv.skills, ["extra"]);
+  assert.equal(outcome.satisfied, true);
+});
+
+test("ctx: no top up when a loop does not ask for it", async () => {
+  const def = parse(
+    'loop "x":\n  goal: g\n  use skills recommended by ctx\n' +
+    '  done when "t" passes\n  when it fails: reflect, then plan again'
+  ).definitions[0];
+  const runner = new MockRunner();
+  const ctx = new MockCtxAdapter({ provisionSkills: ["base"], topupSkills: ["extra"] });
+  await runDefinition(def, {
+    runner, verifier: new SeqVerifier([false, true]), human: new ScriptedHumanIO(), baseDir: process.cwd(), ctx,
+  });
+  assert.equal(ctx.topupCalls.length, 0, "no top up without `top up skills from ctx`");
+});

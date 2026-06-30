@@ -393,6 +393,35 @@ test("knowledge/examples/tools: context + MCP keywords", () => {
   assert.deepEqual(loop.tools, ["github"]);
 });
 
+// ---- ctx skill source ----
+
+test("ctx: config-tier 'recommend skills with ctx' sets config.skillSource", () => {
+  const file = parse(read("ctx_skills.loop"));
+  assert.deepEqual(file.config.skillSource, { provider: "ctx" });
+});
+
+test("ctx: 'use skills recommended by ctx for ...' + 'top up skills from ctx'", () => {
+  const loop = parse(read("ctx_skills.loop")).definitions[0];
+  assert.equal(loop.name, "harden the stripe webhook handler");
+  assert.deepEqual(loop.skillDiscovery, {
+    provider: "ctx",
+    intent: "stripe webhook idempotency and signature verification",
+  });
+  assert.equal(loop.skillTopUp, true);
+});
+
+test("ctx: bare 'use skills recommended by ctx' carries no intent", () => {
+  const loop = parse('loop "x":\n  goal: g\n  use skills recommended by ctx\n  done when "t" passes').definitions[0];
+  assert.deepEqual(loop.skillDiscovery, { provider: "ctx" });
+  assert.equal(loop.skillTopUp, undefined);
+});
+
+test("ctx: discovery coexists with a hand-named 'use skills:' line", () => {
+  const loop = parse('loop "x":\n  goal: g\n  use skills: a, b\n  use skills recommended by ctx\n  done when "t" passes').definitions[0];
+  assert.deepEqual(loop.skills, ["a", "b"]);
+  assert.deepEqual(loop.skillDiscovery, { provider: "ctx" });
+});
+
 test("parallel stages: 'stages in parallel:' assigns a shared group id", () => {
   const pipe = parse(
     'pipeline "p":\n  stage "a":\n    goal: g\n    check: t\n  stages in parallel:\n    stage "b":\n      goal: g\n      check: t\n    stage "c":\n      goal: g\n      check: t'

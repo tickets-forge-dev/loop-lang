@@ -76,6 +76,8 @@ allow edits automatically, but ask me before <classes>   action policy
 each cycle: plan, then act, then observe   the repeated steps (any subset, in order)
 also: <pass>, <pass>      extra finishing passes run after the goal is met
 use skills: <a>, <b>      named skills the loop may invoke during plan/act
+use skills recommended by ctx        let ctx pick + install the skills for the goal (needs the ctx MCP server); add `for "<intent>"` to override the query
+top up skills from ctx               run-time: pull more skills from ctx when a cycle fails and reflects (pairs with the line above)
 remember in "<file.md>"   cross-run memory: read lessons on start, append an outcome on stop
 reflect                   turn a failure into context for the next plan (the back-edge)
 
@@ -96,6 +98,7 @@ each cycle: plan, then act, then observe   (config tier: the default cycle for e
 rigor: vibe coding | structured ai-assisted | agentic engineering   (the spectrum dial; structured/agentic give every loop a back-edge + thrash guard for free)
 mode: conductor | orchestrator   (supervision posture: in-session/sync vs async/opens-a-PR)
 runs as: <identity>   (an auditable principal for unattended runs)
+recommend skills with ctx   (config tier: ctx is this file's skill source — recommends + installs skills per loop goal; see "Skill source: ctx" below)
 observe:   (block) trace every cycle / meter tokens and cost / stop and warn if cost exceeds "$N"
 sandbox:   (block) no network access / allow egress to "host" only / cap cpu at … memory at … time at …
 hooks:     (loop body block) before each cycle | after act | on commit | on stop : "<cmd>" passes|finds nothing   (a failing hook blocks)
@@ -158,6 +161,33 @@ This is **skill-driven development**: build and battle-test each skill on its ow
 then have the loop coordinate them. Don't invent a loop around skills that don't exist yet —
 prove the skill manually, then wire it in (as an execution skill via `use skills:`, or as a
 verifier via `done when the skill "…" approves`). See `examples/skills_memory.loop`.
+
+### Skill source: ctx — let a recommender pick + install the skills
+
+`use skills:` assumes the skills already exist in `~/.claude/skills`. **ctx**
+([claude-ctx](https://github.com/stevesolun/ctx)) is the recommender that fills that gap:
+point it at a goal and it recommends the smallest useful bundle and installs the skill bodies
+into `~/.claude/skills` — so the names resolve. ctx is the layer beneath Loop; Loop stays the
+top, user-facing layer.
+
+```loop
+recommend skills with ctx               # config tier: ctx is this file's skill source
+
+loop "harden the stripe webhook handler":
+  goal: webhook retries are idempotent and signature-checked, with tests
+  use skills recommended by ctx for "stripe webhook idempotency"   # bake at author time, resolve at run time
+  top up skills from ctx when a step needs more                    # pull more on a failing cycle
+  done when "pnpm test api/webhooks" passes
+```
+
+- **Author time** (`/loopflow`): ctx recommends for the goal, you approve, the names are
+  installed and written into a `use skills:` line so the `.loop` stays self-contained.
+- **Run time** (`loop run`): the runtime resolves `use skills recommended by ctx` via the ctx
+  MCP server before the first plan, and `top up skills from ctx` after a failed cycle reflects.
+- **No ctx attached?** The lines are inert — the loop runs exactly as it would without them.
+
+Setup: `claude mcp add ctx -- ctx-mcp-server` (needs `pip install claude-ctx`). See
+`examples/ctx_skills.loop` and `docs/ctx-skill-source.md`.
 
 ### `remember in` — cross-run memory
 
