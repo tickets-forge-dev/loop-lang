@@ -12,6 +12,7 @@ import { ClaudeCodeRunner } from "./runners/claudeCode.js";
 import { IpcHumanIO } from "./ipc.js";
 import { ShellGitIO } from "./runners/shellGit.js";
 import { ownModelBinaryWarning } from "./ownModel.js";
+import { eventSinkFromEnv } from "./eventSink.js";
 import type { LoopEvent } from "./types.js";
 import { summarizeModels, formatModelSummary, summarizeOpex, formatOpexSummary } from "./summary.js";
 
@@ -310,6 +311,14 @@ async function main() {
     if (ownModelWarning) console.error(ownModelWarning);
   }
 
+  // Control-plane telemetry: when LOOP_EVENTS_URL is set, stream every event to the collector.
+  // Best-effort and off by default — no env, no sink, behaves exactly as before.
+  const eventSink = eventSinkFromEnv({
+    loop_path: path,
+    principal: file.config?.runsAs,
+    runner: file.config?.runner,
+  });
+
   // `--events`: machine-readable NDJSON protocol for a UI host (e.g. the VSCode
   // extension) — streams Claude's live activity and answers human gates over stdin.
   if (rest.includes("--events")) {
@@ -339,11 +348,12 @@ async function main() {
       flowStack: [path],
       modelPolicy: file.config?.models,
       cliModel: model,
-      onEvent: (e) => emit({ kind: "event", event: e }),
+      onEvent: (e) => { eventSink?.post(e); emit({ kind: "event", event: e }); },
     });
     const ok = outcomes.every((o) => o.satisfied);
     emit({ kind: "end", ok });
     rl.close();
+    await eventSink?.flush();
     process.exit(ok ? 0 : 1);
   }
 
@@ -382,7 +392,7 @@ async function main() {
     const html = renderLiveHtml(file, { title: basename(fileArg) });
     const srv = await startLiveServer(html);
     console.error(`\n  ↻ Loop live dashboard → http://127.0.0.1:${srv.port}\n`);
-    const outcomes = await run(file, { ...baseOpts, onEvent: (e) => { srv.emit(e); onTrace(e); } });
+    const outcomes = await run(file, { ...baseOpts, onEvent: (e) => { eventSink?.post(e); srv.emit(e); onTrace(e); } });
     reportSummary();
     const ok = outcomes.every((o) => o.satisfied);
     // Keep the dashboard up after the run — a fast loop can finish before the browser even
@@ -394,13 +404,14 @@ async function main() {
     return;
   }
 
-  const outcomes = await run(file, { ...baseOpts, onEvent: onTrace });
+  const outcomes = await run(file, { ...baseOpts, onEvent: (e) => { eventSink?.post(e); onTrace(e); } });
   reportSummary();
   // Observability: when `observe:` is on, print the OpEx report (token burn made visible).
   if (file.config?.observe?.trace || file.config?.observe?.meter) {
     console.error(formatOpexSummary(summarizeOpex(traceEvents)));
   }
   const ok = outcomes.every((o) => o.satisfied);
+  await eventSink?.flush();
   process.exit(ok ? 0 : 1);
 }
 
