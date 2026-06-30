@@ -1,5 +1,6 @@
 import {
   Action,
+  CapabilityGroup,
   Config,
   CycleStep,
   Definition,
@@ -24,6 +25,14 @@ import {
 } from "./types.js";
 
 const RIGOR_LEVELS: Rigor[] = ["vibe coding", "structured ai-assisted", "agentic engineering"];
+
+// Capability-group names a `grant ctx:` line may list (singular/plural + entity-type spellings).
+const CTX_CAPABILITY_GROUPS: Record<string, CapabilityGroup> = {
+  skills: "skills", skill: "skills",
+  agents: "agents", agent: "agents",
+  mcps: "mcps", mcp: "mcps", "mcp-server": "mcps", "mcp-servers": "mcps",
+  harnesses: "harnesses", harness: "harnesses",
+};
 
 const HOOK_POINTS: Record<string, HookPoint> = {
   "before each cycle": "before-cycle",
@@ -697,6 +706,26 @@ function parseConfigLine(config: Config, ln: Line): boolean {
   // Config tier: declare ctx as this file's skill recommender/installer.
   if (/^recommend skills with ctx$/i.test(t)) {
     config.skillSource = { provider: "ctx" };
+    return true;
+  }
+  // Config tier: capability groups the file grants ctx (`grant ctx: skills, agents, mcps, harnesses`).
+  // Fails closed — only listed groups are granted; default (no line) is skills+agents in the adapter.
+  if ((m = t.match(/^grant ctx:\s*(.+)$/i))) {
+    const groups: CapabilityGroup[] = [];
+    for (const raw of m[1].split(/,|\band\b/).map((s) => s.trim().toLowerCase()).filter(Boolean)) {
+      const g = CTX_CAPABILITY_GROUPS[raw];
+      if (!g) {
+        throw new ParseError(`unknown ctx capability group "${raw}" (expected: skills, agents, mcps, harnesses)`, ln.lineNo);
+      }
+      if (!groups.includes(g)) groups.push(g);
+    }
+    config.ctxGrants = groups;
+    return true;
+  }
+  // Config tier: declare a user-owned/local/API model so ctx may recommend harnesses (gated, dry-run).
+  if ((m = t.match(/^ctx may use my own model\s+"([^"]+)"$/i))) {
+    const spec = m[1].trim();
+    config.ownModel = { provider: spec.split("/")[0].trim(), model: spec };
     return true;
   }
   return false;

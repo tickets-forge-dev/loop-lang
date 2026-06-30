@@ -99,6 +99,8 @@ rigor: vibe coding | structured ai-assisted | agentic engineering   (the spectru
 mode: conductor | orchestrator   (supervision posture: in-session/sync vs async/opens-a-PR)
 runs as: <identity>   (an auditable principal for unattended runs)
 recommend skills with ctx   (config tier: ctx is this file's skill source — recommends + installs skills per loop goal; see "Skill source: ctx" below)
+grant ctx: skills, agents, mcps, harnesses   (config tier: capability groups the file lets ctx recommend; fails closed, default skills+agents; mcps/harnesses are recommend-only)
+ctx may use my own model "<provider>/<model>"   (config tier: declares a user-owned/local/API model — unlocks ctx harness recommendations, always dry-run)
 observe:   (block) trace every cycle / meter tokens and cost / stop and warn if cost exceeds "$N"
 sandbox:   (block) no network access / allow egress to "host" only / cap cpu at … memory at … time at …
 hooks:     (loop body block) before each cycle | after act | on commit | on stop : "<cmd>" passes|finds nothing   (a failing hook blocks)
@@ -186,8 +188,33 @@ loop "harden the stripe webhook handler":
   MCP server before the first plan, and `top up skills from ctx` after a failed cycle reflects.
 - **No ctx attached?** The lines are inert — the loop runs exactly as it would without them.
 
+**Beyond skills — the full capability set.** By default ctx provisions only `skills`
+(and the agents Loop loads the same way). A `grant ctx:` line widens what ctx may recommend to
+any of `skills, agents, mcps, harnesses`, **failing closed** — only listed groups are returned:
+
+```loop
+recommend skills with ctx
+grant ctx: skills, agents, mcps, harnesses          # capability grants (fail-closed)
+ctx may use my own model "ollama/llama3.1"          # unlocks harness recs (dry-run only)
+
+loop "stand up a local agent loop":
+  goal: an MCP agent loop running on local ollama with filesystem access
+  use skills recommended by ctx
+  done when "pytest tests/agent_loop" passes
+```
+
+- **skills / agents** install into `~/.claude/skills` (as before) and merge into the cycle's
+  skill set.
+- **mcps** are **recommend-only**: ctx surfaces fitting MCP servers + a suggested
+  `ctx-mcp-install <name>`; the runtime emits them on a `ctx` event, it never auto-registers one.
+- **harnesses** (autogen, langfuse, …) recommend **only** when you declare a user-owned model
+  (`ctx may use my own model "…"`), and ship as an explicit `ctx-harness-install <name> --dry-run`
+  command — never an automatic install. This is the one capability that pulls real software, so it
+  stays human-gated by design.
+
 Setup: `claude mcp add ctx -- ctx-mcp-server` (needs `pip install claude-ctx`). See
-`examples/ctx_skills.loop` and `docs/ctx-skill-source.md`.
+`examples/ctx_skills.loop`, `examples/ctx_capabilities.loop`, and `docs/ctx-skill-source.md`.
+Full customer-facing walkthrough (setup, own-model, the capability model): `docs/ctx-integration-guide.md`.
 
 ### `remember in` — cross-run memory
 

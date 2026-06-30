@@ -141,8 +141,18 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
           goal: loop.goal,
           intent: loop.skillDiscovery.intent,
           baseDir: opts.baseDir,
+          permissions: opts.ctxGrants,
+          ownModel: opts.ownModel,
         });
-        emit(opts, { type: "ctx", action: "provision", skills: mergeSkills(res.useSkills), ok: true });
+        // Skills/agents merge into the working set; mcps/harnesses are recommend-only and only
+        // surfaced on the event (a host registers MCPs / a human runs the dry-run harness install).
+        emit(opts, {
+          type: "ctx", action: "provision", skills: mergeSkills(res.useSkills), ok: true,
+          mcps: res.capabilities?.mcps,
+          harnesses: res.capabilities?.harnesses,
+          harnessInstall: res.harnessInstall ?? undefined,
+          warnings: res.warnings,
+        });
       } catch (err) {
         emit(opts, { type: "ctx", action: "provision", skills: [], ok: false, detail: String((err as Error)?.message ?? err) });
       }
@@ -333,9 +343,22 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
       // skills for the next plan. Excludes already-loaded skills; degrades quietly on any error.
       if (loop.skillTopUp && opts.ctx && reflection && reflection !== reflectionBefore) {
         try {
-          const res = await opts.ctx.topup({ goal: loop.goal, reflection, loaded: skills, baseDir: opts.baseDir });
+          const res = await opts.ctx.topup({
+            goal: loop.goal, reflection, loaded: skills, baseDir: opts.baseDir,
+            permissions: opts.ctxGrants,
+            ownModel: opts.ownModel,
+          });
           const added = mergeSkills(res.useSkills);
-          if (added.length) emit(opts, { type: "ctx", action: "topup", skills: added, ok: true });
+          const mcps = res.capabilities?.mcps;
+          const harnesses = res.capabilities?.harnesses;
+          if (added.length || mcps?.length || harnesses?.length) {
+            emit(opts, {
+              type: "ctx", action: "topup", skills: added, ok: true,
+              mcps, harnesses,
+              harnessInstall: res.harnessInstall ?? undefined,
+              warnings: res.warnings,
+            });
+          }
         } catch (err) {
           emit(opts, { type: "ctx", action: "topup", skills: [], ok: false, detail: String((err as Error)?.message ?? err) });
         }

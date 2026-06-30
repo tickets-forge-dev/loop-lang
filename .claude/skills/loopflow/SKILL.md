@@ -60,6 +60,8 @@ schedule: <when>             run unattended on a cadence
 runner: <agent>              which agent executes the loop
 target: <dir>                operate on another directory/repo
 recommend skills with ctx    ctx is this file's skill source — recommends + installs skills per loop goal
+grant ctx: skills, agents, mcps, harnesses   capability groups ctx may recommend (fail-closed; default skills+agents; mcps/harnesses are recommend-only)
+ctx may use my own model "<provider>/<model>"   declares a user-owned model — unlocks harness recommendations (dry-run only)
 ```
 
 Predicates:
@@ -178,6 +180,13 @@ When ctx's tools are available (`ctx__loop_provision`, `ctx__recommend_bundle`):
    first keeps the `.loop` self-contained and reproducible; the second lets a headless
    `loop run` re-resolve the bundle from ctx.
 3. Offer `top up skills from ctx` if the loop should pull more skills when a cycle fails.
+4. **Beyond skills** — if the goal needs more than skills, add a `grant ctx: skills, agents,
+   mcps, harnesses` line for the groups that apply (fail-closed; omit it for skills-only).
+   `mcps` and `harnesses` are **recommend-only** — ctx surfaces them with an install command
+   the user runs; the loop never auto-installs them. Harnesses additionally need a
+   `ctx may use my own model "<provider>/<model>"` line, and always come as a `--dry-run`
+   command. Pass the granted groups (and own-model) to `ctx__loop_provision` as `permissions` /
+   `own_llm` / `model_provider` / `model`.
 
 When ctx is **not** attached, skip this silently and author `use skills:` by hand as usual —
 the loop runs the same either way.

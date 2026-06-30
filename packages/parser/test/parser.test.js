@@ -422,6 +422,25 @@ test("ctx: discovery coexists with a hand-named 'use skills:' line", () => {
   assert.deepEqual(loop.skillDiscovery, { provider: "ctx" });
 });
 
+test("ctx: config-tier 'grant ctx:' parses the capability groups", () => {
+  const file = parse('grant ctx: skills, agents, mcps, harnesses\nloop "x":\n  goal: g\n  use skills recommended by ctx\n  done when "t" passes');
+  assert.deepEqual(file.config.ctxGrants, ["skills", "agents", "mcps", "harnesses"]);
+});
+
+test("ctx: 'grant ctx:' dedups + normalizes singular/'and', rejects unknown groups", () => {
+  const file = parse('grant ctx: skill, mcp and harness and harness\nloop "x":\n  goal: g\n  done when "t" passes');
+  assert.deepEqual(file.config.ctxGrants, ["skills", "mcps", "harnesses"]);
+  assert.throws(
+    () => parse('grant ctx: bogus\nloop "x":\n  goal: g\n  done when "t" passes'),
+    /unknown ctx capability group/,
+  );
+});
+
+test("ctx: 'ctx may use my own model' parses provider + model", () => {
+  const file = parse('ctx may use my own model "ollama/llama3.1"\nloop "x":\n  goal: g\n  done when "t" passes');
+  assert.deepEqual(file.config.ownModel, { provider: "ollama", model: "ollama/llama3.1" });
+});
+
 test("parallel stages: 'stages in parallel:' assigns a shared group id", () => {
   const pipe = parse(
     'pipeline "p":\n  stage "a":\n    goal: g\n    check: t\n  stages in parallel:\n    stage "b":\n      goal: g\n      check: t\n    stage "c":\n      goal: g\n      check: t'

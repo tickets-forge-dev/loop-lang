@@ -742,16 +742,22 @@ test("parallel stages run concurrently and all must satisfy", async () => {
 
 // ---- ctx skill provisioning ----
 
-/** Records provision/topup calls; returns scripted skill names. */
+/** Records provision/topup calls; returns scripted skill names + recommend-only capabilities. */
 class MockCtxAdapter {
-  constructor({ provisionSkills = [], topupSkills = [] } = {}) {
+  constructor({ provisionSkills = [], topupSkills = [], capabilities, harnessInstall, warnings } = {}) {
     this.provisionCalls = [];
     this.topupCalls = [];
     this._p = provisionSkills;
     this._t = topupSkills;
+    this._caps = capabilities;
+    this._harness = harnessInstall;
+    this._warnings = warnings;
   }
-  async provision(input) { this.provisionCalls.push(input); return { useSkills: this._p }; }
-  async topup(input) { this.topupCalls.push(input); return { useSkills: this._t }; }
+  _result(useSkills) {
+    return { useSkills, capabilities: this._caps, harnessInstall: this._harness, warnings: this._warnings };
+  }
+  async provision(input) { this.provisionCalls.push(input); return this._result(this._p); }
+  async topup(input) { this.topupCalls.push(input); return this._result(this._t); }
 }
 
 test("ctx: provision merges recommended skills into the first plan", async () => {
@@ -825,4 +831,31 @@ test("ctx: no top up when a loop does not ask for it", async () => {
     runner, verifier: new SeqVerifier([false, true]), human: new ScriptedHumanIO(), baseDir: process.cwd(), ctx,
   });
   assert.equal(ctx.topupCalls.length, 0, "no top up without `top up skills from ctx`");
+});
+
+test("ctx: grants + own model thread to provision; mcps/harnesses surface but never merge into skills", async () => {
+  const def = parse('loop "x":\n  goal: build a local agent loop\n  use skills recommended by ctx\n  done when "t" passes').definitions[0];
+  const runner = new MockRunner();
+  const ctx = new MockCtxAdapter({
+    provisionSkills: ["fastapi-patterns"],
+    capabilities: { mcps: ["local-ollama-files"], harnesses: ["autogen"] },
+    harnessInstall: "ctx-harness-install autogen --dry-run",
+    warnings: [],
+  });
+  const { events, onEvent } = collect();
+  const outcome = await runDefinition(def, {
+    runner, verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: process.cwd(), ctx, onEvent,
+    ctxGrants: ["skills", "agents", "mcps", "harnesses"],
+    ownModel: { provider: "ollama", model: "ollama/llama3.1" },
+  });
+  // The engine threads the file's grants + own model into the provision input.
+  assert.deepEqual(ctx.provisionCalls[0].permissions, ["skills", "agents", "mcps", "harnesses"]);
+  assert.deepEqual(ctx.provisionCalls[0].ownModel, { provider: "ollama", model: "ollama/llama3.1" });
+  // Skills merge into the plan; mcps/harnesses are recommend-only and must NOT enter the skill set.
+  assert.deepEqual(runner.planCalls[0].skills, ["fastapi-patterns"]);
+  const ev = events.find((e) => e.type === "ctx" && e.action === "provision");
+  assert.deepEqual(ev.mcps, ["local-ollama-files"]);
+  assert.deepEqual(ev.harnesses, ["autogen"]);
+  assert.equal(ev.harnessInstall, "ctx-harness-install autogen --dry-run");
+  assert.equal(outcome.satisfied, true);
 });

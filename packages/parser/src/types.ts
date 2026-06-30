@@ -80,6 +80,22 @@ export interface SkillDiscovery {
   intent?: string;
 }
 
+/**
+ * A capability group a `.loop` can grant ctx (`grant ctx: skills, agents, mcps, harnesses`).
+ * Fails closed: with no grant, ctx defaults to skills+agents. mcps/harnesses are recommend-only;
+ * harnesses additionally require an `ownModel`.
+ */
+export type CapabilityGroup = "skills" | "agents" | "mcps" | "harnesses";
+
+/**
+ * A user-owned/local/API model (`ctx may use my own model "<provider>/<model>"`). Declaring one
+ * unlocks ctx's harness recommendations (which otherwise stay gated, since harnesses pull software).
+ */
+export interface OwnModel {
+  provider: string;
+  model: string;
+}
+
 export interface Config {
   use?: string;
   useOverrides?: OverrideEntry[];
@@ -107,6 +123,13 @@ export interface Config {
   runsAs?: string;
   /** External skill recommender for the whole file (`recommend skills with ctx`). */
   skillSource?: SkillSource;
+  /**
+   * Capability groups this file grants ctx (`grant ctx: skills, agents, mcps, harnesses`).
+   * Threaded to ctx as permissions; fail-closed, default skills+agents. Absent = legacy behaviour.
+   */
+  ctxGrants?: CapabilityGroup[];
+  /** A user-owned model (`ctx may use my own model "…"`) that unlocks ctx harness recommendations. */
+  ownModel?: OwnModel;
 }
 
 export interface OverrideEntry {
