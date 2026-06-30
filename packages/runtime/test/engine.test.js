@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { parse } from "@loop-lang/parser";
-import { run, runDefinition, MockRunner, ScriptedHumanIO } from "../dist/index.js";
+import { run, runDefinition, MockRunner, ScriptedHumanIO, ownModelBinaryWarning } from "../dist/index.js";
 import { MockGitIO } from "../dist/runners/mockGit.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -831,6 +831,18 @@ test("ctx: no top up when a loop does not ask for it", async () => {
     runner, verifier: new SeqVerifier([false, true]), human: new ScriptedHumanIO(), baseDir: process.cwd(), ctx,
   });
   assert.equal(ctx.topupCalls.length, 0, "no top up without `top up skills from ctx`");
+});
+
+test("ctx: own-model binary warning fires only for a missing LOCAL provider binary", () => {
+  const ollama = { provider: "ollama", model: "ollama/llama3.1" };
+  // local provider, binary missing -> warn
+  assert.match(ownModelBinaryWarning(ollama, () => false), /`ollama` binary isn't on PATH/);
+  // local provider, binary present -> silent
+  assert.equal(ownModelBinaryWarning(ollama, () => true), null);
+  // API/unknown provider has no local binary -> silent even if onPath is false
+  assert.equal(ownModelBinaryWarning({ provider: "openai", model: "gpt-4o" }, () => false), null);
+  // no own-model declared -> silent
+  assert.equal(ownModelBinaryWarning(undefined, () => false), null);
 });
 
 test("ctx: grants + own model thread to provision; mcps/harnesses surface but never merge into skills", async () => {

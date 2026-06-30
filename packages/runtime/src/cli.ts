@@ -11,6 +11,7 @@ import { CliHumanIO } from "./human.js";
 import { ClaudeCodeRunner } from "./runners/claudeCode.js";
 import { IpcHumanIO } from "./ipc.js";
 import { ShellGitIO } from "./runners/shellGit.js";
+import { ownModelBinaryWarning } from "./ownModel.js";
 import type { LoopEvent } from "./types.js";
 import { summarizeModels, formatModelSummary, summarizeOpex, formatOpexSummary } from "./summary.js";
 
@@ -302,6 +303,11 @@ async function main() {
     } catch (err) {
       console.error(`⚠ ctx skill source requested but the MCP client could not load: ${String((err as Error)?.message ?? err)}`);
     }
+    // A declared own-model (`ctx may use my own model …`) only unlocks ctx harness recommendations;
+    // it never makes the loop run on that model. Warn if its local binary is missing so the author
+    // isn't surprised that running a recommended harness later would fail.
+    const ownModelWarning = ownModelBinaryWarning(file.config?.ownModel);
+    if (ownModelWarning) console.error(ownModelWarning);
   }
 
   // `--events`: machine-readable NDJSON protocol for a UI host (e.g. the VSCode

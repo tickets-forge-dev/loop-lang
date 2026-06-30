@@ -1,5 +1,6 @@
 export * from "./types.js";
 export { run, runDefinition } from "./engine.js";
+export { ownModelBinaryWarning, commandOnPath } from "./ownModel.js";
 export { ShellVerifier } from "./verify.js";
 export type { ShellVerifierOptions } from "./verify.js";
 export { CliHumanIO, ScriptedHumanIO } from "./human.js";
