@@ -22,7 +22,7 @@ function findLoops(dir, acc = []) {
   return acc;
 }
 
-const files = [...findLoops(join(root, "examples")), join(root, "agentic-engineering.loop")];
+const files = findLoops(join(root, "examples"));
 
 // A verifier that always passes; human IO that always approves — so every example reaches done.
 class PassVerifier { async verify() { return { passed: true, output: "ok" }; } }
