@@ -116,7 +116,7 @@ the thrash guard).
 ## 4. The CLI
 
 ```
-loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop> [--model <alias>] [--live] [--out <path>]
+loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop> [--model <alias>] [--live] [--log <path>] [--out <path>]
 ```
 
 | Command | What it does |
@@ -136,6 +136,8 @@ loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop> [--model <alias>]
   Code. Omit to use the CLI default.
 - `--live` — for `run`, open a live browser dashboard and stream every step to it as the
   loop executes (see below).
+- `--log <path>` — for `run`, append the full event stream to a local NDJSON log
+  (see **Event log & telemetry** below). Overrides `LOOP_LOG_FILE`.
 - `--out <path>` — for `viz`, the HTML output file (default: the `.loop` name with an
   `.html` extension).
 - `--json` — print the parsed loop-spec JSON before the command's normal work (handy with
@@ -167,6 +169,70 @@ The page connects over Server-Sent Events; each event carries an id and the serv
 on connect (and dedupes on reconnect via `Last-Event-ID`), so events fired before the browser
 connects are not lost and a transient drop doesn't double-deliver. The dashboard is
 self-contained (no external assets) and binds to `127.0.0.1` only.
+
+### Event log & telemetry
+
+Every meaningful thing a run does is a **structured event** — `loop-start`, each
+`node-enter` / `node-exit` (with the attempt number), `observe` (pass/fail + output),
+`transition`, `reflect`, `loop-back`, human gates, `ctx` provision/top-up, `git` actions,
+`hook` results, the `model` tier per phase, `stop` (with the reason), `loop-end`, and the
+pipeline / flow / for-each envelopes. The live dashboard renders this stream; you can also
+**persist it** — to a local file and/or a remote collector — for auditing, debugging a
+thrashing loop, or metering cost.
+
+**Off by default.** With no flag and no env var, a run persists nothing and behaves exactly
+as before. Persistence is **best-effort**: a failing log or an unreachable collector never
+throws and never blocks a run — telemetry can't break a loop.
+
+#### Local log — `--log` / `LOOP_LOG_FILE`
+
+```bash
+loop-run run test.loop --log run.log          # one-off (overrides LOOP_LOG_FILE)
+LOOP_LOG_FILE=run.log loop-run run test.loop  # env — same effect
+```
+
+The log is **NDJSON**: one JSON object per line, so it streams and greps cleanly. The first
+line is a `loop.log.v1` header (the run id + metadata); every line after is one event with a
+monotonic `seq` and an ISO timestamp:
+
+```jsonc
+{"v":"loop.log.v1","runId":"…","ts":"2026-07-01T20:04:43.443Z","meta":{"loop_path":"test.loop","principal":"idan"}}
+{"seq":0,"ts":"…","event":{"type":"loop-start","name":"test loop"}}
+{"seq":1,"ts":"…","event":{"type":"node-enter","node":"plan","attempt":1}}
+{"seq":2,"ts":"…","event":{"type":"observe","passed":false,"output":"1 failing test"}}
+{"seq":3,"ts":"…","event":{"type":"reflect","focus":"which layer broke","text":"the API returned 500"}}
+{"seq":4,"ts":"…","event":{"type":"stop","reason":"done"}}
+```
+
+Each event is written with a synchronous append, so it's on disk the instant it fires — the
+log survives a `Ctrl-C` or a crash with **no lost tail**. The parent directory is created if
+missing. It works the same across all run modes (default, `--live`, `--events`).
+
+Read it back with any NDJSON tool — e.g. with `jq`:
+
+```bash
+jq 'select(.event.type == "observe")' run.log            # every verification result
+jq -r 'select(.event.type=="reflect") | .event.text' run.log   # what each failure taught it
+jq 'select(.event.type == "stop") | .event.reason' run.log     # how it ended
+```
+
+#### Remote collector — `LOOP_EVENTS_URL`
+
+To stream the same events to a control plane over HTTP, set `LOOP_EVENTS_URL` (and, if the
+collector needs it, `LOOP_EVENTS_TOKEN`). Events POST to
+`<url>/api/v1/runs/<runId>/events`, each carrying the monotonic `seq` so the server is
+idempotent on retries and out-of-order delivery.
+
+| Env var | Meaning |
+|---|---|
+| `LOOP_LOG_FILE` | Local NDJSON log path (the `--log` flag overrides it). |
+| `LOOP_EVENTS_URL` | Control-plane collector base URL — enables the HTTP sink. |
+| `LOOP_EVENTS_TOKEN` | Shared API token, sent as `x-api-token` (optional). |
+| `LOOP_RUN_ID` | Correlate a run's events across sinks (optional; a UUID is generated if unset). |
+
+The file log and the HTTP collector can run **together** — the same event fans out to both,
+sharing one `runId`, so a local trace and the control-plane record line up. Set `LOOP_RUN_ID`
+yourself when you want a run's id to match something you already track (a CI job, a ticket).
 
 ## 5. Language reference
 
