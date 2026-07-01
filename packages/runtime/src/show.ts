@@ -8,8 +8,10 @@ import type { LoopFile, Definition, Loop, Pipeline, Flow, Predicate, Transition,
 
 function predicateStr(p?: Predicate | null): string | null {
   if (!p) return null;
-  if (p.type === "test") return `test "${p.target}"`;
-  if (p.type === "command") return p.expect === "empty" ? `"${p.command}" finds nothing` : `"${p.command}" passes`;
+  // `… passes N times` re-runs the check as a flake guard; surface it compactly as `×N`.
+  const times = (p.type === "test" || p.type === "command") && p.runs && p.runs > 1 ? ` ×${p.runs}` : "";
+  if (p.type === "test") return `test "${p.target}"${times}`;
+  if (p.type === "command") return (p.expect === "empty" ? `"${p.command}" finds nothing` : `"${p.command}" passes`) + times;
   if (p.type === "human") return `a human confirms "${p.description}"`;
   // skill = an eval: name the verdict and, when not the default, the subject it judges.
   const verdict = p.minScore !== undefined ? `scores ${p.minScore}+` : "approves";
@@ -137,8 +139,9 @@ function joinList(items: string[], conj = "then"): string {
 }
 
 function predicateProse(p: Predicate): string {
-  if (p.type === "test") return `the test "${p.target}" passes`;
-  if (p.type === "command") return p.expect === "empty" ? `running \`${p.command}\` reports nothing` : `running \`${p.command}\` succeeds`;
+  const times = (p.type === "test" || p.type === "command") && p.runs && p.runs > 1 ? ` ${p.runs} times in a row` : "";
+  if (p.type === "test") return `the test "${p.target}" passes${times}`;
+  if (p.type === "command") return (p.expect === "empty" ? `running \`${p.command}\` reports nothing` : `running \`${p.command}\` succeeds`) + times;
   if (p.type === "human") return `you confirm "${p.description}"`;
   // skill = an eval
   const verdict = p.minScore !== undefined ? `the "${p.skill}" review scores ${p.minScore} or more` : `the "${p.skill}" review approves`;

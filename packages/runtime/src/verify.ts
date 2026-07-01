@@ -63,8 +63,20 @@ export class ShellVerifier implements Verifier {
       expectEmpty = predicate.expect === "empty";
     }
 
-    const { code, out } = await sh(command, baseDir);
-    const passed = expectEmpty ? code === 0 && out.length === 0 : code === 0;
-    return { passed, output: out.slice(0, 4000) };
+    // `… passes N times` re-runs the check as a flake guard: EVERY run must pass, and the first
+    // failing run short-circuits (no point running the rest). Absent / 1 → a single run as before.
+    const runs = Math.max(1, predicate.runs ?? 1);
+    let lastOut = "";
+    for (let i = 1; i <= runs; i++) {
+      const { code, out } = await sh(command, baseDir);
+      lastOut = out;
+      const ok = expectEmpty ? code === 0 && out.length === 0 : code === 0;
+      if (!ok) {
+        const prefix = runs > 1 ? `run ${i}/${runs} failed — ` : "";
+        return { passed: false, output: (prefix + out).slice(0, 4000) };
+      }
+    }
+    const suffix = runs > 1 ? `\n(passed ${runs}/${runs} runs)` : "";
+    return { passed: true, output: (lastOut + suffix).slice(0, 4000) };
   }
 }

@@ -234,8 +234,10 @@ export interface PlanSource {
 }
 
 export type Predicate =
-  | { type: "test"; target: string }
-  | { type: "command"; command: string; expect?: "exit-zero" | "empty" }
+  // `runs` (from `… passes N times`) re-runs the check N times and requires every run to pass —
+  // a flake guard against a green that only holds by luck. Absent / 1 = the usual single run.
+  | { type: "test"; target: string; runs?: number }
+  | { type: "command"; command: string; expect?: "exit-zero" | "empty"; runs?: number }
   | { type: "human"; description: string }
   /**
    * An eval: a review skill judges the goal (approve / score). `subject` selects what it

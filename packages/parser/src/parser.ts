@@ -124,17 +124,25 @@ function quoted(s: string): string | null {
 
 function parsePredicate(s: string, lineNo: number): Predicate {
   const text = s.trim();
-  // the test "X" passes
-  let m = text.match(/^the test\s+"([^"]+)"\s+passes$/i);
-  if (m) return { type: "test", target: m[1] };
 
-  // "CMD" finds nothing  -> command, expect empty
-  m = text.match(/^"([^"]+)"\s+finds nothing$/i);
-  if (m) return { type: "command", command: m[1], expect: "empty" };
+  // An optional `N times` suffix re-runs a check to guard against a flaky green — every run must
+  // pass. Only surfaced as `runs` when > 1 (so a plain check, and "1 time", stay the default shape).
+  const times = (n: string | undefined): { runs?: number } => {
+    const r = n ? parseInt(n, 10) : 1;
+    return r > 1 ? { runs: r } : {};
+  };
 
-  // "CMD" passes / succeeds  -> command, exit-zero
-  m = text.match(/^"([^"]+)"\s+(?:passes|succeeds)$/i);
-  if (m) return { type: "command", command: m[1], expect: "exit-zero" };
+  // the test "X" passes [N times]
+  let m = text.match(/^the test\s+"([^"]+)"\s+passes(?:\s+(\d+)\s+times?)?$/i);
+  if (m) return { type: "test", target: m[1], ...times(m[2]) };
+
+  // "CMD" finds nothing [N times]  -> command, expect empty
+  m = text.match(/^"([^"]+)"\s+finds nothing(?:\s+(\d+)\s+times?)?$/i);
+  if (m) return { type: "command", command: m[1], expect: "empty", ...times(m[2]) };
+
+  // "CMD" passes / succeeds [N times]  -> command, exit-zero
+  m = text.match(/^"([^"]+)"\s+(?:passes|succeeds)(?:\s+(\d+)\s+times?)?$/i);
+  if (m) return { type: "command", command: m[1], expect: "exit-zero", ...times(m[2]) };
 
   // a human confirms "..."
   m = text.match(/^a human confirms\s+"([^"]+)"$/i);
@@ -388,7 +396,7 @@ function interpretLoopBody(name: string | null, body: Line[], defaults?: ParseDe
     // command (`check: npm test`); a predicate phrase (`check: the skill "x" approves`) is parsed as-is.
     if ((m = t.match(/^(?:check|verify):\s*(.+)$/i))) {
       const val = m[1].trim();
-      const isPhrase = /^(the test|the skill|a human)\b/i.test(val) || /^".*"\s+(passes|succeeds|finds nothing)$/i.test(val);
+      const isPhrase = /^(the test|the skill|a human)\b/i.test(val) || /^".*"\s+(passes|succeeds|finds nothing)(\s+\d+\s+times?)?$/i.test(val);
       const pred: Predicate = isPhrase
         ? parsePredicate(val, ln.lineNo)
         : { type: "command", command: val.replace(/^"|"$/g, ""), expect: "exit-zero" };

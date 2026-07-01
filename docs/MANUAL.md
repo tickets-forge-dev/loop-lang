@@ -362,6 +362,7 @@ what you intend.
 done when the test "billing.spec.ts::apostrophe" passes   # a named test
 done when "pnpm test" passes                               # shell command, exit 0 (`succeeds` also works)
 done when "semgrep --severity=high" finds nothing          # shell command, empty stdout
+done when "pnpm test flaky" passes 3 times                 # flake guard: re-run, every run must pass
 done when a human confirms "looks right at 375px"          # a human check
 done when the skill "email-review" approves                # an eval: approved / not
 done when the skill "email-review" scores 8 or more        # an eval: numeric threshold
@@ -372,6 +373,13 @@ done when the skill "path-review" approves on the trajectory          # an eval 
 
 The command runs in your shell with your privileges (like an npm script). Keep it fast
 and deterministic.
+
+**Flake guard — `passes N times`.** Append `N times` to a `test` or command predicate
+(`passes` / `succeeds` / `finds nothing`) to re-run the check `N` times and require **every**
+run to pass. The first failing run short-circuits (the rest don't execute). Use it when a
+green can hold by luck — a timing-dependent or order-dependent test — so "done" means
+"passes *reliably*", not "passed *once*". `show` renders it as `×N`; a plain check (or
+`1 time`) is the usual single run.
 
 #### Tests vs evals
 

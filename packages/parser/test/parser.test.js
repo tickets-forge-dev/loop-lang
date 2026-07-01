@@ -213,6 +213,32 @@ test("use skills: also accepts 'and' as a separator", () => {
   assert.deepEqual(loop.skills, ["a", "b", "c"]);
 });
 
+test("flake guard: `passes N times` carries a runs count on a command predicate", () => {
+  const loop = parse('loop "x":\n  goal: g\n  done when "pnpm test" passes 3 times').definitions[0];
+  assert.deepEqual(loop.doneWhen, [{ type: "command", command: "pnpm test", expect: "exit-zero", runs: 3 }]);
+});
+
+test("flake guard: `finds nothing N times` and `the test passes N times` carry runs", () => {
+  const cmd = parse('loop "x":\n  goal: g\n  done when "semgrep" finds nothing 5 times').definitions[0];
+  assert.deepEqual(cmd.doneWhen, [{ type: "command", command: "semgrep", expect: "empty", runs: 5 }]);
+
+  const tst = parse('loop "x":\n  goal: g\n  done when the test "a::b" passes 2 times').definitions[0];
+  assert.deepEqual(tst.doneWhen, [{ type: "test", target: "a::b", runs: 2 }]);
+});
+
+test("flake guard: a plain check (no `N times`) and `1 time` stay the single-run shape", () => {
+  const plain = parse('loop "x":\n  goal: g\n  done when "t" passes').definitions[0];
+  assert.deepEqual(plain.doneWhen, [{ type: "command", command: "t", expect: "exit-zero" }]); // no `runs` key
+
+  const one = parse('loop "x":\n  goal: g\n  done when "t" passes 1 time').definitions[0];
+  assert.deepEqual(one.doneWhen, [{ type: "command", command: "t", expect: "exit-zero" }]); // 1 == default → omitted
+});
+
+test("flake guard: the `check:` sugar also accepts `N times`", () => {
+  const loop = parse('loop "x":\n  goal: g\n  check: "pnpm test" passes 3 times').definitions[0];
+  assert.deepEqual(loop.doneWhen, [{ type: "command", command: "pnpm test", expect: "exit-zero", runs: 3 }]);
+});
+
 test("memory: 'keep a memory in' is an accepted alias", () => {
   const loop = parse('loop "x":\n  goal: g\n  keep a memory in "notes.md"').definitions[0];
   assert.deepEqual(loop.memory, { file: "notes.md" });

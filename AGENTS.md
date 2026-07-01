@@ -116,6 +116,7 @@ stages in parallel:    (inside a pipeline: the indented stages run concurrently)
 done when the test "billing.spec.ts::apostrophe" passes   # a named test
 done when "pnpm test" passes                               # a shell command, exit 0
 done when "semgrep --severity=high" finds nothing          # a shell command, empty output
+done when "pnpm test flaky" passes 3 times                 # flake guard: re-run the check, EVERY run must pass
 done when a human confirms "looks right at 375px"          # a human check
 done when the skill "email-review" approves                # an eval: approved / not
 done when the skill "email-review" scores 8 or more        # an eval: numeric threshold
@@ -126,6 +127,11 @@ done when the skill "path-review" approves on the trajectory          # an eval 
 
 The command in a predicate runs in the user's shell with their privileges (like an npm
 script). It IS meant to be a real command. Prefer a fast, deterministic check.
+
+**Flake guard — `passes N times`.** Append `N times` to a `test` or command predicate to re-run
+it `N` times and require every run to pass (the first failure short-circuits). Reach for it when a
+green can pass by luck — a timing- or order-dependent test — so "done" means "passes *reliably*",
+not "passed *once*".
 
 ### Tests vs evals — list as many `done when` as you need
 
