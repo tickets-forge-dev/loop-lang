@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { appendFileSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import type { LoopEvent } from "./types.js";
 
 /** Run metadata sent alongside events so the collector can attribute a run. */
@@ -53,19 +55,80 @@ export function makeHttpEventSink(opts: {
 }
 
 /**
- * Build a sink from the environment. Returns undefined when `LOOP_EVENTS_URL` is unset, so a run
- * with no control plane configured streams nowhere and behaves exactly as before.
- *   LOOP_EVENTS_URL    — collector base URL (required to enable)
- *   LOOP_EVENTS_TOKEN  — shared API token (optional)
- *   LOOP_RUN_ID        — correlate events to one run (optional; a UUID is generated if unset)
+ * Append every Loop runtime event to a local NDJSON log file — one JSON object per line.
+ *
+ * The first line is a `loop.log.v1` header (runId + meta); every subsequent line is
+ * `{ seq, ts, event }`. Writes are synchronous appends, so each event is durable the instant it
+ * fires — the log survives a Ctrl-C or crash with no lost tail (nothing is buffered, so `flush()`
+ * is a no-op). Best-effort like the HTTP sink: a missing directory is created once, and any write
+ * error disables the sink quietly rather than breaking the run.
  */
-export function eventSinkFromEnv(meta?: RunMeta): EventSink | undefined {
+export function makeFileEventSink(opts: { path: string; runId: string; meta?: RunMeta }): EventSink {
+  let seq = 0;
+  let broken = false;
+  let started = false;
+  const line = (obj: unknown): void => {
+    if (broken) return;
+    try {
+      appendFileSync(opts.path, JSON.stringify(obj) + "\n");
+    } catch {
+      broken = true;
+    }
+  };
+  const start = (): void => {
+    if (started) return;
+    started = true;
+    try {
+      mkdirSync(dirname(opts.path), { recursive: true });
+    } catch {
+      /* dir may already exist or be uncreatable — the append below decides if we can log */
+    }
+    line({ v: "loop.log.v1", runId: opts.runId, ts: new Date().toISOString(), meta: opts.meta });
+  };
+  return {
+    post(event) {
+      start();
+      line({ seq: seq++, ts: new Date().toISOString(), event });
+    },
+    async flush() {
+      /* appendFileSync is durable — nothing is buffered */
+    },
+  };
+}
+
+/** Fan one event stream out to several sinks. Returns undefined when none are active. */
+export function combineSinks(sinks: Array<EventSink | undefined>): EventSink | undefined {
+  const active = sinks.filter((s): s is EventSink => !!s);
+  if (!active.length) return undefined;
+  if (active.length === 1) return active[0];
+  return {
+    post(event) {
+      for (const s of active) s.post(event);
+    },
+    async flush() {
+      await Promise.allSettled(active.map((s) => s.flush()));
+    },
+  };
+}
+
+/**
+ * Build a sink from the environment (plus optional explicit overrides). Returns undefined when no
+ * telemetry is configured, so a run with no sink streams nowhere and behaves exactly as before.
+ * When more than one is active, events fan out to all — sharing one run id so the HTTP collector
+ * and the local log correlate.
+ *   LOOP_EVENTS_URL    — control-plane collector base URL (enables the HTTP sink)
+ *   LOOP_EVENTS_TOKEN  — shared API token for the collector (optional)
+ *   LOOP_LOG_FILE      — local NDJSON log path (enables the file sink)
+ *   LOOP_RUN_ID        — correlate events to one run (optional; a UUID is generated if unset)
+ *
+ * `override.logFile` (the CLI's `--log <path>`) takes precedence over `LOOP_LOG_FILE`.
+ */
+export function eventSinkFromEnv(meta?: RunMeta, override?: { logFile?: string }): EventSink | undefined {
+  const runId = process.env.LOOP_RUN_ID || randomUUID();
   const url = process.env.LOOP_EVENTS_URL;
-  if (!url) return undefined;
-  return makeHttpEventSink({
-    url,
-    runId: process.env.LOOP_RUN_ID || randomUUID(),
-    token: process.env.LOOP_EVENTS_TOKEN,
-    meta,
-  });
+  const logPath = override?.logFile || process.env.LOOP_LOG_FILE;
+  return combineSinks([
+    url ? makeHttpEventSink({ url, runId, token: process.env.LOOP_EVENTS_TOKEN, meta }) : undefined,
+    logPath ? makeFileEventSink({ path: logPath, runId, meta }) : undefined,
+  ]);
 }

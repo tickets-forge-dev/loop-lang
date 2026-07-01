@@ -231,7 +231,7 @@ async function main() {
   }
 
   if (!cmd || (cmd !== "run" && cmd !== "parse" && cmd !== "viz" && cmd !== "live") || !fileArg) {
-    console.error("usage: loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop>  [--model <alias>] [--live] [--events] [--out <path>]");
+    console.error("usage: loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop>  [--model <alias>] [--live] [--events] [--log <path>] [--out <path>]");
     process.exit(2);
   }
 
@@ -289,6 +289,9 @@ async function main() {
 
   const modelIdx = rest.indexOf("--model");
   const model = modelIdx >= 0 ? rest[modelIdx + 1] : undefined;
+  // `--log <path>` writes the full event stream to a local NDJSON log (overrides LOOP_LOG_FILE).
+  const logIdx = rest.indexOf("--log");
+  const logFile = logIdx >= 0 ? rest[logIdx + 1] : undefined;
   const target = file.config?.target ? resolve(baseDir, file.config.target) : baseDir;
 
   const git = new ShellGitIO();
@@ -311,13 +314,17 @@ async function main() {
     if (ownModelWarning) console.error(ownModelWarning);
   }
 
-  // Control-plane telemetry: when LOOP_EVENTS_URL is set, stream every event to the collector.
-  // Best-effort and off by default — no env, no sink, behaves exactly as before.
-  const eventSink = eventSinkFromEnv({
-    loop_path: path,
-    principal: file.config?.runsAs,
-    runner: file.config?.runner,
-  });
+  // Telemetry: stream every event to the control-plane collector (LOOP_EVENTS_URL) and/or append
+  // it to a local NDJSON log (LOOP_LOG_FILE). Best-effort and off by default — no env, no sink,
+  // behaves exactly as before.
+  const eventSink = eventSinkFromEnv(
+    {
+      loop_path: path,
+      principal: file.config?.runsAs,
+      runner: file.config?.runner,
+    },
+    { logFile }
+  );
 
   // `--events`: machine-readable NDJSON protocol for a UI host (e.g. the VSCode
   // extension) — streams Claude's live activity and answers human gates over stdin.
