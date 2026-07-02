@@ -628,6 +628,31 @@ when blocked: ask a human            # unblock when the agent is stuck</code></p
   </ol>
   <div class="note"><b>No failing test yet?</b> Tell the loop to write one first — a tiny "reproduce PROJ-412 with a failing test" loop, then the fix loop. Now <code class="inl">done when</code> has something real to check.</div>
 
+  <h3>You already have a spec — PRD + sprint.yaml (the BMAD flow)</h3>
+  <p>The other everyday shape: the thinking is done. A PRD (<code class="inl">plan.md</code>) and a story backlog (<code class="inl">sprint.yaml</code>) already exist — from BMAD, from a planning session, from your PM. You don't want a loop to <em>re-plan</em> the product; you want it to <strong>deliver the backlog, story by story, with the same checklist every time</strong>. That's what <code class="inl">for each</code> is for:</p>
+  <ol>
+    <li><strong>Grab the two-file kit.</strong> Copy <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/templates/load-spec.loop"><code class="inl">templates/load-spec.loop</code></a> + <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/templates/story-template.loop"><code class="inl">templates/story-template.loop</code></a> next to your spec (in VS Code: <em>New Loop from template ▸ load-spec</em> drops the whole bundle). Edit the <code class="inl"># TODO</code> lines — your real test commands.</li>
+    <li><strong>The driver is three lines.</strong> It iterates <em>your existing</em> <code class="inl">sprint.yaml</code>:</li>
+  </ol>
+  <pre><code class="loop"># load-spec.loop — deliver an existing backlog, story by story
+flow "deliver the sprint":
+  for each story in "sprint.yaml":
+    run "story-template.loop"</code></pre>
+  <ol start="3">
+    <li><strong>Your backlog stays the source of truth.</strong> <code class="inl">sprint.yaml</code> is any YAML list (or an <code class="inl">items:</code> key; a <code class="inl">.md</code> file splits on <code class="inl">##</code> sections). Each entry's <em>text</em> is handed to the template as the story's context — what to build, its acceptance criteria:</li>
+  </ol>
+  <pre><code class="loop"># sprint.yaml — yours, unchanged
+- "signup: email + password, verification mail; done when pnpm test auth/signup passes"
+- "login: session cookie, lockout after 5 tries; done when pnpm test auth/login passes"
+- "reset: token flow, 15-min expiry; done when pnpm test auth/reset passes"</code></pre>
+  <ol start="4">
+    <li><strong>One checklist, every story.</strong> <code class="inl">story-template.loop</code> is the per-story pipeline — implement to a green test, then a security pass, then a 👤 manual check. Author it once; the flow runs it once per story. A failing story <strong>pauses and asks you</strong>: continue with the next story, or stop the sprint.</li>
+    <li><strong>Run it</strong> — <code class="inl">/loopflow run load-spec.loop</code> in the chat, or headless with a journal so a long sprint can survive anything:</li>
+  </ol>
+  <pre><code class="loop">loop-run run load-spec.loop --log sprint.log       # every story's progress on disk
+loop-run run load-spec.loop --resume sprint.log --log sprint.log   # laptop died at story 7? stories 1–6 skip</code></pre>
+  <div class="note"><b>No spec yet?</b> That's the other template: <code class="inl">greenfield-app.loop</code> runs <code class="inl">discover.loop</code> (interviews you → writes <code class="inl">sprint.yaml</code>) and <code class="inl">design.loop</code> (👤-approved <code class="inl">design.md</code>) <em>first</em>, then falls into this same per-story flow. Same delivery engine — it just builds the spec before consuming it. Method-neutral, too: any checklist works, BMAD is one example (<code class="inl">examples/bmad/atoz/</code>).</div>
+
   <h3>Built with LoopFlow — Forge's sandbox runner <span class="badge b-inter">case study</span></h3>
   <p>This isn't hypothetical. <strong>Forge</strong> — a ticket-driven implementation platform (you hand it a ticket, agents implement it) — is itself built with LoopFlow. One of its sharper-edged modules is the <strong>sandbox runner</strong>: the infrastructure that executes agent-written code in isolation, so untrusted code can run without ever touching the host. I built it as a pipeline, one provable stage at a time:</p>
   <pre><code class="loop"># examples/forge-sandbox.loop
