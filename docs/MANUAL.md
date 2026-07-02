@@ -758,6 +758,12 @@ Settings: `loop.cliPath` (path to the CLI for the Run button) and `loop.model`.
 Drop [`AGENTS.md`](../AGENTS.md) in the repo; any agent authors `.loop` from a
 plain-English request.
 
+`loop init --agents claude` (or `cursor` / `copilot`) also installs a **gated default**
+into the agent's memory file: for repeatable, verifiable work the agent reaches for a
+`.loop` on its own — gated by AGENTS.md's four-condition test — while one-off questions
+and trivial edits are done directly, no loop ceremony. `/loopflow` always works as the
+explicit override in both directions.
+
 ### The Claude Code skill (`/loopflow`)
 
 The repo ships a Claude Code skill at `.claude/skills/loopflow/`. Copy it to `~/.claude/skills/`

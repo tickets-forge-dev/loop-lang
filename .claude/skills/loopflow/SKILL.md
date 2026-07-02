@@ -1,6 +1,6 @@
 ---
 name: loopflow
-description: Create and run Loop (.loop) flows — a natural-language DSL for loop engineering. Use when the user wants to author, write, run, or execute a self-correcting or human-gated AI coding loop, turn an epic into a pipeline, fix a bug "as a loop", build a feature or whole app "as a loop", learn what Loop is or how to use it, or mentions a .loop file or "loop engineering". Invoked as /loopflow (the name avoids colliding with the built-in /loop scheduler).
+description: Create and run Loop (.loop) flows — a natural-language DSL for loop engineering. Use when the user wants to author, write, run, or execute a self-correcting or human-gated AI coding loop, turn an epic into a pipeline, fix a bug "as a loop", build a feature or whole app "as a loop", learn what Loop is or how to use it, or mentions a .loop file or "loop engineering". Not for one-off questions or trivial edits — the skill's four-condition gate decides and de-escalates. Invoked as /loopflow (the name avoids colliding with the built-in /loop scheduler).
 ---
 
 # Loop
@@ -12,6 +12,16 @@ steps in.
 
 You do two things with this skill: **create** `.loop` files, and **run** them — natively,
 in this conversation, so the user watches every step and answers gates right here.
+
+## When NOT to loop — the gate comes first
+
+Before authoring anything, run the **four-condition test** (the full version lives in
+`AGENTS.md` → "When to write a `.loop`"): does the task **repeat**? is **"done" checkable**
+by a command/test/review skill? are the **iterations affordable**? can the loop **verify
+itself**? **Any condition fails → don't force a loop.** Say so in one line — e.g. *"one-off
+edit, doing it directly"* — then answer the question or make the change normally, without
+loop ceremony. A rename, a one-off question, an unverifiable ask: never a loop. The user
+can always override with an explicit request.
 
 ---
 
