@@ -1,7 +1,7 @@
 {
   "name": "loopflow",
   "displayName": "LoopFlow",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Language support for the LoopFlow (.loop) DSL — syntax highlighting, live diagnostics, completion, best-practice templates, and ▶ Run buttons for self-correcting agent workflows.",
   "license": "Apache-2.0",
   "publisher": "Loop-Lang",
@@ -21,7 +21,7 @@
     "loop-engineering"
   ],
   "galleryBanner": {
-    "color": "#0d9488",
+    "color": "#0b0d12",
     "theme": "dark"
   },
   "repository": {
