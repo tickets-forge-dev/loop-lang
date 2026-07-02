@@ -35,6 +35,8 @@
 
 ## Quickstart
 
+Requires Node 18+ and the [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) — full install options in the [manual](docs/MANUAL.md#2-install).
+
 ```bash
 npx @loop-lang/loop init      # installs the /loopflow skill + AGENTS.md
 ```
@@ -43,33 +45,16 @@ Then, in a Claude Code chat:
 
 ```
 /loopflow fix the failing test — done when the suite passes
+/loopflow run examples/fix_test.loop   # name a .loop file and it runs natively in the session
 ```
 
-It plans → acts → observes, reflects on a red test, and stops only when the check is green — never pushing to `main`. Full walkthrough at **[loopflow.live](https://loopflow.live)**.
+Copy `.claude/skills/loopflow/` to `~/.claude/skills/` to use the skill in any repo. Don't write your first loop from scratch — [start from a template](https://loopflow.live/#templates) and edit the goal + `done when`. Full walkthrough at **[loopflow.live](https://loopflow.live)**.
 
 ## Why
 
 AI writes the code now. But you're still the conductor — kicking off manual pass after manual pass: *"fix the security issues", "now refactor", "now fix the UI."* Even strong methods leave you iterating by hand, in layers, forever.
 
-LoopFlow lets you describe that **movement once**. You don't type the app — you type the *loop*: the objective, the context, the allowed actions, how it verifies itself, when it stops, and where a human steps in. Then you reuse it.
-
-A loop has five knobs — **objective, context, actions, verification, stopping rules**. Today they're buried in a prompt. LoopFlow makes them first-class, editable, and shareable.
-
-## The shape
-
-One structure, two faces — the five decisions you author drive the five phases that run:
-
-```
-  DECIDE                          RUN
-  objective    → goal:            plan → act → observe
-  context      → look at:           ▲            │
-  actions      → allow / ask          └ reflect ◄┘ (fail)
-  verification → done when                 │
-  stopping     → when… / after N    (pass) ▼  →  stop
-```
-
-You rarely write all five — defaults carry the simple case, and the editor *nudges*
-(never blocks) when a loop is missing something load-bearing. See [the manual](docs/MANUAL.md#the-shape-of-a-loop).
+LoopFlow lets you describe that **movement once**. You don't type the app — you type the *loop*: the five decisions (objective, context, actions, verification, stopping) that today are buried in a prompt. LoopFlow makes them first-class, editable, and shareable; at run time they drive five phases — plan → act → observe → reflect → stop. The [tutorial](https://loopflow.live/#what) teaches the framing.
 
 ## A taste
 
@@ -88,157 +73,50 @@ loop "fix billing apostrophe bug":
   after 6 tries:                        stop and warn "thrashing"
 ```
 
-Compose loops into **stages** and **pipelines**, with humans wired in where judgment lives:
-
-```loop
-pipeline "ship feature":
-
-  stage "security":
-    goal: no high or critical vulnerabilities
-    done when "semgrep --severity=high" finds nothing
-    each cycle: plan, then act, then observe
-    when it fails: reflect, then plan again
-
-  stage "build":
-    goal: feature works and tests pass
-    a human approves the plan first
-    done when "pnpm test" passes
-    each cycle: act, then observe
-
-  stage "ui":
-    goal: matches design, responsive at 375px
-    each cycle: plan, then act, then observe
-    a human reviews before stopping
-```
-
-## Verify like you mean it
-
-`done when` is the loop's definition of reality — so LoopFlow gives verification real teeth.
-List several checks (**all must pass**), mix deterministic tests with LM-judged evals, and
-harden both sides against false greens:
-
-```loop
-loop "harden checkout":
-  goal: checkout works, reliably, and was built the right way
-  done when "pnpm test checkout" passes 3 times                  # flake guard: every run must pass
-  done when the skill "code-review" approves by 3 judges         # judge panel: majority of 3 verdicts
-  done when the skill "path-review" approves on the trajectory   # judges HOW it got there
-    the bar: didn't weaken a test to go green; no writes outside src/checkout
-```
-
-- **Flake guard** — `passes N times` re-runs a test/command; one lucky green isn't "done".
-- **Judge panel** — `by N judges` takes a majority of independent verdicts; one wobbly LM
-  judgment isn't "done" either.
-- **Trajectory evals** — catch what a green test can't: an agent that gamed the check.
-
-Full mechanics — what a verdict is actually affected by (working dir, shell env, exit codes) —
-in [How verification works](docs/MANUAL.md#how-verification-works--what-done-actually-depends-on).
-
-## Skills and memory
-
-Two knobs make a loop coordinate proven work and learn over time:
-
-```loop
-loop "decide whether to cancel the morning run":
-  goal: a clear go / no-go call the runner trusts
-  use skills: check-weather, analyze-workout     # coordinate battle-tested skills
-  remember in "morning-run.memory.md"            # cross-run history + lessons learned
-  each cycle: plan, then act, then observe
-  done when the skill "workout-review" approves   # bridge the abstract to the verifiable
-```
-
-- **`use skills:`** names skills the loop may invoke while planning and acting — compose
-  proven skills instead of one mega-prompt (skill-driven development).
-- **`done when the skill "…" approves`** (or `scores N or more`) lets a review skill verify
-  a goal that isn't a test or command — a good email, a sound design, a sensible call.
-- **`remember in "<file>"`** gives the loop a markdown memory: it reads past lessons into its
-  first plan and appends an outcome entry when it stops. `reflect` is within-run memory;
-  `remember` is its across-run counterpart. See [`examples/skills_memory.loop`](examples/skills_memory.loop).
-
-And a loop can **equip itself**: with [ctx](https://github.com/stevesolun/ctx) attached as the
-skill source, `use skills recommended by ctx` resolves + installs the right skill bundle for the
-goal before the first plan, and `top up skills from ctx` pulls more after a failed cycle
-reflects. Opt-in, fail-closed, inert without ctx — see
-[the integration guide](docs/MANUAL.md) and [`examples/ctx_capabilities.loop`](examples/ctx_capabilities.loop).
-
 ## Compose loops
 
 Compose loops into **pipelines** (stages in order, fail-fast), chain whole files with **`flow`**, and fan out over a plan with **`for each`** — humans wired in where judgment lives. Full grammar with worked examples: the [tutorial](https://loopflow.live) and the [manual](docs/MANUAL.md).
 
-## The vocabulary (~15 words — learn it once)
+## Verify like you mean it
+
+`done when` is the loop's definition of reality. List several checks (**all must pass**), mix deterministic tests with LM-judged evals, and harden both against false greens:
+
+- `done when "pnpm test checkout" passes 3 times` — **flake guard**: one lucky green isn't "done".
+- `done when the skill "code-review" approves by 3 judges` — **judge panel**: majority of 3 independent verdicts; one wobbly LM judgment isn't "done" either.
+- `done when the skill "path-review" approves on the trajectory` — **trajectory eval**: catches what a green test can't — an agent that gamed the check.
+
+Taught with a worked example in the [tutorial](https://loopflow.live/#evals); full mechanics (working dir, shell env, exit codes) in [How verification works](docs/MANUAL.md#how-verification-works--what-done-actually-depends-on).
+
+## Skills and memory
+
+A loop can coordinate proven skills (`use skills: check-weather, analyze-workout`), let a review skill be the verdict (`done when the skill "workout-review" approves`), and keep cross-run memory in a markdown file (`remember in "morning-run.memory.md"`). With [ctx](https://github.com/stevesolun/ctx) attached as the skill source, `use skills recommended by ctx` provisions the right bundle before the first plan — opt-in, fail-closed, inert without ctx. Details: [manual](docs/MANUAL.md#skill-source-ctx), [integration guide](docs/ctx-integration-guide.md), [`examples/skills_memory.loop`](examples/skills_memory.loop), [`examples/ctx_capabilities.loop`](examples/ctx_capabilities.loop).
+
+## The vocabulary — learn it once
 
 `pipeline` · `stage` · `loop` · `flow` · `for each … in …` · `run … then …` · `each cycle` · `goal` · `done when` · `look at` · `allow…/ask me before…` · `also` · `use skills` · `remember in` · `when…` · `reflect` · `a human…` · `stop` · `use` · `schedule` · `git`
 
-Power comes from **composition**, not keyword count.
+Power comes from **composition**, not keyword count. Each word is documented at [loopflow.live/keywords](https://loopflow.live/keywords/index.html); the authoritative grammar is [AGENTS.md](AGENTS.md).
 
 ## Git strategy (safe by default)
 
-Without any `git:` block, LoopFlow works on a branch and commits when the goal is met — it
-never pushes to `main` or `master`. A `git:` block at the top of the file lets you opt
-into push and a pull request:
-
-```loop
-git:
-  work on a branch
-  commit when the goal is met
-  push when done
-  open a pull request
-```
-
-See [`examples/git_policy.loop`](examples/git_policy.loop) and the [manual](docs/MANUAL.md#git-strategy) for the full set of line forms and cascade rules.
+Without a `git:` block, LoopFlow works on a branch and commits when the goal is met — it **never pushes to `main` or `master`** (unconditional, not configurable). A `git:` block opts into push and a pull request: all line forms and cascade rules in the [manual](docs/MANUAL.md#git-strategy), working file at [`examples/git_policy.loop`](examples/git_policy.loop).
 
 ## Authoring: by hand or by agent
 
-Write `.loop` by hand — the [**LoopFlow VS Code extension**](https://marketplace.visualstudio.com/items?itemName=Loop-Lang.loopflow)
-(`ext install Loop-Lang.loopflow` · [source](packages/vscode)) gives syntax highlight,
-context-aware Ctrl+Space autocomplete, hover docs, and live error squiggles (Copilot
-fills the AI-prediction lane). Or ask an AI assistant to write it: drop
-[AGENTS.md](AGENTS.md) in your repo and Claude Code / Copilot author `.loop` from a
-plain-English request — the language reference travels with the project, so no special
-generator is needed.
+By hand: the [**LoopFlow VS Code extension**](https://marketplace.visualstudio.com/items?itemName=Loop-Lang.loopflow) (`ext install Loop-Lang.loopflow`) gives highlighting, completions, hover docs, and squiggles. By agent: drop [AGENTS.md](AGENTS.md) in your repo and any assistant authors `.loop` from a plain-English request — feature details in the [manual](docs/MANUAL.md#7-vscode-extension).
 
-## Run it inside Claude Code
+## Run it headless
 
-A bundled **Claude Code skill** (`.claude/skills/loopflow/`) lets you create and run loops
-*inside your Claude Code conversation* — no separate process:
+The `loop-run` CLI ships with `npm i -g @loop-lang/runtime`:
 
 ```
-/loopflow fix the failing auth test in src/auth, gate any database migration
-/loopflow run examples/bmad-auth.loop
+loop-run run file.loop --live          # real-time browser dashboard of the run
+loop-run run file.loop --log run.log   # NDJSON event log (secrets scrubbed)
+loop-run run file.loop --resume run.log  # skip what the log proves done; pick up where it died
+loop-run show file.loop                # sanity-check the shape as ASCII before spending tokens (explain = plain English)
 ```
 
-Describe work and it writes the `.loop`; name a `.loop` file and it runs the loop
-**natively in the session** — you watch every plan/act/observe/reflect step and answer
-human gates right in the chat. Copy `.claude/skills/loopflow/` to `~/.claude/skills/` to use it
-in any repo (it's already active inside this one).
-
-## Watch it run — live dashboard
-
-A real-time browser view of a run, showing the loop's **actual structure** as a turn-by-turn
-route (Waze-style): where you are, the steps ahead, human gates, and for-each sprints listed
-by item title with live progress.
-
-```
-loop-run run file.loop --live      # headless: engine streams every step to the browser
-/loopflow run file.loop            # in-session: the skill offers the dashboard, then drives it
-```
-
-When you run a loop via `/loopflow`, the skill asks if you want the dashboard and, on yes,
-opens it and updates it as each step happens — pipeline stages, flow steps, and sprint stories
-filling in as the loop progresses.
-
-Prefer a file you can grep later? Persist the same event stream as NDJSON — and use it to
-**resume** an interrupted run:
-
-```
-loop-run run file.loop --log run.log       # append every event to a local log (secrets scrubbed)
-loop-run run file.loop --resume run.log    # skip what the log proves done; pick up where it died
-```
-
-See **Event log & telemetry** in [`docs/MANUAL.md`](docs/MANUAL.md) for the format, redaction,
-resume semantics, and the `LOOP_EVENTS_URL` remote collector. Want to *feel* the language first?
-Open the [**browser playground**](https://loopflow.live/playground.html) — type a `.loop`, see its
-shape live, no install.
+In-session, the dashboard is opt-in: set `live=true` in `loop.config` (`loop init` writes it with `live=false`). Log format, redaction, resume semantics, and the `LOOP_EVENTS_URL` remote collector: [Event log & telemetry](docs/MANUAL.md#event-log--telemetry).
 
 ## Project layout
 
@@ -258,10 +136,7 @@ shape live, no install.
 
 ## Status
 
-Active. Shipped: parser + runtime (pipelines, flows, for-each, evals, judge panels, flake
-guard), event log + `--resume`, secret-scrubbed telemetry, live dashboard, VSCode extension,
-template library, browser playground, ctx skill provisioning. See the [roadmap](#roadmap)
-and [open issues](../../issues).
+Active — see the [roadmap](#roadmap) and [open issues](../../issues).
 
 ## Roadmap
 

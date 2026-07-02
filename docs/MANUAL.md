@@ -1,10 +1,8 @@
 # LoopFlow — User Manual
 
-LoopFlow is an open-source natural-language DSL for **loop engineering**. You describe a
-staged, self-correcting, human-gated AI coding workflow in plain English in a `.loop`
-file, then run it natively on Claude Code. The loop's five knobs — objective, context,
-actions, verification, stopping rules — are first-class and editable instead of buried in
-a prompt.
+The complete LoopFlow reference: install, CLI, language, run semantics, the IR.
+New here? Start with the [tutorial](https://loopflow.live).
+Authoring `.loop` with an AI agent? Give it [`AGENTS.md`](../AGENTS.md).
 
 - [The shape of a loop](#the-shape-of-a-loop)
 - [1. Requirements](#1-requirements)
@@ -48,17 +46,15 @@ the runtime executes **five phases** (the cycle). The knobs configure the phases
 | Verification | `done when …` | what `observe` checks |
 | Stopping | `when …` / `after N tries` | `stop` + the `reflect` back-edge |
 
-You rarely write all five — sensible defaults cover the simple case (the cycle defaults to
-plan→act→observe; edits default to auto). The VSCode extension nudges you when a loop is
-missing something load-bearing (e.g. no way to verify "done", or a back-edge with no
-thrash guard) — a warning, never an error. Structure guides; it doesn't cage.
+Defaults cover the simple case (cycle `plan → act → observe`; edits auto). The
+[VSCode extension](#7-vscode-extension) warns — never errors — when a loop is missing
+something load-bearing.
 
 ## Anatomy — the authoring order
 
-The parser doesn't care what order the lines come in. **You should.** A loop written in
-the canonical order reads top-to-bottom like the run itself degrades — promises at the
-top, failure handling at the bottom — and forces the two decisions that matter before any
-of the ones that don't. The standard: **write the finish line first, the safety net last.**
+The parser doesn't care what order the lines come in; you should: **the finish line
+first, the safety net last** — four zones, top to bottom. (Rationale and the taught
+version: [tutorial → Anatomy](https://loopflow.live/#anatomy).)
 
 <p align="center"><img src="assets/loop-anatomy.svg" alt="Anatomy of a healthy loop: 1 the contract (goal + done when), 2 the boundaries (look at, allow/ask, human gates), 3 the engine (each cycle), 4 the safety net (when it fails / when blocked / after N tries)" width="860"></p>
 
@@ -66,12 +62,12 @@ of the ones that don't. The standard: **write the finish line first, the safety 
 
 | # | Zone | Lines | Why it comes here |
 |---|---|---|---|
-| 1 | **The contract** | `goal:` → `done when` | The destination and the finish line. Write `done when` *before any behavior* — this is loop engineering's TDD. If you can't write the check, you don't know what you're building yet; stop and figure that out first. Everything below exists to make this line pass. |
-| 2 | **The boundaries** | `look at:` → `allow …, ask me before …` → `a human approves/reviews …` | Scope before power. First what it may *read* (pin the loop inside your architecture), then what it may *do* alone, then where a person sits. Deciding gates now — while you're thinking about risk, not behavior — is what keeps them honest. |
-| 3 | **The engine** | `each cycle:` | The repeated movement. Usually the default `plan, then act, then observe` — written explicitly so a reader sees the shape without knowing the defaults. |
-| 4 | **The safety net** | `when it fails:` → `when blocked:` → `after N tries:` | Recovery (the reflect back-edge), the escape hatch (a human), and the floor — in escalation order. **The last line of a loop is its hard stop**: the file ends with the guarantee that it can't spin forever. |
+| 1 | **The contract** | `goal:` → `done when` | The check before any behavior — loop engineering's TDD. |
+| 2 | **The boundaries** | `look at:` → `allow …, ask me before …` → `a human approves/reviews …` | Scope before power; decide gates while thinking about risk. |
+| 3 | **The engine** | `each cycle:` | The repeated movement. |
+| 4 | **The safety net** | `when it fails:` → `when blocked:` → `after N tries:` | Recovery → escape hatch → floor; the last line is the hard stop. |
 
-Line by line, the canonical skeleton:
+The canonical skeleton (placeholders — replace every `<…>` before running; it does not parse as-is):
 
 ```loop
 loop "<name>":
@@ -89,11 +85,6 @@ loop "<name>":
   after 6 tries: stop and warn "<how you'll find it stuck>"     #      the floor, always last
 ```
 
-**Why `done when` second and not last?** Because it's the decision that shapes every other
-line: the context you scope, the actions you allow, even the try ceiling are all sized to
-the check. Written last, `done when` tends to describe whatever the loop happened to do;
-written first, the loop is built to satisfy it. Same reason tests-before-code works.
-
 **Where the optional lines go** — each joins the zone it belongs to:
 
 | Line | Zone |
@@ -103,15 +94,6 @@ written first, the loop is built to satisfy it. Same reason tests-before-code wo
 | `also:` (finishing passes) | 3 · engine (extra movement after the goal) |
 | `hooks:` | 4 · safety net (deterministic checkpoints) |
 | `git:` block, `models:` | config tier — **above** all definitions, or file-top inside the loop |
-
-### What a healthy loop looks like
-
-- **A finish line a machine can check** — or an explicit `a human reviews before stopping`. Never neither.
-- **A fast, deterministic check** — `finds nothing` for scanners, `passes N times` where timing lurks.
-- **Scoped context** — the three files that matter plus `the last failure`, not "the repo".
-- **Gates on risk, autonomy on the rest** — migrations gated, edits automatic. Gating trivia trains you to rubber-stamp.
-- **Recovery AND a floor** — `reflect, then plan again` *always* paired with `after N tries`. A back-edge without a ceiling is how loops thrash to the hard cap.
-- **Reads like a story** — someone who's never seen LoopFlow should understand the file top to bottom: *what → how we'll know → what it may touch → how it moves → what happens when it goes wrong.*
 
 Smells, for the review pass: no `done when` · `look at:` missing or unbounded · a reflect
 back-edge with no try ceiling · a `warn` message that won't tell future-you what got stuck ·
@@ -126,30 +108,20 @@ stage is a loop and reads as one.
 
 ## 2. Install
 
-Build from source (the monorepo):
+The published packages:
 
 ```bash
-git clone <repo-url> loop-lang
-cd loop-lang
-npm install
-npm run build        # builds every package
-npm test             # optional: run the test suite
+npx @loop-lang/loop init         # scaffold Loop into a repo: /loopflow skill + AGENTS.md + examples + templates
+npm i -g @loop-lang/runtime      # the loop-run CLI used throughout this manual
 ```
 
-The CLI entry point is `packages/runtime/dist/cli.js`. Either run it directly:
+Building from source (contributors):
 
 ```bash
-node packages/runtime/dist/cli.js <command> <file.loop>
+git clone <repo-url> loop-lang && cd loop-lang
+npm install && npm run build
+npm link --workspace @loop-lang/runtime   # the same loop-run command, from your build
 ```
-
-or expose a `loop-run` command by linking the runtime package:
-
-```bash
-npm link --workspace @loop-lang/runtime   # then: loop-run <command> <file.loop>
-```
-
-This manual writes `loop-run` for brevity; substitute `node packages/runtime/dist/cli.js` if
-you did not link.
 
 ## 3. Quickstart
 
@@ -166,13 +138,20 @@ loop "fix add":
   after 5 tries: stop and warn "could not fix add"
 ```
 
+Don't start from a blank file: [`templates/`](../templates/) ships verified starter loops
+(bugfix, feature, security, greenfield A-to-Z) — copy one and fill in its `# TODO` lines.
+
 Check it parses, see it, then run it:
 
 ```bash
+loop-run show fix.loop       # print the loop's shape as ASCII (explain = plain English)
 loop-run parse fix.loop      # prints the loop-spec JSON (validates syntax)
 loop-run viz fix.loop        # writes fix.html — open it in a browser
 loop-run run fix.loop        # drives Claude Code: plan -> act -> observe -> done
 ```
+
+Make `show` (or `explain`) a habit before `run` — ten seconds of reading the shape catches
+a missing thrash guard before it costs tokens.
 
 `loop-run run` works in the directory the `.loop` file lives in: it plans, edits files,
 runs your `done when` check, reflects on failure, and stops when the goal is met (or at
@@ -181,7 +160,7 @@ the thrash guard).
 ## 4. The CLI
 
 ```
-loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop> [--model <alias>] [--live] [--log <path>] [--resume <log>] [--out <path>]
+loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop> [--model <alias>] [--live] [--events] [--log <path>] [--resume <log>] [--out <path>]
 ```
 
 | Command | What it does |
@@ -201,6 +180,8 @@ loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop> [--model <alias>]
   Code. Omit to use the CLI default.
 - `--live` — for `run`, open a live browser dashboard and stream every step to it as the
   loop executes (see below).
+- `--events` — for `run`, emit the machine-readable NDJSON event protocol on stdout for a
+  UI host (what the VSCode ▶ Run "output" mode consumes).
 - `--log <path>` — for `run`, append the full event stream to a local NDJSON log
   (see **Event log & telemetry** below). Overrides `LOOP_LOG_FILE`.
 - `--resume <log>` — for `run`, skip everything a prior run's event log proves already
@@ -224,13 +205,10 @@ Two ways to drive it:
 
 - **Headless** — `loop-run run <file> --live` opens a browser tab and the engine streams
   every event to it. The terminal still prints the normal text trace.
-- **In-session** — when you run a loop inside Claude Code via `/loopflow`, the dashboard is
-  **opt-in via `loop.config`**: `loop init` writes `loop.config` with `live=false` (off by
-  default), and the skill only opens the dashboard when you set `live=true`. When enabled it
-  starts `loop-run live <file>` in the background (which prints `LOOP_LIVE_PORT=<port>` and
-  opens the browser) and pushes an event per narrated step with
-  `loop-run emit <port> '<event-json>'`. The headless `--live` flag is independent of this
-  config.
+- **In-session** — opt-in via `loop.config`: `loop init` writes `live=false`; only
+  `live=true` makes the `/loopflow` skill open and drive the dashboard. Independent of the
+  headless `--live` flag. (The emit protocol the skill uses is specified in the skill's own
+  cheat-sheet.)
 
 The page connects over Server-Sent Events; each event carries an id and the server replays
 on connect (and dedupes on reconnect via `Last-Event-ID`), so events fired before the browser
@@ -464,18 +442,22 @@ what you intend.
 
 ### Predicates (`done when …`)
 
+Every form, in one (deliberately over-checked) loop body:
+
 ```loop
-done when the test "billing.spec.ts::apostrophe" passes   # a named test
-done when "pnpm test" passes                               # shell command, exit 0 (`succeeds` also works)
-done when "semgrep --severity=high" finds nothing          # shell command, empty stdout
-done when "pnpm test flaky" passes 3 times                 # flake guard: re-run, every run must pass
-done when a human confirms "looks right at 375px"          # a human check
-done when the skill "email-review" approves                # an eval: approved / not
-done when the skill "email-review" scores 8 or more        # an eval: numeric threshold
-done when the skill "code-review" approves by 3 judges     # judge panel: N verdicts, majority wins
-done when the skill "api-review" scores 8 or more on the output       # an eval of WHAT was produced
-done when the skill "path-review" approves on the trajectory          # an eval of HOW it got there
-  the bar: didn't weaken a test to go green; no writes outside api/   # the rubric the judge scores against
+loop "predicate forms":
+  goal: one example of every done when form
+  done when the test "billing.spec.ts::apostrophe" passes   # a named test
+  done when "pnpm test" passes                               # shell command, exit 0 (`succeeds` also works)
+  done when "semgrep --severity=high" finds nothing          # shell command, empty stdout
+  done when "pnpm test flaky" passes 3 times                 # flake guard: re-run, every run must pass
+  done when a human confirms "looks right at 375px"          # a human check
+  done when the skill "email-review" approves                # an eval: approved / not
+  done when the skill "email-review" scores 8 or more        # an eval: numeric threshold
+  done when the skill "code-review" approves by 3 judges     # judge panel: N verdicts, majority wins
+  done when the skill "api-review" scores 8 or more on the output       # an eval of WHAT was produced
+  done when the skill "path-review" approves on the trajectory          # an eval of HOW it got there
+    the bar: didn't weaken a test to go green; no writes outside api/   # the rubric the judge scores against
 ```
 
 The command runs in your shell with your privileges (like an npm script). Keep it fast
@@ -494,9 +476,8 @@ bar; independent samples average the noise out. The panel early-exits once the v
 mathematically decided (2 approvals out of 3 → the third judge never runs), each verdict is
 emitted as its own `skill-verify` event (`judge 1/3: …`), and the observe output reports the
 tally (`judges: 2/2 approved (majority of 3 reached)`). Composes with everything else:
-`scores 8 or more on the trajectory by 5 judges`. This is the eval-side counterpart of the
-flake guard — **flake guard for tests, judge panel for evals**; costs N× the eval, so reserve
-it for checks where a wrong "done" is expensive.
+`scores 8 or more on the trajectory by 5 judges`. Costs N× the eval, so reserve it for
+checks where a wrong "done" is expensive.
 
 #### Tests vs evals
 
@@ -516,8 +497,7 @@ it in. See `examples/skills_memory.loop` and `examples/email_review.loop`.
 
 #### How verification works — what "done" actually depends on
 
-The most common question about Loop: *when the loop says "done", what exactly decided that?*
-The full mechanics, end to end:
+When the loop says "done", what exactly decided that? End to end:
 
 **When it runs.** Verification happens at the **observe** node of every cycle — after act,
 before any transition. Nothing is verified mid-act; a cycle without `observe` in its
@@ -529,7 +509,7 @@ becomes the observe result; on failure that text is *"the last failure"* your `l
 context refers to, and it feeds the `reflect` step. Verification isn't just a gate — it's the
 loop's sensory input.
 
-**Where a command runs (this is what surprises people).** A `test` / command predicate runs
+**Where a command runs.** A `test` / command predicate runs
 as a real shell command:
 
 | Factor | Effect on the verdict |
@@ -571,7 +551,7 @@ use the BMAD method      # pull in a preset (a .loop in the stdlib, or ./local.l
 run with claude code     # runner / provider (or: `runner claude code`)
 schedule: nightly        # manual · nightly · on push · cron (parsed; run is manual via the CLI)
 target: ./src            # working directory the loop operates in
-notify: slack            # notification destination (reserved)
+notify: slack            # parsed and stored in the IR; NO runtime behavior yet (reserved)
 each cycle: plan, then act, then observe   # the DEFAULT cycle for every loop in the file
 ```
 
@@ -617,6 +597,30 @@ These add agentic-engineering discipline to Loop. All are optional; a simple loo
 
 See [`examples/agentic/`](../examples/agentic/) for one file per feature; run `loop-run explain
 <file>` on any of them to read it back in plain English.
+
+### Skill source: ctx
+
+[ctx](https://github.com/stevesolun/ctx) can act as a file's **skill source** —
+recommending and installing capabilities per loop goal. All lines are opt-in and **inert
+without the ctx MCP server** (the loop runs exactly as it would without them).
+
+| Line | Tier | What it does |
+|---|---|---|
+| `recommend skills with ctx` | config | ctx is this file's skill source. |
+| `use skills recommended by ctx` (optional `for "<intent>"`) | loop body | Resolve + install the skill bundle for the goal before the first plan; `for "…"` overrides the query. |
+| `top up skills from ctx` (optional `when a step needs more`) | loop body | Pull more skills after a failed cycle reflects. |
+| `grant ctx: skills, agents, mcps, harnesses` | config | Capability groups ctx may recommend — **fail-closed** (default `skills, agents`; only listed groups are returned). |
+| `ctx may use my own model "<provider>/<model>"` | config | Declares a user-owned/local/API model — unlocks harness recommendations. |
+
+Semantics of the groups: **skills / agents** install into `~/.claude/skills` and merge into
+the cycle's skill set. **mcps** are recommend-only — surfaced on a `ctx` event with a
+suggested install command, never auto-registered. **harnesses** recommend only when an
+own-model is declared, and ship as an explicit `--dry-run` install command — never an
+automatic install.
+
+Setup and the full capability walkthrough: [ctx-integration-guide](ctx-integration-guide.md).
+Examples: [`examples/ctx_skills.loop`](../examples/ctx_skills.loop),
+[`examples/ctx_capabilities.loop`](../examples/ctx_capabilities.loop).
 
 ### Git strategy
 
@@ -679,7 +683,7 @@ See [`examples/git_policy.loop`](../examples/git_policy.loop) for the full worki
 
 ### Model policy
 
-A loop is several LLM calls per cycle, so naively it could cost more than a single prompt. The `models:` policy fixes that: name two tiers and the engine routes the cheap-thinking phases to the fast one and the hard `act` to the strong one — a stack of cheap calls plus one strong call per cycle, not N expensive prompts.
+`models:` names two tiers; the engine routes the cheap-thinking phases (plan / reflect / `also`) to the fast tier and `act` to the strong tier.
 
 **Grammar (config tier, before any definition, or inside a loop body):**
 
@@ -724,7 +728,7 @@ models: all strong                              # whole scope on one tier
 Notes:
 - The cycle repeats until `done when` passes, a thrash guard fires, or a hard safety cap
   (25 iterations) is reached.
-- A `test` predicate runs `npm test -- <target>` by default.
+- The `test` shorthand's default command: see [the verification table](#how-verification-works--what-done-actually-depends-on).
 - In a pipeline, stages run sequentially; a stage that ends unsatisfied halts the rest.
 - Confirm-class actions are asked once per loop, then remembered for that run.
 
@@ -751,10 +755,8 @@ Settings: `loop.cliPath` (path to the CLI for the Run button) and `loop.model`.
 
 ## 8. Authoring with an AI agent
 
-You don't need to memorize the grammar. Drop [`AGENTS.md`](../AGENTS.md) into your repo and
-ask Claude Code (or Copilot) in plain English — "set up a loop to fix the auth test and
-gate the deploy." The agent reads the reference and writes the `.loop` for you. The
-language travels with the project, so there's no separate generator step.
+Drop [`AGENTS.md`](../AGENTS.md) in the repo; any agent authors `.loop` from a
+plain-English request.
 
 ### The Claude Code skill (`/loopflow`)
 
@@ -779,6 +781,10 @@ A method is just a `.loop` file in the standard library. `use the BMAD method` p
 `BMAD.loop` (an analyze → architect → build → qa pipeline). Fork it, or point `use` at
 your own `./method.loop`. The core is method-agnostic.
 
+A bare name (`use the BMAD method`) resolves in the stdlib (`@loop-lang/stdlib` — check
+`packages/stdlib` for the current contents; today `BMAD.loop`); a path (`use ./method.loop`)
+resolves relative to the file.
+
 ## 10. Troubleshooting
 
 - **`loop-run run` does nothing / errors immediately** — ensure `claude` is installed and
@@ -787,12 +793,21 @@ your own `./method.loop`. The core is method-agnostic.
   (two spaces) and that the `done when` predicate is one of the supported forms.
 - **The loop never stops** — add `after N tries: stop and warn "…"`; otherwise a hard cap
   of 25 iterations applies.
-- **A `done when` test never passes** — the default test command is `npm test -- <target>`;
-  if your runner differs, use a command predicate instead: `done when "pnpm test -- x" passes`.
+- **A `done when` test never passes** — if your runner isn't npm-style (see
+  [the verification table](#how-verification-works--what-done-actually-depends-on) for the
+  `test` shorthand's default), use a command predicate instead: `done when "pnpm test -- x" passes`.
 - **A migration/push happened that you didn't want** — add it to the policy:
   `ask me before migrations or pushes`. Only `auto` classes run unattended.
 - **`plan from "<file>"` doesn't load** — check the path is relative to the `.loop` file
   and the file exists; the loop reads its plan from that file verbatim.
+- **The loop is thrashing (repeating the same failed fix)** — read what each cycle learned:
+  `jq -r 'select(.event.type=="reflect") | .event.text' run.log`. Identical reflections mean
+  the context is wrong, not the attempt count: add the failing file to `look at:` and make
+  sure it ends with `and the last failure`.
+- **Runs cost too much** — three dials: `models: fast haiku, strong opus` (cheap
+  plan/reflect, strong act), an `observe:` block with `stop and warn if cost exceeds "$5"`
+  (hard budget), and a lower `after N tries`. The end-of-run per-tier call count shows where
+  the spend went.
 
 ## 11. The loop-spec IR
 

@@ -4,13 +4,11 @@ This file teaches an AI assistant (Claude Code, Copilot, Cursor, etc.) how to wr
 **LoopFlow** flows. When a user asks you to design a staged, self-correcting, or human-gated
 coding workflow — "set up a loop to fix X", "turn this epic into a pipeline", "automate
 this multi-step task" — author a `.loop` file using the grammar below, then let the user
-run it with `loop-run run file.loop`.
+run it with `loop-run run file.loop`, or in Claude Code via `/loopflow run file.loop`.
 
-LoopFlow is a small natural-language DSL. A `.loop` file describes the *movement* of an AI
-coding loop: its objective, the context it may read, the actions it's allowed, how it
-verifies itself, when it stops, and where a human steps in. The five knobs —
-**objective, context, actions, verification, stopping rules** — are first-class instead
-of buried in a prompt.
+A `.loop` declares a goal, the context to read, the allowed actions, the verification
+(`done when`), and the stopping rules. This file is the complete grammar plus the
+authoring procedure.
 
 ## When to write a `.loop`
 
@@ -43,14 +41,9 @@ inline so a confident user can accept everything at once.
 This repo ships a library of **best-practice starter loops** in [`templates/`](./templates/)
 (see [`templates/README.md`](./templates/README.md)). When the user's request matches one,
 **reach for it first** — copy it, fill in its `# TODO` lines (test commands, paths), and
-adapt — instead of authoring from a blank file. They cover the everyday jobs:
-
-- **Spec-driven:** `greenfield-app.loop` (whole app, A-to-Z), `load-spec.loop` (deliver an
-  existing `plan.md` + `sprint.yaml` backlog story by story) — with `discover.loop`,
-  `design.loop`, `story-template.loop`, and starter `sprint.yaml`/`plan.md`.
-- **Change:** `feature.loop`, `brownfield-feature.loop`, `bugfix.loop`, `refactor.loop`.
-- **Quality gates:** `cicd-check.loop`, `security.loop`, `clean-architecture.loop`,
-  `test-coverage.loop`, `review-diff.loop`.
+adapt — instead of authoring from a blank file. They cover the everyday jobs —
+`bugfix.loop`, `feature.loop`, `load-spec.loop` (deliver an existing backlog), and more;
+the index is [`templates/README.md`](./templates/README.md).
 
 Each is heavily commented and verified to parse. Still interview the user for the specifics
 (goal, the real `done when`, what to gate) — the template is the skeleton, not the answer.
@@ -71,7 +64,7 @@ flow "<name>":            a chain of loop files (each step runs a whole .loop fi
 
 goal: <text>              what "done" means, in plain language
 done when <predicate>     how the loop verifies itself (see Predicates)
-look at: <files>, and the last failure   context the agent reads before acting (items are file paths or plain-language descriptions the agent resolves to files)
+look at: <files>, and the last failure   context the agent reads before acting
 allow edits automatically, but ask me before <classes>   action policy
 each cycle: plan, then act, then observe   the repeated steps (any subset, in order)
 also: <pass>, <pass>      extra finishing passes run after the goal is met
@@ -101,8 +94,8 @@ runs as: <identity>   (an auditable principal for unattended runs)
 recommend skills with ctx   (config tier: ctx is this file's skill source — recommends + installs skills per loop goal; see "Skill source: ctx" below)
 grant ctx: skills, agents, mcps, harnesses   (config tier: capability groups the file lets ctx recommend; fails closed, default skills+agents; mcps/harnesses are recommend-only)
 ctx may use my own model "<provider>/<model>"   (config tier: declares a user-owned/local/API model — unlocks ctx harness recommendations, always dry-run)
-observe:   (block) trace every cycle / meter tokens and cost / stop and warn if cost exceeds "$N"
-sandbox:   (block) no network access / allow egress to "host" only / cap cpu at … memory at … time at …
+observe:   (config-tier block) trace every cycle / meter tokens and cost / stop and warn if cost exceeds "$N"
+sandbox:   (config-tier block) no network access / allow egress to "host" only / cap cpu at … memory at … time at …
 hooks:     (loop body block) before each cycle | after act | on commit | on stop : "<cmd>" passes|finds nothing   (a failing hook blocks)
 examples: <files>      (reference patterns to imitate — context engineering's 6th part)
 knowledge: <files>     (read-only reference the agent must not edit)
@@ -129,15 +122,11 @@ done when the skill "path-review" approves on the trajectory          # an eval 
 The command in a predicate runs in the user's shell with their privileges (like an npm
 script). It IS meant to be a real command. Prefer a fast, deterministic check.
 
-**Flake guard — `passes N times`.** Append `N times` to a `test` or command predicate to re-run
-it `N` times and require every run to pass (the first failure short-circuits). Reach for it when a
-green can pass by luck — a timing- or order-dependent test — so "done" means "passes *reliably*",
-not "passed *once*".
+**Flake guard — `passes N times`.** Re-runs the check `N` times; every run must pass (first
+failure short-circuits). Use when a green can pass by luck.
 
-**Judge panel — `by N judges`.** Append `by N judges` to a skill predicate to collect `N`
-independent verdicts and take the majority (early-exit once decided). A single LM judge wobbles
-near the bar; consensus smooths the noise. The deterministic counterpart of the flake guard:
-flake guard for tests, judge panel for evals.
+**Judge panel — `by N judges`.** Collects `N` independent verdicts on a skill predicate and
+takes the majority (early-exit once decided). Use for LM judgments near the bar.
 
 ### Tests vs evals — list as many `done when` as you need
 
@@ -154,11 +143,6 @@ combine the two kinds of verification:
 A trajectory eval is what catches the failures a green test can't — e.g. an agent that made a test
 pass by weakening it. Pair a test with an eval when "done" means both "it works" and "it was built
 the right way."
-
-The **skill** predicate bridges an abstract goal to a verifiable one: when "done" isn't a
-test or a command (a good email, a sound design), have a review skill return an
-approved/rejected verdict or a numeric score. Build that review skill manually first and
-confirm it judges well, then wire it in as the loop's check.
 
 ### `use skills` — coordinate proven skills
 
@@ -179,10 +163,8 @@ verifier via `done when the skill "…" approves`). See `examples/skills_memory.
 ### Skill source: ctx — let a recommender pick + install the skills
 
 `use skills:` assumes the skills already exist in `~/.claude/skills`. **ctx**
-([claude-ctx](https://github.com/stevesolun/ctx)) is the recommender that fills that gap:
-point it at a goal and it recommends the smallest useful bundle and installs the skill bodies
-into `~/.claude/skills` — so the names resolve. ctx is the layer beneath Loop; Loop stays the
-top, user-facing layer.
+([claude-ctx](https://github.com/stevesolun/ctx)) fills that gap: point it at a goal and it
+recommends + installs the smallest useful bundle so the names resolve.
 
 ```loop
 recommend skills with ctx               # config tier: ctx is this file's skill source
@@ -215,18 +197,13 @@ loop "stand up a local agent loop":
   done when "pytest tests/agent_loop" passes
 ```
 
-- **skills / agents** install into `~/.claude/skills` (as before) and merge into the cycle's
-  skill set.
-- **mcps** are **recommend-only**: ctx surfaces fitting MCP servers + a suggested
-  `ctx-mcp-install <name>`; the runtime emits them on a `ctx` event, it never auto-registers one.
-- **harnesses** (autogen, langfuse, …) recommend **only** when you declare a user-owned model
-  (`ctx may use my own model "…"`), and ship as an explicit `ctx-harness-install <name> --dry-run`
-  command — never an automatic install. This is the one capability that pulls real software, so it
-  stays human-gated by design.
+- **skills / agents** — install into `~/.claude/skills`, merge into the cycle's skill set.
+- **mcps** — recommend-only: surfaced on a `ctx` event, never auto-registered.
+- **harnesses** — only with `ctx may use my own model "…"`, ship as an explicit `--dry-run`
+  command, never auto-install.
 
-Setup: `claude mcp add ctx -- ctx-mcp-server` (needs `pip install claude-ctx`). See
-`examples/ctx_skills.loop`, `examples/ctx_capabilities.loop`, and `docs/ctx-skill-source.md`.
-Full customer-facing walkthrough (setup, own-model, the capability model): `docs/ctx-integration-guide.md`.
+Setup: `claude mcp add ctx -- ctx-mcp-server` (needs `pip install claude-ctx`). Full
+walkthrough: `docs/ctx-integration-guide.md`.
 
 ### `remember in` — cross-run memory
 
@@ -294,6 +271,9 @@ flow "deliver":
 - **Put human gates on risky work** — payments, migrations, deploys, anything
   irreversible. Use `ask me before …` for action policy, `a human approves before …`
   for a hard stage gate.
+- Quote every shell predicate and every file path exactly (`done when "pnpm test cart" passes`) —
+  the command runs verbatim in the user's shell; a paraphrased command is a loop that can never
+  go green.
 - Output only valid `.loop` syntax. Comments start with `#`.
 - **Friendly shorthands** (all desugar to the lines above — use freely): `check:` / `verify:`
   = `done when` (a bare value is a shell command; a predicate phrase parses as-is); `in:` /
@@ -381,24 +361,6 @@ overrides it.
   error that surfaces before the loop runs.
 - **`work in place` + `push when done` on a protected branch** is also an up-front error.
 
-### Example
-
-```loop
-git:
-  work on a branch
-  commit when the goal is met
-  push when done
-  open a pull request
-
-loop "add a healthcheck endpoint":
-  goal: GET /healthz returns 200 with a JSON status
-  done when "pnpm test health" passes
-  look at: the http server and the routes module, and the last failure
-  each cycle: plan, then act, then observe
-  when it fails: reflect, then plan again
-  after 6 tries: stop and warn "healthcheck stuck"
-```
-
 ## Config defaults & the project config file
 
 Anything in the **config tier** (the top of the file, before any definition) sets a default for
@@ -438,54 +400,53 @@ git:
 **Cascade (lowest wins):** `loop.config` → a file's config tier → a per-loop directive.
 The same rule already governs `git:` and `models:`.
 
+### Cost control
+
+Cap spend at the config tier:
+
+```loop
+observe:
+  meter tokens and cost
+  stop and warn if cost exceeds "$5"
+```
+
+Pair with `models: fast haiku, strong opus` so plan/reflect run on the cheap model and only
+`act` uses the strong one.
+
 ## Show the flow — every time it changes
 
-Whenever you create or edit a `.loop`, print its flow so the user sees the shape.
-Run `loop-run show file.loop`, or render the compact ASCII yourself: the cycle
-(`plan → act → observe`), the `↺` reflect back-edge, the `✓ done when` check, the
-`⛔` thrash guard, and any `👤` gates. For a pipeline, list stages in order; for a
-flow, show the file chain. `loop-run ls` lists every loop in the repo.
+Whenever you create or edit a `.loop`, run `loop-run show file.loop` — it prints the flow AND
+doubles as your parse check (if it errors, fix indentation first: blocks at column 0, bodies
+two spaces). Or render the compact ASCII yourself: the cycle, the `↺` reflect back-edge,
+`✓ done when`, `⛔` thrash guard, `👤` gates. `loop-run ls` lists every loop in the repo.
 
 ## Running what you wrote
 
-- `loop-run run file.loop` — execute it on Claude Code (plan/act/observe, reflect on failure,
-  verify with `done when`, pause at human gates).
-- `loop-run run file.loop --log run.log` — also append every event to a local NDJSON log
-  (secrets are scrubbed before anything is persisted).
-- `loop-run run file.loop --resume run.log` — resume an interrupted run from its log: satisfied
-  stages / flow steps / for-each items are skipped, the first incomplete unit picks up (flow
-  carry-forward summaries restored from the log).
-- `loop-run show file.loop` — print the loop's flow as compact ASCII (and `loop-run ls` to list them).
-- `loop-run explain file.loop` — describe the loop in plain English (a friendly check of what it will do).
-- `loop-run viz file.loop` — open a visual HTML schematic of the flow.
+- `loop-run run file.loop` — execute on Claude Code (or `/loopflow run file.loop` in-session).
+- `loop-run show file.loop` / `loop-run ls` — the shape / every loop in the repo.
+- Everything else — `--log`, `--resume`, `viz`, `explain`, `live`, redaction, resume
+  semantics — is in `docs/MANUAL.md` §4.
 
 ### Live visual — opt-in via `loop.config`
 
-The in-session dashboard is **off by default**. Before running a loop **in this session**,
-read `loop.config` at the repo root: only if it has `live=true` do you start the dashboard
-and drive it as you narrate. With `live=false` (the default written by `loop init`) or no
-config, run normally in the chat — don't open anything, don't ask. (The headless
-`loop-run run <file> --live` flag below is independent of this config.) When enabled:
-
-- `loop-run live file.loop` — start the dashboard server (opens the browser, prints
-  `LOOP_LIVE_PORT=<port>`), run it in the **background**, keep the port.
-- `loop-run emit <port> '<event-json>'` — push one event per narrated step so the browser
-  animates in real time: the active cycle node pulses, flow steps light up, and a
-  `for each` (sprint) progress bar fills item by item — the user always sees where in the
-  loop and where in the plan the run is.
-- `loop-run run file.loop --live` — headless alternative: the engine itself streams every
-  event to the browser (no manual `emit`), gates answered in the terminal.
-
-The `/loopflow` skill has the full event cheat-sheet for the in-session push protocol.
+The in-session dashboard is **off by default**. Before running in-session, read `loop.config`
+at the repo root: only `live=true` starts the dashboard; with `live=false` or no config, run
+normally in the chat — don't open anything, don't ask. (Headless `loop-run run <file> --live`
+is independent of this config.) Event protocol: the `/loopflow` skill's cheat-sheet.
 
 ## Authoring checklist
 
-1. One coherent objective per `loop`; one story per `stage`.
-2. A real, fast `done when` predicate — never claim done without a check.
-3. `look at:` the relevant files so the agent stays inside the architecture.
-4. A `when it fails: reflect, then plan again` so the loop self-corrects.
-5. An `after N tries` thrash guard so it can't spin forever.
-6. Human gates on anything irreversible.
+1. `loop-run show file.loop` parses clean and shows the shape you meant.
+2. The `done when` command was run by hand at least once — a check that can never pass loops
+   forever.
+3. `look at:` ends with `and the last failure` — reflect's diagnosis reaches the next plan
+   only if you pass it in.
+
+### If a loop thrashes
+
+When `after N tries` fires: (1) run the `done when` command by hand; (2) tighten `look at:`
+to fewer files; (3) split the goal into stages; (4) add `remember in "<file>.memory.md"` so
+the next run starts from the lessons instead of repeating them.
 
 ## Authoring order — write the lines in this order
 
@@ -504,4 +465,5 @@ in the order a run degrades — promises first, failure handling last):
    hard stop.** Never emit a reflect back-edge without a try ceiling.
 
 The same order applies inside every `stage`. Blank lines between zones are encouraged.
-Full rationale + the anatomy diagram: `docs/MANUAL.md` → *Anatomy — the authoring order*.
+Full rationale + the anatomy diagram: the tutorial → https://loopflow.live/#anatomy
+(reference tables: `docs/MANUAL.md`).

@@ -199,9 +199,10 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
     <li><a href="#start">Install + first loop</a></li>
     <li class="grp">Core syntax · the five decisions</li>
     <li><a href="#donewhen">done when — verify</a></li>
+    <li><a href="#material">Context &amp; knowledge</a></li>
     <li><a href="#cycle">The cycle + reflect</a></li>
     <li><a href="#humans">Human gates</a></li>
-    <li class="grp">The rest of the syntax</li>
+    <li class="grp">Scale up &amp; the rest</li>
     <li><a href="#pipelines">Composing</a></li>
     <li><a href="#beyond">The rest of the syntax</a></li>
     <li class="grp">In practice</li>
@@ -215,7 +216,6 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
     <li><a href="#library">Your global library</a></li>
     <li class="grp">The full system</li>
     <li><a href="#evals">Tests &amp; evals</a></li>
-    <li><a href="#material">Context &amp; knowledge</a></li>
     <li><a href="#config">Config &amp; project defaults</a></li>
     <li><a href="#rigor">Rigor, defaults &amp; mode</a></li>
     <li><a href="#hooks">Hooks</a></li>
@@ -305,7 +305,7 @@ loop "add API rate limiting":
   goal: the cart total is correct with a coupon    # Objective
   look at: the checkout code, and the last failure      # Context
   allow edits automatically, ask me before pushes  # Actions
-  done when the cart coupon tests pass # Verification
+  done when "pnpm test cart/coupon" passes            # Verification
   after 6 tries: stop and warn "stuck"             # Stopping</code></pre>
 
   <figure class="fig">
@@ -331,7 +331,6 @@ loop "add API rate limiting":
     <figcaption>Every cycle runs <b>plan → act → observe</b>. The <b>done&nbsp;when</b> check decides: pass → <b>stop</b>; fail → <b>reflect</b>, which feeds the error into the next plan. A thrash guard (<b>after N tries</b>) stops it if it gets stuck — so a loop never spins forever.</figcaption>
   </figure>
 
-  <p>When the model took over the building, those five decisions got <em>buried</em> in prompts. LoopFlow promotes them to first-class, editable knobs. At runtime they drive five phases — <strong>plan → act → observe → reflect → stop</strong> — the diagram above. You don't re-tune a prompt; you <strong>edit the loop</strong>.</p>
   <div class="key"><span class="kt">The two ideas to keep</span>
     <ul>
       <li><strong>Edit the loop, not the prompt.</strong> The control structure is the artifact.</li>
@@ -365,7 +364,7 @@ loop "add API rate limiting":
       <li>Smells: no <code class="inl">done when</code> · unbounded <code class="inl">look at</code> · a back-edge with no ceiling · a warn message that won't tell future-you what got stuck.</li>
     </ul>
   </div>
-  <p class="sub">The same order applies inside every <code class="inl">stage</code> of a pipeline — each stage is a loop and reads as one. Full rationale in <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md">the manual</a>.</p>
+  <p class="sub">The same order applies inside every <code class="inl">stage</code> of a pipeline — each stage is a loop and reads as one. Full reference tables in <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md#anatomy--the-authoring-order">the manual</a>.</p>
 </section>
 
 <!-- you are the loop today -->
@@ -390,7 +389,7 @@ loop "add API rate limiting":
   <p>The loop:</p>
   <pre><code class="loop">loop "fix the checkout tax test":
   goal: the checkout tax test passes with no regressions
-  done when the checkout tax tests pass
+  done when the test "checkout.spec.ts::tax" passes
   look at: the checkout code, and the last failure
   each cycle: plan, then act, then observe
   when it fails: reflect, then plan again
@@ -403,16 +402,7 @@ loop "add API rate limiting":
 <section id="vsbuiltins">
   <h2>vs Claude Code's <code class="inl">/loop</code> and <code class="inl">/goal</code> <span class="badge b-basic">why</span></h2>
   <p>Claude Code already has two looping built-ins — they're useful, and they're not the same tool. <code class="inl">/loop</code> is a <strong>scheduler</strong> (re-run a prompt every few minutes). <code class="inl">/goal</code> is the closest cousin: <strong>keep going until a condition holds</strong>. The catch with <code class="inl">/goal</code> — its condition is judged by a fast model <em>reading the transcript</em>; it can't run your test or open a file. So "done" is what the model <em>says</em>, not a command that <em>passed</em>.</p>
-  <table>
-    <tr><th></th><th><code>/loop</code></th><th><code>/goal</code></th><th>LoopFlow</th></tr>
-    <tr><td>What it's for</td><td>run a prompt on a schedule</td><td>loop until a condition reads true</td><td>a verified, gated, reusable workflow</td></tr>
-    <tr><td>"Done" means</td><td>never — you stop it</td><td>a model judges your condition from the transcript</td><td>a real command passes — <code>done when "pnpm test" passes</code>, can't be faked</td></tr>
-    <tr><td>On failure</td><td>fires again next interval</td><td>next turn; no introspection</td><td><strong>reflect</strong> on the failure, then re-plan (the back-edge)</td></tr>
-    <tr><td>Human gate mid-run</td><td>no</td><td>no — fully autonomous</td><td>yes — <code>a human approves the plan first</code></td></tr>
-    <tr><td>Never push to <code>main</code></td><td>no</td><td>no</td><td>built-in, unconditional</td></tr>
-    <tr><td>Reusable / shareable</td><td>no</td><td>no — ephemeral per session</td><td>a version-controlled <code>.loop</code> — run in any repo, save to your library</td></tr>
-    <tr><td>Multi-step</td><td>—</td><td>one condition</td><td>pipelines, flows, <code>for each</code></td></tr>
-  </table>
+  <p>Full side-by-side table: <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/FAQ.md#claude-code-already-has-loop-and-goal--why-another-thing">the FAQ</a>.</p>
   <div class="key"><span class="kt">When to reach for which</span><ul>
     <li><code class="inl">/loop</code> — polling and cadence ("check the deploy every 5 minutes").</li>
     <li><code class="inl">/goal</code> — a quick, throwaway "keep going until it looks done" in this session.</li>
@@ -426,7 +416,7 @@ loop "add API rate limiting":
 <section id="start">
   <h2>Getting started <span class="badge b-basic">setup</span></h2>
   <p class="sub" style="font-size:14px;margin-top:0">That's the <em>why</em>. From here down is the <strong>deep dive</strong> — set LoopFlow up once, then learn the language line by line.</p>
-  <p><b>Prerequisites:</b> <strong>Node 18+</strong>, the <a href="https://docs.anthropic.com/en/docs/claude-code">Claude Code</a> CLI (LoopFlow drives it), and a <strong>git repo</strong> to work in. <strong>The primary way to use LoopFlow is a Claude Code chat</strong> — type <code class="inl">/loopflow</code> and the assistant writes and runs the loop with you, watching every step and answering gates inline. (Prefer to write <code class="inl">.loop</code> files by hand? The VS Code extension is there too — see <a href="#running-vscode">Running a loop ▸ In VS Code</a> — but the chat is the recommended path.) One command installs everything:</p>
+  <p><b>Prerequisites:</b> <strong>Node 18+</strong>, the <a href="https://docs.anthropic.com/en/docs/claude-code">Claude Code</a> CLI, and a <strong>git repo</strong>. The primary surface is a Claude Code chat — <code class="inl">/loopflow</code> writes and runs the loop with you, gates answered inline. One command installs everything:</p>
 
   <h3>1 · Install with npm</h3>
   <p>From your repo, run the installer. In one step it writes the <code class="inl">/loopflow</code> skill <em>and</em> <code class="inl">AGENTS.md</code> (the full language reference) into the project:</p>
@@ -467,8 +457,7 @@ loop "fix the failing auth test":
   each cycle: plan, then act, then observe
   when it fails: reflect, then plan again
   after 6 tries: stop and warn "stuck"</code></pre>
-
-  <p>Prefer to write <code class="inl">.loop</code> files by hand in an editor? The optional <strong>LoopFlow VS&nbsp;Code extension</strong> — highlighting, completion, a ▶ Run button, and <em>New from template</em> — is covered under <a href="#running-vscode">Running a loop ▸ In VS Code</a>. The chat is the first-class way to <em>run</em>; the extension is the first-class way to <em>author by hand</em>.</p>
+  <p class="sub">Before running a loop you didn't write, print its shape: <code class="inl">loop-run show &lt;file&gt;.loop</code> — a missing done-when or thrash guard is obvious in the ASCII.</p>
   <div class="note"><b>Safe from the first run:</b> with no <code class="inl">git:</code> block, LoopFlow works on a branch and commits when the goal is met, and <strong>never pushes to <code class="inl">main</code>/<code class="inl">master</code></strong> — see the <a href="keywords/git.html">git</a> keyword.</div>
 
   <h3>Rather learn hands-on?</h3>
@@ -486,14 +475,17 @@ loop "fix the failing auth test":
 <section id="donewhen">
   <h2><code class="inl">done when</code> — how a loop verifies itself <span class="badge b-basic">basic</span></h2>
   <p>The predicate is the spine of the whole idea. Four forms:</p>
-  <pre><code class="loop">done when the test "billing.spec.ts::apostrophe" passes   # a named test (runs via your test runner)
-done when "pnpm test" passes                               # a shell command, success = exit 0
-done when "semgrep --severity=high" finds nothing          # exit 0 AND empty output
-done when a human confirms "the UI looks right"            # a person is the check</code></pre>
+  <pre><code class="loop">loop "the four forms":
+  goal: one loop, all four verification forms
+  done when the test "billing.spec.ts::apostrophe" passes   # a named test (runs via your test runner)
+  done when "pnpm test" passes                               # a shell command, success = exit 0
+  done when "semgrep --severity=high" finds nothing          # exit 0 AND empty output
+  done when a human confirms "the UI looks right"            # a person is the check</code></pre>
   <div class="key"><span class="kt">Why this matters</span>
     <ul>
       <li>A predicate is a <strong>real command run with your privileges</strong> — like an npm script or a Makefile target. So treat a <code class="inl">.loop</code> from an untrusted source as you would their shell scripts.</li>
       <li><code class="inl">finds nothing</code> is how you say "this scanner must report zero" — it requires both exit&nbsp;0 and empty output.</li>
+      <li><strong>Feed the error forward:</strong> end <code class="inl">look at:</code> with <code class="inl">and the last failure</code> — reflect diagnoses the miss, but the next plan only sees it if you pass it in.</li>
       <li>The <code class="inl">a human confirms "…"</code> form is decided by a person — it's satisfied when you run the loop in conversation; the headless shell verifier returns <code class="inl">human check required: …</code> and never passes on its own.</li>
       <li>A loop with <em>no</em> <code class="inl">done when</code> has no machine check, so it must finish through a human path — a review gate, an approved plan-first pass (a plan-only loop), or an explicit <code class="inl">when …: stop</code> — otherwise it runs to the hard cap. Always give it a real check when one exists.</li>
     </ul>
@@ -501,6 +493,28 @@ done when a human confirms "the UI looks right"            # a person is the che
 </section>
 
 <!-- 4 -->
+
+<!-- context & knowledge -->
+<section id="material">
+  <h2>Context &amp; knowledge — what the agent reads <span class="badge b-inter">context</span></h2>
+  <p>Give the agent the right material before it plans. Each input carries a distinct intent, so the agent knows what it may change and what it must only learn from.</p>
+  <table>
+    <tr><th>Line</th><th>Intent</th></tr>
+    <tr><td><code class="inl">look at:</code> <span style="color:var(--muted)">(alias <code class="inl">in:</code>)</span></td><td>Files it reads <em>and may edit</em>. Add <code class="inl">and the last failure</code> to feed the previous error forward.</td></tr>
+    <tr><td><code class="inl">knowledge:</code></td><td>Read-only reference (docs, diagrams) it must <em>not</em> edit.</td></tr>
+    <tr><td><code class="inl">examples:</code></td><td>Reference patterns to <em>imitate</em> — "build it like these".</td></tr>
+    <tr><td><code class="inl">use skills:</code></td><td>Named skills it may invoke while planning/acting.</td></tr>
+    <tr><td><code class="inl">use skills recommended by ctx</code></td><td>Let <a href="https://github.com/stevesolun/ctx">ctx</a> resolve + install the right skill bundle for the goal before the first plan (needs the ctx MCP server; inert without it). Reference: <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md#skill-source-ctx">the manual</a>.</td></tr>
+    <tr><td><code class="inl">use tools from the "x" server</code></td><td>An MCP server whose tools it may use.</td></tr>
+  </table>
+  <pre><code class="loop">loop "add the webhooks endpoint":
+  goal: POST /webhooks matches the house style
+  look at: routes/
+  knowledge: docs/webhooks-spec.md, the architecture diagram
+  examples: routes/payments.ts, routes/users.ts
+  use tools from the "github" server
+  check: pnpm test webhooks</code></pre>
+</section>
 
 <!-- 5 -->
 <section id="cycle">
@@ -526,11 +540,13 @@ each cycle: act, then observe              # skip planning — just do + check</
 <!-- 8 -->
 <section id="humans">
   <h2>Human gates <span class="badge b-adv">human-in-the-loop</span></h2>
-  <p>LoopFlow has five places a person steps in. The first two go inside a loop; the third is a stage gate; the fourth is a transition; the fifth is the per-run <strong>confirm</strong> prompt from the action policy (Section&nbsp;4) — <code class="inl">ask me before …</code>, asked once and remembered.</p>
-  <pre><code class="loop">a human approves the plan first      # approve the plan before any acting
-a human reviews before stopping      # judge the result before the loop may stop
-a human approves before provisioning # a hard, blocking gate (used on a stage)
-when blocked: ask a human            # unblock when the agent is stuck</code></pre>
+  <p>Four lines put a person in the loop — approve the plan, review before stopping, gate a stage, unblock when stuck — plus the per-run confirm you already met in <code class="inl">ask me before …</code> (asked once, then remembered). The four lines:</p>
+  <pre><code class="loop">loop "gated work":
+  goal: a person at every risky step
+  a human approves the plan first      # approve the plan before any acting
+  a human reviews before stopping      # judge the result before the loop may stop
+  a human approves before provisioning # a hard, blocking gate (used on a stage)
+  when blocked: ask a human            # unblock when the agent is stuck</code></pre>
   <div class="key"><span class="kt">Where to use which</span>
     <ul>
       <li><code class="inl">a human approves the plan first</code> — high-stakes work where the plan must be right before touching anything.</li>
@@ -640,12 +656,12 @@ when blocked: ask a human            # unblock when the agent is stuck</code></p
   <h3>A ticket from Jira (the daily driver)</h3>
   <p>You picked up <code class="inl">PROJ-412 — "Applying a coupon can make the cart total negative."</code> Turn the ticket into a loop:</p>
   <ol>
-    <li><strong>Describe it.</strong> In the chat: <code class="inl">/loopflow PROJ-412: a coupon must never make the cart total negative; done when the coupon-floor tests pass</code> — the skill writes the <code class="inl">.loop</code>. (Or write it yourself — the ticket's acceptance criterion becomes <code class="inl">done when</code>, in plain words.)</li>
+    <li><strong>Describe it.</strong> In the chat: <code class="inl">/loopflow PROJ-412: a coupon must never make the cart total negative; done when "pnpm test cart/coupon-floor" passes</code> — the skill writes the <code class="inl">.loop</code>. (Or write it yourself — the ticket's acceptance criterion becomes <code class="inl">done when</code>, in plain words.)</li>
     <li><strong>What it produces:</strong></li>
   </ol>
   <pre><code class="loop">loop "PROJ-412: coupon must not make the cart total negative":
   goal: applying a coupon never produces a negative cart total
-  done when the coupon-floor tests pass
+  done when "pnpm test cart/coupon-floor" passes
   look at: the cart total logic and the coupon code, and the last failure
   allow edits automatically, but ask me before migrations or pushes
   each cycle: plan, then act, then observe
@@ -670,7 +686,7 @@ flow "deliver the sprint":
   <ol start="3">
     <li><strong>Your backlog stays the source of truth.</strong> <code class="inl">sprint.yaml</code> is any YAML list (or an <code class="inl">items:</code> key; a <code class="inl">.md</code> file splits on <code class="inl">##</code> sections). Each entry's <em>text</em> is handed to the template as the story's context — what to build, its acceptance criteria:</li>
   </ol>
-  <pre><code class="loop"># sprint.yaml — yours, unchanged
+  <pre class="tree"><code># sprint.yaml — yours, unchanged
 - "signup: email + password, verification mail; done when pnpm test auth/signup passes"
 - "login: session cookie, lockout after 5 tries; done when pnpm test auth/login passes"
 - "reset: token flow, 15-min expiry; done when pnpm test auth/reset passes"</code></pre>
@@ -678,7 +694,7 @@ flow "deliver the sprint":
     <li><strong>One checklist, every story.</strong> <code class="inl">story-template.loop</code> is the per-story pipeline — implement to a green test, then a security pass, then a 👤 manual check. Author it once; the flow runs it once per story. A failing story <strong>pauses and asks you</strong>: continue with the next story, or stop the sprint.</li>
     <li><strong>Run it</strong> — <code class="inl">/loopflow run load-spec.loop</code> in the chat, or headless with a journal so a long sprint can survive anything:</li>
   </ol>
-  <pre><code class="loop">loop-run run load-spec.loop --log sprint.log       # every story's progress on disk
+  <pre class="sh"><code>loop-run run load-spec.loop --log sprint.log       # every story's progress on disk
 loop-run run load-spec.loop --resume sprint.log --log sprint.log   # laptop died at story 7? stories 1–6 skip</code></pre>
   <div class="note"><b>No spec yet?</b> That's the other template: <code class="inl">greenfield-app.loop</code> runs <code class="inl">discover.loop</code> (interviews you → writes <code class="inl">sprint.yaml</code>) and <code class="inl">design.loop</code> (👤-approved <code class="inl">design.md</code>) <em>first</em>, then falls into this same per-story flow. Same delivery engine — it just builds the spec before consuming it. Method-neutral, too: any checklist works, BMAD is one example (<code class="inl">examples/bmad/atoz/</code>).</div>
 
@@ -706,9 +722,8 @@ pipeline "forge sandbox runner":
     goal: a real ticket's generated code runs end to end inside the sandbox
     done when "pnpm test:e2e sandbox" passes
     a human reviews before stopping</code></pre>
-  <p><strong>Why a pipeline, not one loop:</strong> a sandbox is only as trustworthy as the stage you trust least. <code class="inl">isolate</code> has to be green before <code class="inl">execute</code> is even attempted — a failing stage halts the rest, so the runner is never "half-isolated." <code class="inl">harden</code> pairs a security suite with a scan and <strong>gates network egress on a human</strong> — the one call I never wanted an agent to make alone. <code class="inl">integrate</code> won't declare done until a real ticket's generated code actually runs inside the box, with me reviewing before it stops.</p>
-  <p>Every stage carried its own <code class="inl">done when</code>, so "done" meant a green check, not a vibe — and when the escape test failed, the loop reflected on <em>why</em> and re-planned, instead of me re-prompting from scratch. The whole module is now a single file I re-run whenever the base image changes.</p>
-  <span class="cap">examples/forge-sandbox.loop — the real pipeline behind Forge's sandbox executor. Built with LoopFlow, gated where it counts.</span>
+  <p><strong>Why a pipeline, not one loop:</strong> a sandbox is only as trustworthy as the stage you trust least. <code class="inl">isolate</code> has to be green before <code class="inl">execute</code> is even attempted — a failing stage halts the rest, so the runner is never "half-isolated." <code class="inl">harden</code> pairs a security suite with a scan and <strong>gates network egress on a human</strong> — the one call I never wanted an agent to make alone. <code class="inl">integrate</code> won't declare done until a real ticket's generated code actually runs inside the box, with me reviewing before it stops. The whole module is now a single file I re-run whenever the base image changes.</p>
+  <span class="cap">examples/forge-sandbox.loop</span>
 </section>
 
 <!-- by role -->
@@ -727,16 +742,6 @@ pipeline "forge sandbox runner":
   when it fails: reflect, then plan again
   after 6 tries: stop and warn "orders endpoint stuck"</code></pre>
 
-  <h3>Mobile / frontend</h3>
-  <p>Build a screen until its widget tests are green.</p>
-  <pre><code class="loop">loop "build the login screen":
-  goal: the login screen validates input and matches the spec
-  done when "flutter test test/login_test.dart" passes
-  look at: the login widget and the design spec, and the last failure
-  each cycle: plan, then act, then observe
-  when it fails: reflect, then plan again
-  after 6 tries: stop and warn "login screen stuck"</code></pre>
-
   <h3>DevOps</h3>
   <p>A gated infra change — the scan must pass, and a human approves before it touches staging.</p>
   <pre><code class="loop">pipeline "harden the staging cluster":
@@ -749,16 +754,6 @@ pipeline "forge sandbox runner":
     goal: the change is live on staging
     a human approves the plan first
     done when "kubectl rollout status deploy/web -n staging" passes</code></pre>
-
-  <h3>QA</h3>
-  <p>Turn a bug report into a reproducing test, then make it pass — "done" is the test, not a vibe.</p>
-  <pre><code class="loop">loop "reproduce + fix BUG-481: coupon makes the total negative":
-  goal: a regression test reproduces the bug, then the fix makes it pass
-  done when "pnpm test cart/coupon" passes
-  look at: the cart total logic and the bug report
-  each cycle: plan, then act, then observe
-  when it fails: reflect, then plan again
-  after 6 tries: stop and warn "BUG-481 stuck"</code></pre>
 
   <h3>Security</h3>
   <p>A scan that must find nothing — save it to your library and run it in every repo.</p>
@@ -810,23 +805,23 @@ pipeline "forge sandbox runner":
   </table>
   <p>Every command below runs the same kind of file — here's the one referenced throughout this section:</p>
   <pre><code class="loop"># examples/fix_test.loop
-loop "fix the failing checkout tax test":
-  goal: the tax line is correct at checkout
-  done when the checkout tax tests pass
+loop "fix test":
+  goal: the checkout tax test passes
+  done when the test "checkout.spec.ts::tax" passes
+
   each cycle: plan, then act, then observe
-  when it fails: reflect, then plan again
-  after 5 tries: stop and warn "stuck"</code></pre>
+  when it fails: reflect, then plan again</code></pre>
   <h3>In a Claude Code chat <span class="badge b-basic">recommended — the main way</span></h3>
   <p>This is how LoopFlow is meant to be used. With the <code class="inl">/loopflow</code> skill loaded, run it inside the chat — the assistant executes the cycle itself, narrates every step, and you answer gates inline:</p>
   <pre class="sh"><code>/loopflow "fix the failing checkout tax test"   # write a .loop from a request
 /loopflow run examples/fix_test.loop            # run it, right here in the chat</code></pre>
-  <p>You stay in the chat the whole time: you watch each step, you answer the gate, and the loop ends on a <em>real</em> green test — not the assistant saying "done". This is the only mode where a long interactive discovery works, because the human is already in the loop.</p>
+  <p>Interactive discovery only works in this mode — the human is already in the loop.</p>
 
   <h3 id="running-vscode">In VS Code <span class="badge b-basic">optional — author by hand</span></h3>
   <p>Reach for the extension when you'd rather <strong>write <code class="inl">.loop</code> files by hand</strong> in an editor. Install it from the <a href="https://marketplace.visualstudio.com/items?itemName=Loop-Lang.loopflow"><strong>VS&nbsp;Code Marketplace</strong></a> (or Quick Open <code class="inl">Ctrl+P</code> → <code class="inl">ext install Loop-Lang.loopflow</code>), then open any <code class="inl">.loop</code> file:</p>
   <ul>
     <li>Syntax highlighting, hover docs, and context-aware tab-completion for every construct — including the latest vocabulary (<code class="inl">use skills</code>, <code class="inl">remember in</code>, <code class="inl">flow</code>, <code class="inl">for each</code>, and <code class="inl">done when the skill "…" approves / scores N or more</code>).</li>
-    <li>A <strong>▶ Run</strong> CodeLens above each definition. You choose <em>where</em> it runs via <code class="inl">loop.runMode</code>: <code class="inl">ask</code> (prompt each time), <code class="inl">session</code> (open a Claude Code session in the integrated terminal — watch every step, answer gates in chat), or <code class="inl">output</code> (headless, streamed into the VS Code output panel with native gate dialogs).</li>
+    <li>A <strong>▶ Run</strong> CodeLens above each definition — run in a chat session or headless into the output panel (<code class="inl">loop.runMode</code>; settings detail in <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md#7-vscode-extension">the manual</a>).</li>
     <li>A soft linter that nudges, never blocks: "this loop has no way to verify it's done", "add a thrash guard".</li>
     <li><strong>New Loop from template</strong> — from <em>File ▸ New File…</em>, an Explorer folder right-click, or the Command Palette — scaffolds a best-practice loop (bugfix, feature, security, … the full library) into your workspace, <code class="inl"># TODO</code> lines marked.</li>
   </ul>
@@ -839,6 +834,8 @@ loop-run show  examples/ship_feature.loop  # print the loop's flow as compact AS
 loop-run ls                                # list every .loop in the repo + its shape
 loop-run parse examples/ship_flow.loop     # print the parsed spec (the loop-spec IR)
 loop-run viz   examples/ship_flow.loop     # write a self-contained HTML schematic
+loop-run run file.loop --log run.log       # persist every event (secrets scrubbed)
+loop-run run file.loop --resume run.log    # died at story 7? 1–6 skip, pick up where it stopped
 # flags: --model <alias>, --live, --out <path>, --events (NDJSON for a UI host), --json</code></pre>
 
   <h3 id="live">Watch it run — live dashboard <span class="badge b-inter">intermediate</span></h3>
@@ -848,13 +845,14 @@ loop-run viz   examples/ship_flow.loop     # write a self-contained HTML schemat
   <p><strong>In a Claude Code chat (<code class="inl">/loopflow</code>)</strong> the dashboard is <strong>opt-in via <code class="inl">loop.config</code></strong>. <code class="inl">loop init</code> writes <code class="inl">loop.config</code> with <code class="inl">live=false</code> (off by default); flip it to <code class="inl">live=true</code> and the skill opens the dashboard and updates it as each step happens. The headless <code class="inl">--live</code> flag is independent of this config.</p>
   <pre class="sh"><code># loop.config
 live=true            # /loopflow shows the live dashboard during in-session runs</code></pre>
-  <p>The page streams over Server-Sent Events (each event carries an id; the server replays on connect and dedupes on reconnect), is self-contained — no external assets — and binds to <code class="inl">127.0.0.1</code> only.</p>
+  <p>Wire format and reconnect semantics: <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md#live-dashboard">the manual</a>.</p>
 
   <h3>Troubleshooting</h3>
   <table>
     <tr><th>Symptom</th><th>Fix</th></tr>
     <tr><td><code>/loopflow</code> isn't recognized in the chat</td><td>The skill isn't installed. Run <code class="inl">npx @loop-lang/loop init</code> (or <code class="inl">--global</code>) and reopen the chat.</td></tr>
     <tr><td>The loop runs forever / hits the attempt cap</td><td>It has no real <code class="inl">done when</code>, so nothing can decide "done". Pin it to a test or command, and add an <code class="inl">after N tries</code> guard.</td></tr>
+    <tr><td>The loop stopped with your <code class="inl">after N tries</code> warn</td><td>Read the reflect notes in the trace (or the <code class="inl">--log</code> file). Failed the same way every cycle → the goal is underspecified; split it into a smaller loop. Failed differently each time → tighten <code class="inl">look at:</code> so the plan stops wandering.</td></tr>
     <tr><td>A <code class="inl">done when a human confirms</code> check never passes headless</td><td>Human predicates need a person — run it <em>in the chat</em> (or VS Code <strong>session</strong> mode), not the headless output panel.</td></tr>
     <tr><td><code class="inl">push when done</code> fails before the loop even starts</td><td>You're on <code class="inl">main</code>/<code class="inl">master</code>. LoopFlow refuses to push to a protected branch — switch to a feature branch (or drop <code class="inl">push when done</code>).</td></tr>
     <tr><td><code class="inl">loop-run</code> isn't found in the terminal</td><td>The headless CLI ships with <code class="inl">@loop-lang/runtime</code>: <code class="inl">npm i -g @loop-lang/runtime</code>. The chat (<code class="inl">/loopflow</code>) needs nothing extra.</td></tr>
@@ -887,12 +885,7 @@ live=true            # /loopflow shows the live dashboard during in-session runs
 
   <p>Now open a brand-new project and type <code class="inl">/loopflow run security</code>. Claude reads your saved loop and runs it <em>here</em> — plan → act → observe, reflecting on each failure, stopping only when your <code class="inl">done when</code> check is green, asking before anything risky. Same loop, new repo, every guarantee intact. A bare name means your library; a path or a <code class="inl">.loop</code> file still means a local file, so the library never shadows a loop that lives in the repo.</p>
 
-  <div class="key"><span class="kt">Why this beats re-asking the model</span><ul>
-    <li>Ask an LLM to "check this repo for security issues" and you get a <strong>fresh plan-then-execute</strong> every time — a new interpretation, no real verification, no memory of what "done" meant, and you re-type it in each project.</li>
-    <li>A saved loop carries its <code class="inl">done when</code> check, its reflect-and-retry, its gates, and its <code class="inl">look at</code> scope <em>with it</em>. Running it re-applies all of that, identically, anywhere. It's a reusable <strong>guarantee</strong> you built once — not a prompt you re-type and re-trust.</li>
-  </ul></div>
-
-  <div class="note"><strong>Claude is the first-class home for LoopFlow.</strong> The library and every <code class="inl">/loopflow</code> command live in the chat — that's where you watch each step and answer gates as the loop runs. <a href="#running-vscode">VS&nbsp;Code</a> is the second seat: handy for <em>editing</em> a <code class="inl">.loop</code> with highlighting and a ▶ Run button, but the loop still runs through Claude. If you only ever use one surface, use the chat.</div>
+  <div class="key"><span class="kt">Why this beats re-asking the model</span><ul><li>A saved loop carries its check, its gates, and its <code class="inl">look at</code> scope with it — a guarantee you built once, not a prompt you re-trust.</li></ul></div>
 </section>
 
 <!-- skills & memory -->
@@ -916,34 +909,15 @@ live=true            # /loopflow shows the live dashboard during in-session runs
   <pre><code class="loop">loop "add the refund endpoint":
   goal: POST /refunds reverses a charge and is safe to ship
   in: api/refunds.ts, api/charges.ts
-  done when "pnpm test refunds" passes                              # a TEST (deterministic)
+  done when "pnpm test refunds" passes 3 times                      # a TEST + flake guard
   done when the skill "api-review" scores 8 or more on the output   # an OUTPUT eval
-  done when the skill "path-review" approves on the trajectory       # a TRAJECTORY eval
+  done when the skill "code-review" approves by 3 judges            # a JUDGE PANEL
+  done when the skill "path-review" approves on the trajectory      # a TRAJECTORY eval
     the bar: did not weaken a test to go green; no writes outside api/
   when it breaks: reflect on whether the test or the path failed, then plan again
   after 6 tries: stop and warn "cannot satisfy the test and the evals"</code></pre>
   <div class="note"><b>Why a trajectory eval?</b> A green test isn't always proof — an agent can pass a test by <em>weakening it</em>, a failure that looks right. A trajectory eval inspects the actual path (it sees the edit to the spec file) and rejects it against <code class="inl">the bar:</code>. Pair a test with an eval when "done" means both <em>it works</em> and <em>it was built the right way</em>.</div>
-</section>
-
-<!-- context & knowledge -->
-<section id="material">
-  <h2>Context &amp; knowledge — what the agent reads <span class="badge b-inter">context</span></h2>
-  <p>Give the agent the right material before it plans. Each input carries a distinct intent, so the agent knows what it may change and what it must only learn from.</p>
-  <table>
-    <tr><th>Line</th><th>Intent</th></tr>
-    <tr><td><code class="inl">look at:</code> <span style="color:var(--muted)">(alias <code class="inl">in:</code>)</span></td><td>Files it reads <em>and may edit</em>. Add <code class="inl">and the last failure</code> to feed the previous error forward.</td></tr>
-    <tr><td><code class="inl">knowledge:</code></td><td>Read-only reference (docs, diagrams) it must <em>not</em> edit.</td></tr>
-    <tr><td><code class="inl">examples:</code></td><td>Reference patterns to <em>imitate</em> — "build it like these".</td></tr>
-    <tr><td><code class="inl">use skills:</code></td><td>Named skills it may invoke while planning/acting.</td></tr>
-    <tr><td><code class="inl">use tools from the "x" server</code></td><td>An MCP server whose tools it may use.</td></tr>
-  </table>
-  <pre><code class="loop">loop "add the webhooks endpoint":
-  goal: POST /webhooks matches the house style
-  look at: routes/
-  knowledge: docs/webhooks-spec.md, the architecture diagram
-  examples: routes/payments.ts, routes/users.ts
-  use tools from the "github" server
-  check: pnpm test webhooks</code></pre>
+  <div class="key"><span class="kt">Hardening the checks</span><ul><li><strong>Flake guard</strong> — <code class="inl">passes N times</code> re-runs the check; one lucky green isn't done.</li><li><strong>Judge panel</strong> — <code class="inl">by N judges</code> takes a majority of independent verdicts; one wobbly LM judgment isn't done either.</li></ul><p style="margin:6px 0 0">Mechanics (early-exit, cost): <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md#how-verification-works--what-done-actually-depends-on">How verification works</a>.</p></div>
 </section>
 
 <!-- config & loop.config -->
@@ -1037,6 +1011,7 @@ loop "port the reports module":
   in: src/reports
   models: fast haiku, strong opus
   check: pnpm test reports</code></pre>
+  <p class="sub">Running a whole sprint? Put the cap in <code class="inl">loop.config</code> once — the same <code class="inl">observe:</code> block is config-tier — and route the cheap phases with <code class="inl">models: fast haiku, strong opus</code>; plan/reflect rarely need the strong model.</p>
   <h3>Run isolation &amp; identity</h3>
   <p>For runs of agent-written code, declare isolation as config — where code runs and what it cannot reach — plus an auditable identity for unattended runs.</p>
   <pre><code class="loop">sandbox:
