@@ -6,6 +6,23 @@ Versions track the `@loop-lang/loop` installer package.
 
 ## [Unreleased]
 
+## [0.7.1] — 2026-07-02
+
+> `@loop-lang/loop` 0.7.1 · `@loop-lang/{parser,runtime,stdlib,viz}` 0.4.1 · `loopflow` (vscode) 0.5.4
+
+### Changed
+- **Gated loop-first default** — the pointer `loop init --agents claude|cursor|copilot`
+  installs into the agent's memory file no longer says "default to authoring a `.loop`"
+  unconditionally. It now gates on AGENTS.md's four-condition test (repeats? "done"
+  checkable? iterations affordable? self-verifiable?): all four hold → the agent reaches
+  for a `.loop` on its own; any fail → the work is done directly — one-off questions and
+  trivial edits get no loop ceremony. The `/loopflow` skill enforces the same gate with a
+  new "When NOT to loop" section (de-escalates in one line when auto-invoked on a non-loop
+  task) and a scoped description. `/loopflow` remains the explicit override both ways.
+  Existing repos pick the new pointer up on their next `loop init` (managed markers).
+- Libs republished in lockstep (no functional change) so the workspace publish stays
+  duplicate-free.
+
 ## [0.7.0] — 2026-07-02
 
 > `@loop-lang/loop` 0.7.0 · `@loop-lang/{parser,runtime,stdlib,viz}` 0.4.0 · `loopflow` (vscode) 0.5.0
