@@ -1,6 +1,7 @@
 import { resolve, dirname, basename } from "node:path";
 import type { Loop, Pipeline, Stage, Flow, FlowStep, Definition, Transition, Action, LoopFile, HookPoint } from "@loop-lang/parser";
 import type { CycleNode, LoopEvent, LoopOutcome, RunOptions, StopReason } from "./types.js";
+import { scopeResume } from "./resume.js";
 import { enumerateItems, labelOf } from "./iterate.js";
 import { resolveGit, isProtected } from "./git.js";
 import { resolveModels, modelForPhase } from "./models.js";
@@ -280,7 +281,7 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
             // A trajectory eval judges HOW the agent got there (the captured path);
             // an output eval judges WHAT it produced (the act summary).
             const isTrajectory = pred.subject === "trajectory";
-            const sr = await opts.runner.runSkill({
+            const skillInput = {
               skill: pred.skill,
               goal: loop.goal,
               context: isTrajectory ? (lastTrajectory || lastActSummary) : lastActSummary,
@@ -289,9 +290,28 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
               subject: pred.subject,
               bar: pred.bar,
               baseDir: opts.baseDir,
-            });
-            emit(opts, { type: "skill-verify", skill: pred.skill, passed: sr.passed, detail: sr.detail });
-            r = { passed: sr.passed, output: sr.detail };
+            };
+            // `by N judges` — a consensus panel: N independent verdicts, majority wins. A single
+            // LM judge wobbles near the bar; independent samples average the noise out. Stops
+            // early once the vote is mathematically decided.
+            const panel = Math.max(1, pred.judges ?? 1);
+            let approvals = 0;
+            const verdicts: string[] = [];
+            for (let j = 1; j <= panel; j++) {
+              const sr = await opts.runner.runSkill(skillInput);
+              if (sr.passed) approvals++;
+              const detail = panel > 1 ? `judge ${j}/${panel}: ${sr.detail}` : sr.detail;
+              verdicts.push(detail);
+              emit(opts, { type: "skill-verify", skill: pred.skill, passed: sr.passed, detail });
+              if (approvals * 2 > panel || (j - approvals) * 2 > panel) break; // majority decided
+            }
+            const approved = approvals * 2 > panel;
+            r = {
+              passed: approved,
+              output: panel > 1
+                ? `judges: ${approvals}/${verdicts.length} approved (majority of ${panel} ${approved ? "reached" : "not reached"})\n${verdicts.join("\n")}`
+                : verdicts[0],
+            };
           } else {
             r = await opts.verifier.verify(pred, opts.baseDir);
           }
@@ -438,6 +458,14 @@ async function applyActions(
 
 /** Run one stage: its gate, its loop, and a story-commit on success. */
 async function runStage(stage: Stage, opts: RunOptions): Promise<LoopOutcome> {
+  // Resume: a stage the prior run's log proves satisfied is skipped whole — gate included
+  // (it was already approved once; re-asking would gate work that won't happen).
+  if (opts.resumeScope?.stages.has(stage.name)) {
+    emit(opts, { type: "stage-start", name: stage.name });
+    emit(opts, { type: "resumed", unit: "stage", name: stage.name });
+    emit(opts, { type: "stage-end", name: stage.name, satisfied: true });
+    return { satisfied: true, reason: "done", attempts: 0, summary: `[${stage.name}] resumed — already satisfied` };
+  }
   emit(opts, { type: "stage-start", name: stage.name });
   if (stage.gate) {
     emit(opts, { type: "human", kind: "gate", prompt: stage.gate.message });
@@ -508,10 +536,19 @@ async function executeForEach(step: FlowStep, opts: RunOptions, stack: string[])
 
   let failedAccepted = 0;
   for (let i = 0; i < items.length; i++) {
+    // Resume: skip items the prior run already delivered (keyed by step + var + index).
+    if (opts.resumeScope?.items.get(`${step.name}:${varName}`)?.has(i)) {
+      emit(opts, { type: "foreach-item-start", var: varName, index: i, total: items.length });
+      emit(opts, { type: "resumed", unit: "foreach-item", name: varName, index: i });
+      emit(opts, { type: "foreach-item-end", var: varName, index: i, satisfied: true });
+      continue;
+    }
     emit(opts, { type: "foreach-item-start", var: varName, index: i, total: items.length });
     const tmpl = await opts.loadFile(step.ref, opts.baseDir);
     const outcomes = await run(tmpl, {
       ...opts,
+      resume: undefined,
+      resumeScope: undefined, // a template's own units are summarised by this item's end event
       baseDir: dirname(templatePath),
       flowStack: [...stack, templatePath],
       upstream: items[i],
@@ -543,6 +580,18 @@ async function executeFlow(flow: Flow, opts: RunOptions): Promise<LoopOutcome> {
   let carried = opts.upstream; // upstream from a parent flow, if any
 
   for (const step of flow.steps) {
+    // Resume: a step the prior run's log proves satisfied is skipped, and its recorded handoff
+    // summary is restored so the NEXT step still receives the carry-forward context it expects.
+    const resumed = opts.resumeScope?.steps.get(step.name);
+    if (resumed !== undefined) {
+      const summary = typeof resumed === "string" ? resumed : `[${step.name}] satisfied (resumed)`;
+      summaries[step.name] = summary;
+      carried = summary;
+      emit(opts, { type: "flow-step-start", name: step.name, ref: step.ref });
+      emit(opts, { type: "resumed", unit: "flow-step", name: step.name });
+      emit(opts, { type: "flow-step-end", name: step.name, satisfied: true, summary });
+      continue;
+    }
     emit(opts, { type: "flow-step-start", name: step.name, ref: step.ref });
 
     if (step.gate) {
@@ -576,6 +625,8 @@ async function executeFlow(flow: Flow, opts: RunOptions): Promise<LoopOutcome> {
       const stepUpstream = step.fromStep ? summaries[step.fromStep] : carried;
       const outcomes = await run(subFile, {
         ...opts,
+        resume: undefined,
+        resumeScope: undefined, // a sub-file's units are summarised by this step's end event
         baseDir: dirname(stepPath),
         flowStack: [...stack, stepPath],
         upstream: stepUpstream,
@@ -590,7 +641,8 @@ async function executeFlow(flow: Flow, opts: RunOptions): Promise<LoopOutcome> {
     summaries[step.name] = summary;
     carried = summary;
 
-    emit(opts, { type: "flow-step-end", name: step.name, satisfied });
+    // The summary rides on the end event so a `--resume` of this log can restore the carry-forward.
+    emit(opts, { type: "flow-step-end", name: step.name, satisfied, summary: summary.slice(0, 4000) });
     if (!satisfied) {
       emit(opts, { type: "flow-end", name: flow.name, satisfied: false });
       return { satisfied: false, reason: "blocked", attempts: 0, summary };
@@ -640,6 +692,19 @@ export async function runDefinition(def: Definition, opts: RunOptions): Promise<
   return executeLoopFull(def, opts);
 }
 
+/**
+ * Run the i-th top-level definition under the resume plan: skip it whole when the prior log
+ * proves it satisfied, otherwise run it with its slice of the plan (stages/steps/items).
+ */
+async function runDefinitionResumable(def: Definition, i: number, opts: RunOptions): Promise<LoopOutcome> {
+  if (opts.resume?.completed.has(`def:${i}`)) {
+    const name = ("name" in def ? (def as { name: string | null }).name : null) ?? def.kind;
+    emit(opts, { type: "resumed", unit: "definition", name });
+    return { satisfied: true, reason: "done", attempts: 0, summary: `[${name}] resumed — already satisfied in a prior run` };
+  }
+  return runDefinition(def, { ...opts, resumeScope: scopeResume(opts.resume, i) });
+}
+
 /** Run every definition in a parsed file, in order. */
 export async function run(file: LoopFile, opts: RunOptions): Promise<LoopOutcome[]> {
   const outer = !opts.gitStarted && !!opts.git;
@@ -663,7 +728,7 @@ export async function run(file: LoopFile, opts: RunOptions): Promise<LoopOutcome
       throw new Error(`git: refusing to push to "${branch}" — add 'work on a branch' (never push to a protected branch)`);
     }
     const outcomes: LoopOutcome[] = [];
-    for (const def of file.definitions) outcomes.push(await runDefinition(def, o));
+    for (let i = 0; i < file.definitions.length; i++) outcomes.push(await runDefinitionResumable(file.definitions[i], i, o));
     const allOk = outcomes.every((x) => x.satisfied);
     if (allOk && policy.commit === "done") await gitCommit(o, `loop: ${slug(file.definitions[0] && (file.definitions[0] as any).name)} — goal met`);
     if (allOk && policy.push) { await o.git!.push({ branch, dir: o.baseDir }); emit(o, { type: "git", action: "push", detail: branch }); }
@@ -672,6 +737,6 @@ export async function run(file: LoopFile, opts: RunOptions): Promise<LoopOutcome
   }
   const fileOpts: RunOptions = { ...opts, modelPolicy: file.config?.models ?? opts.modelPolicy };
   const outcomes: LoopOutcome[] = [];
-  for (const def of file.definitions) outcomes.push(await runDefinition(def, fileOpts));
+  for (let i = 0; i < file.definitions.length; i++) outcomes.push(await runDefinitionResumable(file.definitions[i], i, fileOpts));
   return outcomes;
 }

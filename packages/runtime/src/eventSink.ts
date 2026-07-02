@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { appendFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import type { LoopEvent } from "./types.js";
+import { buildRedactor, redactEvent } from "./redact.js";
 
 /** Run metadata sent alongside events so the collector can attribute a run. */
 export interface RunMeta {
@@ -10,6 +11,8 @@ export interface RunMeta {
   git_sha?: string;
   principal?: string;
   runner?: string;
+  /** sha256 of the .loop source — lets `--resume` warn when the file changed since the logged run. */
+  loop_sha256?: string;
 }
 
 export interface EventSink {
@@ -96,6 +99,25 @@ export function makeFileEventSink(opts: { path: string; runId: string; meta?: Ru
   };
 }
 
+/**
+ * Wrap a sink so every event is secret-scrubbed before delivery (see redact.ts). Sits in front
+ * of both the file log and the HTTP collector — persisted telemetry never sees a raw credential.
+ */
+export function redactingSink(sink: EventSink, redact: (s: string) => string): EventSink {
+  return {
+    post(event) {
+      let scrubbed = event;
+      try {
+        scrubbed = redactEvent(event, redact);
+      } catch {
+        /* a redactor bug must never break telemetry — fall back to the raw event */
+      }
+      sink.post(scrubbed);
+    },
+    flush: () => sink.flush(),
+  };
+}
+
 /** Fan one event stream out to several sinks. Returns undefined when none are active. */
 export function combineSinks(sinks: Array<EventSink | undefined>): EventSink | undefined {
   const active = sinks.filter((s): s is EventSink => !!s);
@@ -122,13 +144,17 @@ export function combineSinks(sinks: Array<EventSink | undefined>): EventSink | u
  *   LOOP_RUN_ID        — correlate events to one run (optional; a UUID is generated if unset)
  *
  * `override.logFile` (the CLI's `--log <path>`) takes precedence over `LOOP_LOG_FILE`.
+ *
+ * Secret redaction is ON by default (see redact.ts); set `LOOP_REDACT=off` to disable.
  */
 export function eventSinkFromEnv(meta?: RunMeta, override?: { logFile?: string }): EventSink | undefined {
   const runId = process.env.LOOP_RUN_ID || randomUUID();
   const url = process.env.LOOP_EVENTS_URL;
   const logPath = override?.logFile || process.env.LOOP_LOG_FILE;
-  return combineSinks([
+  const sink = combineSinks([
     url ? makeHttpEventSink({ url, runId, token: process.env.LOOP_EVENTS_TOKEN, meta }) : undefined,
     logPath ? makeFileEventSink({ path: logPath, runId, meta }) : undefined,
   ]);
+  if (!sink || process.env.LOOP_REDACT === "off") return sink;
+  return redactingSink(sink, buildRedactor());
 }

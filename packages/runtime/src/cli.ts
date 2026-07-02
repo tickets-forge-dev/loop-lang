@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { appendFileSync, readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, resolve, relative, basename } from "node:path";
 import { createInterface } from "node:readline";
 import { parse } from "@loop-lang/parser";
@@ -13,6 +14,7 @@ import { IpcHumanIO } from "./ipc.js";
 import { ShellGitIO } from "./runners/shellGit.js";
 import { ownModelBinaryWarning } from "./ownModel.js";
 import { eventSinkFromEnv } from "./eventSink.js";
+import { buildResumePlan } from "./resume.js";
 import type { LoopEvent } from "./types.js";
 import { summarizeModels, formatModelSummary, summarizeOpex, formatOpexSummary } from "./summary.js";
 
@@ -37,6 +39,8 @@ function render(e: LoopEvent): string {
       return `  ■ stage "${e.name}"`;
     case "stage-end":
       return `  ■ stage "${e.name}" → ${e.satisfied ? "satisfied" : "FAILED"}`;
+    case "resumed":
+      return `  ⏩ ${e.unit} ${e.name ? `"${e.name}"` : ""}${e.index !== undefined ? ` #${e.index + 1}` : ""} — resumed (already satisfied)`;
     case "loop-start":
       return `↻ loop ${e.name ? `"${e.name}"` : ""}`.trimEnd();
     case "node-enter":
@@ -231,7 +235,7 @@ async function main() {
   }
 
   if (!cmd || (cmd !== "run" && cmd !== "parse" && cmd !== "viz" && cmd !== "live") || !fileArg) {
-    console.error("usage: loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop>  [--model <alias>] [--live] [--events] [--log <path>] [--out <path>]");
+    console.error("usage: loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop>  [--model <alias>] [--live] [--events] [--log <path>] [--resume <log>] [--out <path>]");
     process.exit(2);
   }
 
@@ -294,6 +298,26 @@ async function main() {
   const logFile = logIdx >= 0 ? rest[logIdx + 1] : undefined;
   const target = file.config?.target ? resolve(baseDir, file.config.target) : baseDir;
 
+  // `--resume <log>`: rebuild what a prior run already finished from its event log and skip it —
+  // satisfied definitions / stages / flow steps / foreach items don't re-run; the first
+  // incomplete unit picks up (with flow carry-forward summaries restored from the log).
+  const resumeIdx = rest.indexOf("--resume");
+  const resumeLog = resumeIdx >= 0 ? rest[resumeIdx + 1] : undefined;
+  const sourceHash = createHash("sha256").update(readFileSync(path)).digest("hex");
+  let resume: import("./types.js").ResumePlan | undefined;
+  if (resumeLog) {
+    resume = buildResumePlan(readFileSync(resolve(baseDir, resumeLog), "utf8"));
+    if (resume.sourceHash && resume.sourceHash !== sourceHash) {
+      console.error(`⚠ resume: ${basename(path)} changed since the logged run — completed units are matched by name/position and may not correspond`);
+    }
+    if (resume.completed.size === 0) {
+      console.error(`↻ resume: nothing recorded as satisfied in ${resumeLog} — running from the start`);
+      resume = undefined;
+    } else {
+      console.error(`↻ resume: skipping ${resume.completed.size} completed unit(s) from ${resumeLog}`);
+    }
+  }
+
   const git = new ShellGitIO();
 
   // Attach the ctx skill recommender only when the file opts in (`recommend skills with ctx`
@@ -320,6 +344,7 @@ async function main() {
   const eventSink = eventSinkFromEnv(
     {
       loop_path: path,
+      loop_sha256: sourceHash,
       principal: file.config?.runsAs,
       runner: file.config?.runner,
     },
@@ -355,6 +380,7 @@ async function main() {
       flowStack: [path],
       modelPolicy: file.config?.models,
       cliModel: model,
+      resume,
       onEvent: (e) => { eventSink?.post(e); emit({ kind: "event", event: e }); },
     });
     const ok = outcomes.every((o) => o.satisfied);
@@ -381,6 +407,7 @@ async function main() {
     flowStack: [path],
     modelPolicy: file.config?.models,
     cliModel: model,
+    resume,
   };
   const traceEvents: LoopEvent[] = [];
   const onTrace = (e: LoopEvent) => {

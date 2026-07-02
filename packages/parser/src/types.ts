@@ -243,9 +243,11 @@ export type Predicate =
    * An eval: a review skill judges the goal (approve / score). `subject` selects what it
    * inspects — the produced `output` (default) or the `trajectory` (the path and tool calls
    * the agent took to get there). `bar` is an optional inline rubric (`the bar:`) naming the
-   * conditions the judge scores against.
+   * conditions the judge scores against. `judges` (from `… by N judges`) runs the eval N times
+   * independently and takes a majority vote — consensus smooths single-judge wobble. Absent /
+   * 1 = the usual single verdict.
    */
-  | { type: "skill"; skill: string; expect: "approve"; minScore?: number; subject?: "output" | "trajectory"; bar?: string };
+  | { type: "skill"; skill: string; expect: "approve"; minScore?: number; subject?: "output" | "trajectory"; bar?: string; judges?: number };
 
 export interface Transition {
   on: "pass" | "fail" | "blocked" | "attempts";

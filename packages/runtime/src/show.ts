@@ -16,7 +16,8 @@ function predicateStr(p?: Predicate | null): string | null {
   // skill = an eval: name the verdict and, when not the default, the subject it judges.
   const verdict = p.minScore !== undefined ? `scores ${p.minScore}+` : "approves";
   const on = p.subject && p.subject !== "output" ? ` on the ${p.subject}` : "";
-  return `eval: skill "${p.skill}" ${verdict}${on}`;
+  const panel = p.judges && p.judges > 1 ? ` · ${p.judges} judges` : "";
+  return `eval: skill "${p.skill}" ${verdict}${on}${panel}`;
 }
 /** Render every `done when` predicate (a conjunction) as labelled strings. */
 function predicateStrs(dw?: Predicate[] | null): string[] {
@@ -145,7 +146,8 @@ function predicateProse(p: Predicate): string {
   if (p.type === "human") return `you confirm "${p.description}"`;
   // skill = an eval
   const verdict = p.minScore !== undefined ? `the "${p.skill}" review scores ${p.minScore} or more` : `the "${p.skill}" review approves`;
-  return verdict + (p.subject === "trajectory" ? " (judging how it got there, not just the result)" : "");
+  const panel = p.judges && p.judges > 1 ? ` by a majority of ${p.judges} judges` : "";
+  return verdict + panel + (p.subject === "trajectory" ? " (judging how it got there, not just the result)" : "");
 }
 
 /** A plain-English description of a single loop. */

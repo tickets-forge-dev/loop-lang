@@ -23,8 +23,11 @@ export type LoopEvent =
   | { type: "loop-end"; name: string | null; satisfied: boolean }
   | { type: "flow-start"; name: string }
   | { type: "flow-step-start"; name: string; ref: string }
-  | { type: "flow-step-end"; name: string; satisfied: boolean }
+  /** `summary` (the step's handoff text) is recorded so a resumed run can restore the flow carry-forward. */
+  | { type: "flow-step-end"; name: string; satisfied: boolean; summary?: string }
   | { type: "flow-end"; name: string; satisfied: boolean }
+  /** A unit skipped because a prior run's event log (`--resume`) shows it already satisfied. */
+  | { type: "resumed"; unit: "definition" | "stage" | "flow-step" | "foreach-item"; name?: string; index?: number }
   | { type: "foreach-start"; var: string; source: string; count: number; labels?: string[] }
   | { type: "foreach-item-start"; var: string; index: number; total: number }
   | { type: "foreach-item-end"; var: string; index: number; satisfied: boolean }
@@ -216,6 +219,37 @@ export interface RunOptions {
   ctxGrants?: string[];
   /** A user-owned model (`ctx may use my own model …`) that unlocks ctx harness recommendations. */
   ownModel?: { provider: string; model: string };
+  /**
+   * Crash/interrupt recovery (`--resume <log>`): the plan built from a prior run's event log.
+   * Only the top-level `run()` consults it (to skip whole completed definitions); per-definition
+   * units are handed down via `resumeScope`. Nested runs (flow steps, foreach templates) never
+   * see either — their completion is already summarised by their parent unit's end event.
+   */
+  resume?: ResumePlan;
+  /** The current definition's slice of the resume plan (set by run(), consumed by the executors). */
+  resumeScope?: ResumeScope;
+}
+
+/** What a prior run's event log says is already satisfied. Built by `buildResumePlan`. */
+export interface ResumePlan {
+  /** Canonical keys of completed top-level units (`def:<i>`, `stage:<i>:<name>`, `step:<i>:<name>`, `item:<i>:<step>:<var>:<idx>`). */
+  completed: Set<string>;
+  /** flow-step key → its recorded handoff summary, so a resumed flow restores carry-forward context. */
+  summaries: Map<string, string>;
+  /** sha256 of the .loop source recorded in the log header — mismatch means the file changed since. */
+  sourceHash?: string;
+  /** The prior run's id (for operator messages). */
+  runId?: string;
+}
+
+/** The per-definition slice of a ResumePlan (keys with the `def index` prefix stripped). */
+export interface ResumeScope {
+  /** Names of pipeline stages already satisfied. */
+  stages: Set<string>;
+  /** Flow step name → recorded summary (or true when the log predates summaries). */
+  steps: Map<string, string | true>;
+  /** `${stepName}:${var}` → indices of foreach items already satisfied. */
+  items: Map<string, Set<number>>;
 }
 
 export interface LoopOutcome {

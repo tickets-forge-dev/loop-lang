@@ -151,14 +151,20 @@ function parsePredicate(s: string, lineNo: number): Predicate {
   // An eval predicate may name its subject: `on the output` (default) or `on the trajectory`.
   const subj = (s: string | undefined): { subject?: "output" | "trajectory" } =>
     s ? { subject: s.toLowerCase() as "output" | "trajectory" } : {};
+  // …and a consensus panel: `by N judges` runs the eval N times, majority wins. Only surfaced
+  // when > 1 (a single judge is the default shape).
+  const judges = (n: string | undefined): { judges?: number } => {
+    const j = n ? parseInt(n, 10) : 1;
+    return j > 1 ? { judges: j } : {};
+  };
 
-  // the skill "X" scores N or more [on the output|trajectory]  -> eval with a numeric threshold
-  m = text.match(/^the skill\s+"([^"]+)"\s+scores\s+(\d+)(?:\s+or more)?(?:\s+on the (output|trajectory))?$/i);
-  if (m) return { type: "skill", skill: m[1], expect: "approve", minScore: parseInt(m[2], 10), ...subj(m[3]) };
+  // the skill "X" scores N or more [on the output|trajectory] [by N judges]
+  m = text.match(/^the skill\s+"([^"]+)"\s+scores\s+(\d+)(?:\s+or more)?(?:\s+on the (output|trajectory))?(?:\s+by\s+(\d+)\s+judges?)?$/i);
+  if (m) return { type: "skill", skill: m[1], expect: "approve", minScore: parseInt(m[2], 10), ...subj(m[3]), ...judges(m[4]) };
 
-  // the skill "X" approves [on the output|trajectory]  -> eval (approved / not)
-  m = text.match(/^the skill\s+"([^"]+)"\s+approves(?:\s+on the (output|trajectory))?$/i);
-  if (m) return { type: "skill", skill: m[1], expect: "approve", ...subj(m[2]) };
+  // the skill "X" approves [on the output|trajectory] [by N judges]
+  m = text.match(/^the skill\s+"([^"]+)"\s+approves(?:\s+on the (output|trajectory))?(?:\s+by\s+(\d+)\s+judges?)?$/i);
+  if (m) return { type: "skill", skill: m[1], expect: "approve", ...subj(m[2]), ...judges(m[3]) };
 
   throw new ParseError(`could not understand "done when ${text}"`, lineNo);
 }

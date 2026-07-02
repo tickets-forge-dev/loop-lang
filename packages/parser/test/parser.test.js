@@ -239,6 +239,25 @@ test("flake guard: the `check:` sugar also accepts `N times`", () => {
   assert.deepEqual(loop.doneWhen, [{ type: "command", command: "pnpm test", expect: "exit-zero", runs: 3 }]);
 });
 
+test("multi-judge: `approves by N judges` carries a judges count", () => {
+  const loop = parse('loop "x":\n  goal: g\n  done when the skill "review" approves by 3 judges').definitions[0];
+  assert.deepEqual(loop.doneWhen, [{ type: "skill", skill: "review", expect: "approve", judges: 3 }]);
+});
+
+test("multi-judge: composes with a score threshold and a subject", () => {
+  const loop = parse('loop "x":\n  goal: g\n  done when the skill "review" scores 8 or more on the trajectory by 5 judges').definitions[0];
+  assert.deepEqual(loop.doneWhen, [
+    { type: "skill", skill: "review", expect: "approve", minScore: 8, subject: "trajectory", judges: 5 },
+  ]);
+});
+
+test("multi-judge: a single judge (default or `by 1 judge`) keeps the single-verdict shape", () => {
+  const plain = parse('loop "x":\n  goal: g\n  done when the skill "review" approves').definitions[0];
+  assert.deepEqual(plain.doneWhen, [{ type: "skill", skill: "review", expect: "approve" }]); // no judges key
+  const one = parse('loop "x":\n  goal: g\n  done when the skill "review" approves by 1 judge').definitions[0];
+  assert.deepEqual(one.doneWhen, [{ type: "skill", skill: "review", expect: "approve" }]);
+});
+
 test("memory: 'keep a memory in' is an accepted alias", () => {
   const loop = parse('loop "x":\n  goal: g\n  keep a memory in "notes.md"').definitions[0];
   assert.deepEqual(loop.memory, { file: "notes.md" });
