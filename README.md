@@ -192,14 +192,18 @@ When you run a loop via `/loopflow`, the skill asks if you want the dashboard an
 opens it and updates it as each step happens — pipeline stages, flow steps, and sprint stories
 filling in as the loop progresses.
 
-Prefer a file you can grep later? Persist the same event stream as NDJSON:
+Prefer a file you can grep later? Persist the same event stream as NDJSON — and use it to
+**resume** an interrupted run:
 
 ```
-loop-run run file.loop --log run.log   # append every event to a local log (also via LOOP_LOG_FILE)
+loop-run run file.loop --log run.log       # append every event to a local log (secrets scrubbed)
+loop-run run file.loop --resume run.log    # skip what the log proves done; pick up where it died
 ```
 
-See **Event log & telemetry** in [`docs/MANUAL.md`](docs/MANUAL.md) for the format and the
-`LOOP_EVENTS_URL` remote collector.
+See **Event log & telemetry** in [`docs/MANUAL.md`](docs/MANUAL.md) for the format, redaction,
+resume semantics, and the `LOOP_EVENTS_URL` remote collector. Want to *feel* the language first?
+Open the [**browser playground**](https://loopflow.live/playground.html) — type a `.loop`, see its
+shape live, no install.
 
 ## Project layout
 

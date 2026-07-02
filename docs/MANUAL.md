@@ -116,7 +116,7 @@ the thrash guard).
 ## 4. The CLI
 
 ```
-loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop> [--model <alias>] [--live] [--log <path>] [--out <path>]
+loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop> [--model <alias>] [--live] [--log <path>] [--resume <log>] [--out <path>]
 ```
 
 | Command | What it does |
@@ -138,6 +138,8 @@ loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop> [--model <alias>]
   loop executes (see below).
 - `--log <path>` — for `run`, append the full event stream to a local NDJSON log
   (see **Event log & telemetry** below). Overrides `LOOP_LOG_FILE`.
+- `--resume <log>` — for `run`, skip everything a prior run's event log proves already
+  satisfied and pick up at the first incomplete unit (see **Resuming an interrupted run**).
 - `--out <path>` — for `viz`, the HTML output file (default: the `.loop` name with an
   `.html` extension).
 - `--json` — print the parsed loop-spec JSON before the command's normal work (handy with
@@ -208,6 +210,15 @@ Each event is written with a synchronous append, so it's on disk the instant it 
 log survives a `Ctrl-C` or a crash with **no lost tail**. The parent directory is created if
 missing. It works the same across all run modes (default, `--live`, `--events`).
 
+**Secrets are scrubbed before anything is persisted.** Command output can echo credentials
+(a failing `git push` printing a token, a dumped env). Every event passes through a redactor
+before it reaches the file log or the HTTP collector: values of env vars whose *names* look
+secret-bearing (`*_TOKEN`, `*_SECRET`, `*_PASSWORD`, `*_KEY`, …) are replaced with
+`[redacted:<VARNAME>]`, and well-known credential shapes (GitHub / Slack / AWS / `sk-…` API
+keys, JWTs, PEM private keys, `Bearer …` headers, `password=…` assignments) are masked by
+pattern. Best-effort by design — treat it as a seatbelt, not a licence to log freely. Disable
+with `LOOP_REDACT=off` (e.g. when debugging the redactor itself).
+
 Read it back with any NDJSON tool — e.g. with `jq`:
 
 ```bash
@@ -233,6 +244,36 @@ idempotent on retries and out-of-order delivery.
 The file log and the HTTP collector can run **together** — the same event fans out to both,
 sharing one `runId`, so a local trace and the control-plane record line up. Set `LOOP_RUN_ID`
 yourself when you want a run's id to match something you already track (a CI job, a ticket).
+
+### Resuming an interrupted run — `--resume`
+
+The event log is also a **journal**. A long pipeline that dies at stage 4 — crash, `Ctrl-C`,
+laptop lid — doesn't have to start over:
+
+```bash
+loop-run run epic.loop --log run.log          # …dies at stage 4 of 6
+loop-run run epic.loop --resume run.log --log run.log   # stages 1–3 skip, stage 4 picks up
+```
+
+What resume does:
+
+- **Skips what's proven done.** A unit whose end event says `satisfied: true` in the log —
+  a whole definition, a pipeline stage, a flow step, a `for each` item — is skipped, with a
+  `⏩ resumed` line in the trace. Everything else (failed, or interrupted mid-flight with no
+  end event) re-runs from scratch.
+- **Restores flow context.** A flow step's handoff summary is recorded on its end event, so
+  a resumed flow hands the *next* step the same carry-forward text the original run produced.
+- **Detects drift.** The log header carries a hash of the `.loop` source; if the file changed
+  since the logged run you get a warning (units are matched by name/position). Editing the
+  file to *fix* the failing stage and then resuming is the normal workflow — the warning is
+  informational, not an error.
+- **Composes with `--log`.** Point `--log` at the same file to keep one continuous journal
+  (headers separate the runs), or at a new file for a clean second record. Nested work needs
+  no bookkeeping: a sub-file a flow step runs is summarised by that step's own end event.
+
+The unit of resume is deliberately the *stage / step / item*, not the mid-loop cycle — a
+half-finished loop re-verifies from its own `done when`, which is exactly what makes skipping
+safe: nothing is trusted that a check didn't prove.
 
 ## 5. Language reference
 
@@ -366,6 +407,7 @@ done when "pnpm test flaky" passes 3 times                 # flake guard: re-run
 done when a human confirms "looks right at 375px"          # a human check
 done when the skill "email-review" approves                # an eval: approved / not
 done when the skill "email-review" scores 8 or more        # an eval: numeric threshold
+done when the skill "code-review" approves by 3 judges     # judge panel: N verdicts, majority wins
 done when the skill "api-review" scores 8 or more on the output       # an eval of WHAT was produced
 done when the skill "path-review" approves on the trajectory          # an eval of HOW it got there
   the bar: didn't weaken a test to go green; no writes outside api/   # the rubric the judge scores against
@@ -380,6 +422,16 @@ run to pass. The first failing run short-circuits (the rest don't execute). Use 
 green can hold by luck — a timing-dependent or order-dependent test — so "done" means
 "passes *reliably*", not "passed *once*". `show` renders it as `×N`; a plain check (or
 `1 time`) is the usual single run.
+
+**Judge panel — `by N judges`.** Append `by N judges` to a skill predicate to collect `N`
+independent verdicts and take the **majority**. A single LM judge wobbles run-to-run near the
+bar; independent samples average the noise out. The panel early-exits once the vote is
+mathematically decided (2 approvals out of 3 → the third judge never runs), each verdict is
+emitted as its own `skill-verify` event (`judge 1/3: …`), and the observe output reports the
+tally (`judges: 2/2 approved (majority of 3 reached)`). Composes with everything else:
+`scores 8 or more on the trajectory by 5 judges`. This is the eval-side counterpart of the
+flake guard — **flake guard for tests, judge panel for evals**; costs N× the eval, so reserve
+it for checks where a wrong "done" is expensive.
 
 #### Tests vs evals
 
@@ -396,6 +448,56 @@ A trajectory eval catches what a green test can't — e.g. an agent that made a 
 weakening it. Pair a test with an eval when "done" means both *it works* and *it was built
 the right way*. Build the review skill manually first and confirm it judges well, then wire
 it in. See `examples/skills_memory.loop` and `examples/email_review.loop`.
+
+#### How verification works — what "done" actually depends on
+
+The most common question about Loop: *when the loop says "done", what exactly decided that?*
+The full mechanics, end to end:
+
+**When it runs.** Verification happens at the **observe** node of every cycle — after act,
+before any transition. Nothing is verified mid-act; a cycle without `observe` in its
+`each cycle:` never checks at all (it relies on a human gate to stop).
+
+**The conjunction.** Every `done when` line must pass, in the order written. The **first
+failing check short-circuits** — later predicates don't run that cycle. Their combined output
+becomes the observe result; on failure that text is *"the last failure"* your `look at:`
+context refers to, and it feeds the `reflect` step. Verification isn't just a gate — it's the
+loop's sensory input.
+
+**Where a command runs (this is what surprises people).** A `test` / command predicate runs
+as a real shell command:
+
+| Factor | Effect on the verdict |
+|---|---|
+| **Working directory** | The loop's effective `baseDir` — your repo dir by default, the `target:` dir if the config sets one, and **the worktree** when the git policy is `work in a worktree`. A check that passes in-repo can fail in a fresh worktree (untracked files, unbuilt artifacts). |
+| **Your shell + your env** | The command runs with *your* privileges and environment, like an npm script. A `PATH`, `NODE_ENV`, or missing env var difference between your machine and CI changes the verdict. |
+| **Exit code** | `passes` / `succeeds` = **exit 0**. Nothing else is inspected. A test runner configured to exit 0 on failures will make the loop lie to you — verify your runner's exit-code behavior first. |
+| **Output emptiness** | `finds nothing` = exit 0 **and** empty stdout+stderr. A scanner that prints a benign banner never "finds nothing" — silence it or wrap it. |
+| **The `test` shorthand** | `the test "x::y" passes` desugars to `npm test -- x::y` by default. If your runner isn't npm-style, use an explicit command predicate instead. |
+| **Flakiness** | One lucky green = done, unless you add `passes N times` (every run must pass, first failure short-circuits). |
+| **Output size** | Captured output is truncated (~4 kB into the trace) — the verdict uses the exit code, not the text, so truncation never changes pass/fail. |
+
+**How an eval decides.** A skill predicate never touches the shell — it's routed to the
+runner, which invokes the named review skill as a judge. What the judge sees is the
+**subject**: the act summary (`on the output`, default) or the captured path and tool calls
+(`on the trajectory`). It scores against the `the bar:` rubric if present; `scores N or more`
+compares its numeric score to the threshold; `by N judges` repeats the judgment independently
+and takes the majority. An eval's verdict is an LM's judgment — it can wobble; the bar and the
+panel are the two tools that stabilize it.
+
+**What never auto-passes.** `a human confirms "…"` always waits for you. A loop with **no**
+`done when` at all can never be machine-satisfied — it needs `a human reviews before stopping`,
+or it runs until the `after N tries` guard / the hard cap (25 cycles) stops it unsatisfied.
+
+**What the verdict triggers.** Pass + goal met → the loop stops (then `also:` finishing passes,
+then a human review if declared — and an `on stop` hook can still **veto** the stop). Fail →
+the `when it fails:` transition (reflect → plan again). So the checks you write are literally
+the loop's definition of reality: a wrong predicate doesn't make the loop fail — it makes the
+loop *stop caring about the right thing*.
+
+**Rules of thumb.** Fast, deterministic, loud-on-failure commands; `finds nothing` for
+scanners; `passes N times` for anything with timing in it; a test **and** an eval when "done"
+has a quality dimension; a trajectory eval when you're worried the agent will game the test.
 
 ### Config tier (top of file)
 

@@ -120,6 +120,7 @@ done when "pnpm test flaky" passes 3 times                 # flake guard: re-run
 done when a human confirms "looks right at 375px"          # a human check
 done when the skill "email-review" approves                # an eval: approved / not
 done when the skill "email-review" scores 8 or more        # an eval: numeric threshold
+done when the skill "code-review" approves by 3 judges     # consensus: N independent verdicts, majority wins
 done when the skill "api-review" scores 8 or more on the output       # an eval of WHAT was produced
 done when the skill "path-review" approves on the trajectory          # an eval of HOW the agent got there
   the bar: didn't weaken a test to go green; no writes outside api/   # the rubric the judge scores against
@@ -132,6 +133,11 @@ script). It IS meant to be a real command. Prefer a fast, deterministic check.
 it `N` times and require every run to pass (the first failure short-circuits). Reach for it when a
 green can pass by luck — a timing- or order-dependent test — so "done" means "passes *reliably*",
 not "passed *once*".
+
+**Judge panel — `by N judges`.** Append `by N judges` to a skill predicate to collect `N`
+independent verdicts and take the majority (early-exit once decided). A single LM judge wobbles
+near the bar; consensus smooths the noise. The deterministic counterpart of the flake guard:
+flake guard for tests, judge panel for evals.
 
 ### Tests vs evals — list as many `done when` as you need
 
@@ -444,6 +450,11 @@ flow, show the file chain. `loop-run ls` lists every loop in the repo.
 
 - `loop-run run file.loop` — execute it on Claude Code (plan/act/observe, reflect on failure,
   verify with `done when`, pause at human gates).
+- `loop-run run file.loop --log run.log` — also append every event to a local NDJSON log
+  (secrets are scrubbed before anything is persisted).
+- `loop-run run file.loop --resume run.log` — resume an interrupted run from its log: satisfied
+  stages / flow steps / for-each items are skipped, the first incomplete unit picks up (flow
+  carry-forward summaries restored from the log).
 - `loop-run show file.loop` — print the loop's flow as compact ASCII (and `loop-run ls` to list them).
 - `loop-run explain file.loop` — describe the loop in plain English (a friendly check of what it will do).
 - `loop-run viz file.loop` — open a visual HTML schematic of the flow.
