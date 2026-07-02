@@ -23,14 +23,23 @@ export type LoopEvent =
   | { type: "loop-end"; name: string | null; satisfied: boolean }
   | { type: "flow-start"; name: string }
   | { type: "flow-step-start"; name: string; ref: string }
-  | { type: "flow-step-end"; name: string; satisfied: boolean }
+  /** `summary` (the step's handoff text) is recorded so a resumed run can restore the flow carry-forward. */
+  | { type: "flow-step-end"; name: string; satisfied: boolean; summary?: string }
   | { type: "flow-end"; name: string; satisfied: boolean }
+  /** A unit skipped because a prior run's event log (`--resume`) shows it already satisfied. */
+  | { type: "resumed"; unit: "definition" | "stage" | "flow-step" | "foreach-item"; name?: string; index?: number }
   | { type: "foreach-start"; var: string; source: string; count: number; labels?: string[] }
   | { type: "foreach-item-start"; var: string; index: number; total: number }
   | { type: "foreach-item-end"; var: string; index: number; satisfied: boolean }
   | { type: "foreach-end"; var: string; satisfied: boolean }
   | { type: "git"; action: "branch"|"worktree"|"commit"|"push"|"pr"; detail: string }
-  | { type: "ctx"; action: "provision" | "topup"; skills: string[]; ok?: boolean; detail?: string }
+  | { type: "ctx"; action: "provision" | "topup"; skills: string[]; ok?: boolean; detail?: string;
+      /** Recommend-only capabilities ctx surfaced (never auto-installed): MCP servers / harnesses. */
+      mcps?: string[]; harnesses?: string[];
+      /** Dry-run command to install the top recommended harness — an explicit user action. */
+      harnessInstall?: string;
+      /** Non-fatal notes from ctx (e.g. harnesses granted without an own model). */
+      warnings?: string[] }
   | { type: "model"; node: "plan" | "act" | "reflect" | "also"; tier: "fast" | "strong"; model?: string };
 
 export type CycleNode = "plan" | "act" | "observe";
@@ -140,6 +149,16 @@ export interface CtxProvisionResult {
   installed?: string[];
   /** Slugs ctx skipped because already present (informational). */
   skipped?: string[];
+  /**
+   * Recommend-only capability names by group (the ctx.loop_adapter.v1 contract). `mcps` and
+   * `harnesses` are NEVER merged into the loop's skill set — they are surfaced for the host/user
+   * to act on. Present only for groups the loop granted.
+   */
+  capabilities?: { skills?: string[]; agents?: string[]; mcps?: string[]; harnesses?: string[] };
+  /** Dry-run command to install the top recommended harness — an explicit, human-gated action. */
+  harnessInstall?: string | null;
+  /** Non-fatal notes (e.g. harnesses granted without a declared own model). */
+  warnings?: string[];
 }
 
 /**
@@ -149,8 +168,18 @@ export interface CtxProvisionResult {
  * loop's hand-named skills — ctx is always optional.
  */
 export interface CtxAdapter {
-  provision(input: { goal: string; intent?: string; baseDir: string }): Promise<CtxProvisionResult>;
-  topup(input: { goal: string; reflection: string; loaded: string[]; baseDir: string }): Promise<CtxProvisionResult>;
+  provision(input: {
+    goal: string; intent?: string; baseDir: string;
+    /** Capability groups granted (`grant ctx: …`); omitted = ctx's default (skills+agents). */
+    permissions?: string[];
+    /** A user-owned model (`ctx may use my own model …`) — unlocks harness recommendations. */
+    ownModel?: { provider: string; model: string };
+  }): Promise<CtxProvisionResult>;
+  topup(input: {
+    goal: string; reflection: string; loaded: string[]; baseDir: string;
+    permissions?: string[];
+    ownModel?: { provider: string; model: string };
+  }): Promise<CtxProvisionResult>;
   close?(): Promise<void>;
 }
 
@@ -186,6 +215,41 @@ export interface RunOptions {
   cliModel?: string;
   /** External skill recommender (ctx). Present when the file opts in; absent = degrade to named skills. */
   ctx?: CtxAdapter;
+  /** Capability groups the file grants ctx (`grant ctx: …`), threaded to provision/topup as permissions. */
+  ctxGrants?: string[];
+  /** A user-owned model (`ctx may use my own model …`) that unlocks ctx harness recommendations. */
+  ownModel?: { provider: string; model: string };
+  /**
+   * Crash/interrupt recovery (`--resume <log>`): the plan built from a prior run's event log.
+   * Only the top-level `run()` consults it (to skip whole completed definitions); per-definition
+   * units are handed down via `resumeScope`. Nested runs (flow steps, foreach templates) never
+   * see either — their completion is already summarised by their parent unit's end event.
+   */
+  resume?: ResumePlan;
+  /** The current definition's slice of the resume plan (set by run(), consumed by the executors). */
+  resumeScope?: ResumeScope;
+}
+
+/** What a prior run's event log says is already satisfied. Built by `buildResumePlan`. */
+export interface ResumePlan {
+  /** Canonical keys of completed top-level units (`def:<i>`, `stage:<i>:<name>`, `step:<i>:<name>`, `item:<i>:<step>:<var>:<idx>`). */
+  completed: Set<string>;
+  /** flow-step key → its recorded handoff summary, so a resumed flow restores carry-forward context. */
+  summaries: Map<string, string>;
+  /** sha256 of the .loop source recorded in the log header — mismatch means the file changed since. */
+  sourceHash?: string;
+  /** The prior run's id (for operator messages). */
+  runId?: string;
+}
+
+/** The per-definition slice of a ResumePlan (keys with the `def index` prefix stripped). */
+export interface ResumeScope {
+  /** Names of pipeline stages already satisfied. */
+  stages: Set<string>;
+  /** Flow step name → recorded summary (or true when the log predates summaries). */
+  steps: Map<string, string | true>;
+  /** `${stepName}:${var}` → indices of foreach items already satisfied. */
+  items: Map<string, Set<number>>;
 }
 
 export interface LoopOutcome {

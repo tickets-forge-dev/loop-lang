@@ -186,7 +186,7 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
 <div class="shell">
 
 <nav class="toc">
-  <div class="brand"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="LoopFlow"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span>LoopFlow</div>
+  <div class="brand"><span class="logo"><svg class="lpmark" viewBox="0 0 24 24" fill="none" aria-label="LoopFlow"><circle cx="12" cy="12" r="8.5" stroke="#34e0c4" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="42.2 11.2"/></svg></span>LoopFlow</div>
   <div class="tag">the tutorial · basics → advanced</div>
   <a href="https://github.com/tickets-forge-dev/loop-lang" style="display:flex;align-items:center;justify-content:center;gap:7px;margin:10px 0 14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;color:var(--ink);font-weight:700;font-size:12px;"><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>View on GitHub →</a>
   <ol id="tocList">
@@ -223,6 +223,7 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
     <li class="grp">Go deeper</li>
     <li><a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md">📖 Full manual →</a></li>
     <li><a href="keywords/index.html">📖 Keyword reference →</a></li>
+    <li><a href="playground.html">⚡ Playground →</a></li>
     <li><a href="workshop.html">🛠️ Workshop →</a></li>
     <li><a href="game.html">🎮 LoopFlow Lab →</a></li>
   </ol>
@@ -442,8 +443,9 @@ loop "fix the failing auth test":
   <div class="note"><b>Safe from the first run:</b> with no <code class="inl">git:</code> block, LoopFlow works on a branch and commits when the goal is met, and <strong>never pushes to <code class="inl">main</code>/<code class="inl">master</code></strong> — see the <a href="keywords/git.html">git</a> keyword.</div>
 
   <h3>Rather learn hands-on?</h3>
-  <p>Two guided ways to get the language into your fingers before the deep dive below:</p>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 2px">
+  <p>Three guided ways to get the language into your fingers before the deep dive below:</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:10px 0 2px">
+    <a href="playground.html" style="display:block;padding:13px 15px;border:1px solid color-mix(in srgb,var(--blue) 40%,var(--line));border-radius:11px;color:var(--blue);font-weight:700;font-size:14px;text-align:center;">⚡ Playground — try it live →<span style="display:block;color:var(--muted);font-weight:500;font-size:12px;margin-top:3px">type a .loop, see its shape — right in the browser</span></a>
     <a href="workshop.html" style="display:block;padding:13px 15px;border:1px solid color-mix(in srgb,var(--fwd) 40%,var(--line));border-radius:11px;color:var(--fwd);font-weight:700;font-size:14px;text-align:center;">🛠️ Workshop — learn by doing →<span style="display:block;color:var(--muted);font-weight:500;font-size:12px;margin-top:3px">build a small todo app, one loop at a time</span></a>
     <a href="game.html" style="display:block;padding:13px 15px;border:1px solid color-mix(in srgb,var(--gate) 40%,var(--line));border-radius:11px;color:var(--gate);font-weight:700;font-size:14px;text-align:center;">🎮 LoopFlow Lab — learn by playing →<span style="display:block;color:var(--muted);font-weight:500;font-size:12px;margin-top:3px">an interactive game of loop engineering</span></a>
   </div>
@@ -625,6 +627,31 @@ when blocked: ask a human            # unblock when the agent is stuck</code></p
     <li><strong>It lands on a branch</strong> and commits when the test passes (the default git). Add a <code class="inl">git:</code> block with <code class="inl">push when done</code> + <code class="inl">open a pull request</code> to get a PR — paste that link back into the ticket.</li>
   </ol>
   <div class="note"><b>No failing test yet?</b> Tell the loop to write one first — a tiny "reproduce PROJ-412 with a failing test" loop, then the fix loop. Now <code class="inl">done when</code> has something real to check.</div>
+
+  <h3>You already have a spec — PRD + sprint.yaml (the BMAD flow)</h3>
+  <p>The other everyday shape: the thinking is done. A PRD (<code class="inl">plan.md</code>) and a story backlog (<code class="inl">sprint.yaml</code>) already exist — from BMAD, from a planning session, from your PM. You don't want a loop to <em>re-plan</em> the product; you want it to <strong>deliver the backlog, story by story, with the same checklist every time</strong>. That's what <code class="inl">for each</code> is for:</p>
+  <ol>
+    <li><strong>Grab the two-file kit.</strong> Copy <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/templates/load-spec.loop"><code class="inl">templates/load-spec.loop</code></a> + <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/templates/story-template.loop"><code class="inl">templates/story-template.loop</code></a> next to your spec (in VS Code: <em>New Loop from template ▸ load-spec</em> drops the whole bundle). Edit the <code class="inl"># TODO</code> lines — your real test commands.</li>
+    <li><strong>The driver is three lines.</strong> It iterates <em>your existing</em> <code class="inl">sprint.yaml</code>:</li>
+  </ol>
+  <pre><code class="loop"># load-spec.loop — deliver an existing backlog, story by story
+flow "deliver the sprint":
+  for each story in "sprint.yaml":
+    run "story-template.loop"</code></pre>
+  <ol start="3">
+    <li><strong>Your backlog stays the source of truth.</strong> <code class="inl">sprint.yaml</code> is any YAML list (or an <code class="inl">items:</code> key; a <code class="inl">.md</code> file splits on <code class="inl">##</code> sections). Each entry's <em>text</em> is handed to the template as the story's context — what to build, its acceptance criteria:</li>
+  </ol>
+  <pre><code class="loop"># sprint.yaml — yours, unchanged
+- "signup: email + password, verification mail; done when pnpm test auth/signup passes"
+- "login: session cookie, lockout after 5 tries; done when pnpm test auth/login passes"
+- "reset: token flow, 15-min expiry; done when pnpm test auth/reset passes"</code></pre>
+  <ol start="4">
+    <li><strong>One checklist, every story.</strong> <code class="inl">story-template.loop</code> is the per-story pipeline — implement to a green test, then a security pass, then a 👤 manual check. Author it once; the flow runs it once per story. A failing story <strong>pauses and asks you</strong>: continue with the next story, or stop the sprint.</li>
+    <li><strong>Run it</strong> — <code class="inl">/loopflow run load-spec.loop</code> in the chat, or headless with a journal so a long sprint can survive anything:</li>
+  </ol>
+  <pre><code class="loop">loop-run run load-spec.loop --log sprint.log       # every story's progress on disk
+loop-run run load-spec.loop --resume sprint.log --log sprint.log   # laptop died at story 7? stories 1–6 skip</code></pre>
+  <div class="note"><b>No spec yet?</b> That's the other template: <code class="inl">greenfield-app.loop</code> runs <code class="inl">discover.loop</code> (interviews you → writes <code class="inl">sprint.yaml</code>) and <code class="inl">design.loop</code> (👤-approved <code class="inl">design.md</code>) <em>first</em>, then falls into this same per-story flow. Same delivery engine — it just builds the spec before consuming it. Method-neutral, too: any checklist works, BMAD is one example (<code class="inl">examples/bmad/atoz/</code>).</div>
 
   <h3>Built with LoopFlow — Forge's sandbox runner <span class="badge b-inter">case study</span></h3>
   <p>This isn't hypothetical. <strong>Forge</strong> — a ticket-driven implementation platform (you hand it a ticket, agents implement it) — is itself built with LoopFlow. One of its sharper-edged modules is the <strong>sandbox runner</strong>: the infrastructure that executes agent-written code in isolation, so untrusted code can run without ever touching the host. I built it as a pipeline, one provable stage at a time:</p>

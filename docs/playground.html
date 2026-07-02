@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="/gyro-icon.svg" />
+<title>LoopFlow — playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700&family=Ubuntu+Mono:ital,wght@0,400;0,700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0b0d12; --ink:#eef2f7; --muted:#94a1b2; --line:rgba(255,255,255,.1);
+    --fwd:#34e0c4; --reflect:#ffb45a; --gate:#ff86c2; --stop:#5fd99a; --blue:#84b6ff; --str:#9be58f;
+    --mono:"Ubuntu Mono",ui-monospace,monospace; --ui:"Ubuntu",system-ui,sans-serif;
+    --err:#ff7a7a; --warn:#ffb45a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;color:var(--ink);font-family:var(--ui);background:var(--bg);line-height:1.55;-webkit-font-smoothing:antialiased}
+  header{display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid var(--line)}
+  header h1{font-size:16px;margin:0;font-weight:700}
+  header .tag{font-size:12px;color:var(--muted)}
+  header a{color:var(--blue);text-decoration:none;font-size:13px;margin-left:auto}
+  header a:hover{text-decoration:underline}
+  .wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;height:calc(100vh - 53px)}
+  @media (max-width: 900px){ .wrap{grid-template-columns:1fr;height:auto} .pane{min-height:44vh} }
+  .pane{display:flex;flex-direction:column;min-width:0}
+  .pane + .pane{border-left:1px solid var(--line)}
+  .bar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
+  .bar select{background:#131722;color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-family:var(--ui);font-size:12px}
+  .bar .status{margin-left:auto;font-family:var(--mono)}
+  .bar .status.ok{color:var(--stop)} .bar .status.err{color:var(--err)}
+  textarea{flex:1;width:100%;resize:none;border:0;outline:0;background:transparent;color:var(--ink);
+    font-family:var(--mono);font-size:14px;line-height:1.6;padding:16px 18px;tab-size:2;white-space:pre}
+  .out{flex:1;overflow:auto;padding:16px 18px}
+  .out h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px;font-weight:700}
+  .out h3:first-child{margin-top:0}
+  pre{margin:0;font-family:var(--mono);font-size:13.5px;line-height:1.65;white-space:pre-wrap}
+  pre.flow{color:var(--fwd)}
+  .explain{color:var(--muted);font-size:13.5px}
+  .problem{font-family:var(--mono);font-size:13px;padding:8px 12px;border-radius:8px;margin:6px 0}
+  .problem.error{color:var(--err);border:1px solid color-mix(in srgb,var(--err) 35%,transparent);background:color-mix(in srgb,var(--err) 8%,transparent)}
+  .problem.warning{color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);background:color-mix(in srgb,var(--warn) 7%,transparent)}
+  .hint{color:var(--muted);font-size:12.5px;margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+  .hint code{font-family:var(--mono);color:var(--ink)}
+</style>
+</head>
+<body>
+<header>
+  <h1>LoopFlow playground</h1>
+  <span class="tag">type a <b>.loop</b> — see its shape, live · everything runs in your browser</span>
+  <a href="index.html">← the tutorial</a>
+</header>
+
+<div class="wrap">
+  <div class="pane">
+    <div class="bar">
+      <label for="example">example:</label>
+      <select id="example"></select>
+      <span class="status ok" id="status">✓ parses</span>
+    </div>
+    <textarea id="src" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+  </div>
+  <div class="pane">
+    <div class="out" id="out"></div>
+  </div>
+</div>
+
+<script src="playground/loop-lang.js"></script>
+<script>
+const EXAMPLES = {
+  "bugfix — the canonical loop": `loop "fix billing apostrophe bug":
+  goal: settings save when the company name has an apostrophe
+  done when the test "billing.spec.ts::apostrophe" passes
+
+  look at: billing/form.tsx, api/settings.ts, and the last failure
+  allow edits automatically, but ask me before migrations or pushes
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on which layer broke, then plan again
+  when blocked:  ask a human
+  after 6 tries: stop and warn "thrashing"
+`,
+  "flake guard — passes N times": `loop "harden the flaky checkout test":
+  goal: the checkout test passes reliably, not just once
+  done when "pnpm test checkout" passes 3 times
+  look at: src/checkout.ts, and the last failure
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the flake, then plan again
+  after 6 tries: stop and warn "still flaky"
+`,
+  "evals — tests + a judge panel": `loop "design the onboarding email":
+  goal: a welcoming, on-brand onboarding email
+  done when "pnpm test emails" passes
+  done when the skill "email-review" scores 8 or more by 3 judges
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 5 tries: stop and warn "needs a human editor"
+`,
+  "pipeline — an epic with stories": `pipeline "epic: checkout v2":
+
+  stage "story: cart totals":
+    goal: cart shows correct totals with tax
+    look at: src/cart/, src/tax/
+    done when "pnpm test cart" passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect, then plan again
+
+  stage "story: checkout submit":
+    goal: order submits and payment is captured
+    a human approves before charging the card
+    done when "pnpm test checkout" passes
+    each cycle: act, then observe
+`,
+  "flow — chain whole .loop files": `flow "ship":
+  run "build.loop"
+  then run "test.loop"
+  then run "deploy.loop":
+    a human approves first
+`,
+  "broken — see the errors": `loop "oops":
+  goal: watch the squiggles
+  done when the moon is full
+  each cycle: plan, then act, then observe
+`,
+};
+
+const $src = document.getElementById("src");
+const $out = document.getElementById("out");
+const $status = document.getElementById("status");
+const $example = document.getElementById("example");
+
+for (const name of Object.keys(EXAMPLES)) {
+  const o = document.createElement("option");
+  o.value = name; o.textContent = name;
+  $example.appendChild(o);
+}
+$example.addEventListener("change", () => { $src.value = EXAMPLES[$example.value]; refresh(); });
+
+const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+function refresh() {
+  const src = $src.value;
+  let html = "";
+  try {
+    const spec = Loop.parse(src);
+    $status.textContent = "✓ parses";
+    $status.className = "status ok";
+
+    html += `<h3>the shape</h3><pre class="flow">${esc(Loop.renderFile(spec))}</pre>`;
+
+    const warnings = Loop.lint(spec, src.split(/\r?\n/));
+    if (warnings.length) {
+      html += `<h3>nudges</h3>` + warnings.map((w) =>
+        `<div class="problem warning">line ${w.line + 1}: ${esc(w.message)}</div>`).join("");
+    }
+
+    html += `<h3>in plain english</h3><pre class="explain">${esc(Loop.explainFile(spec))}</pre>`;
+  } catch (e) {
+    $status.textContent = "✗ parse error";
+    $status.className = "status err";
+    const line = e && typeof e.line === "number" ? e.line : null;
+    html += `<h3>parse error</h3><div class="problem error">${line ? `line ${line}: ` : ""}${esc(String(e.message || e))}</div>`;
+    html += `<div class="hint">Fix the line and the shape re-renders instantly. The grammar lives in <code>AGENTS.md</code>; the full reference is in the <a href="index.html" style="color:var(--blue)">tutorial</a>.</div>`;
+  }
+  $out.innerHTML = html;
+}
+
+let t;
+$src.addEventListener("input", () => { clearTimeout(t); t = setTimeout(refresh, 150); });
+
+// Tab inserts two spaces (indentation is the syntax).
+$src.addEventListener("keydown", (e) => {
+  if (e.key === "Tab") {
+    e.preventDefault();
+    const { selectionStart: s, selectionEnd: end } = $src;
+    $src.value = $src.value.slice(0, s) + "  " + $src.value.slice(end);
+    $src.selectionStart = $src.selectionEnd = s + 2;
+    refresh();
+  }
+});
+
+$src.value = EXAMPLES[Object.keys(EXAMPLES)[0]];
+refresh();
+</script>
+</body>
+</html>

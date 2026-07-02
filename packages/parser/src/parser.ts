@@ -1,5 +1,6 @@
 import {
   Action,
+  CapabilityGroup,
   Config,
   CycleStep,
   Definition,
@@ -24,6 +25,14 @@ import {
 } from "./types.js";
 
 const RIGOR_LEVELS: Rigor[] = ["vibe coding", "structured ai-assisted", "agentic engineering"];
+
+// Capability-group names a `grant ctx:` line may list (singular/plural + entity-type spellings).
+const CTX_CAPABILITY_GROUPS: Record<string, CapabilityGroup> = {
+  skills: "skills", skill: "skills",
+  agents: "agents", agent: "agents",
+  mcps: "mcps", mcp: "mcps", "mcp-server": "mcps", "mcp-servers": "mcps",
+  harnesses: "harnesses", harness: "harnesses",
+};
 
 const HOOK_POINTS: Record<string, HookPoint> = {
   "before each cycle": "before-cycle",
@@ -115,17 +124,25 @@ function quoted(s: string): string | null {
 
 function parsePredicate(s: string, lineNo: number): Predicate {
   const text = s.trim();
-  // the test "X" passes
-  let m = text.match(/^the test\s+"([^"]+)"\s+passes$/i);
-  if (m) return { type: "test", target: m[1] };
 
-  // "CMD" finds nothing  -> command, expect empty
-  m = text.match(/^"([^"]+)"\s+finds nothing$/i);
-  if (m) return { type: "command", command: m[1], expect: "empty" };
+  // An optional `N times` suffix re-runs a check to guard against a flaky green — every run must
+  // pass. Only surfaced as `runs` when > 1 (so a plain check, and "1 time", stay the default shape).
+  const times = (n: string | undefined): { runs?: number } => {
+    const r = n ? parseInt(n, 10) : 1;
+    return r > 1 ? { runs: r } : {};
+  };
 
-  // "CMD" passes / succeeds  -> command, exit-zero
-  m = text.match(/^"([^"]+)"\s+(?:passes|succeeds)$/i);
-  if (m) return { type: "command", command: m[1], expect: "exit-zero" };
+  // the test "X" passes [N times]
+  let m = text.match(/^the test\s+"([^"]+)"\s+passes(?:\s+(\d+)\s+times?)?$/i);
+  if (m) return { type: "test", target: m[1], ...times(m[2]) };
+
+  // "CMD" finds nothing [N times]  -> command, expect empty
+  m = text.match(/^"([^"]+)"\s+finds nothing(?:\s+(\d+)\s+times?)?$/i);
+  if (m) return { type: "command", command: m[1], expect: "empty", ...times(m[2]) };
+
+  // "CMD" passes / succeeds [N times]  -> command, exit-zero
+  m = text.match(/^"([^"]+)"\s+(?:passes|succeeds)(?:\s+(\d+)\s+times?)?$/i);
+  if (m) return { type: "command", command: m[1], expect: "exit-zero", ...times(m[2]) };
 
   // a human confirms "..."
   m = text.match(/^a human confirms\s+"([^"]+)"$/i);
@@ -134,14 +151,20 @@ function parsePredicate(s: string, lineNo: number): Predicate {
   // An eval predicate may name its subject: `on the output` (default) or `on the trajectory`.
   const subj = (s: string | undefined): { subject?: "output" | "trajectory" } =>
     s ? { subject: s.toLowerCase() as "output" | "trajectory" } : {};
+  // …and a consensus panel: `by N judges` runs the eval N times, majority wins. Only surfaced
+  // when > 1 (a single judge is the default shape).
+  const judges = (n: string | undefined): { judges?: number } => {
+    const j = n ? parseInt(n, 10) : 1;
+    return j > 1 ? { judges: j } : {};
+  };
 
-  // the skill "X" scores N or more [on the output|trajectory]  -> eval with a numeric threshold
-  m = text.match(/^the skill\s+"([^"]+)"\s+scores\s+(\d+)(?:\s+or more)?(?:\s+on the (output|trajectory))?$/i);
-  if (m) return { type: "skill", skill: m[1], expect: "approve", minScore: parseInt(m[2], 10), ...subj(m[3]) };
+  // the skill "X" scores N or more [on the output|trajectory] [by N judges]
+  m = text.match(/^the skill\s+"([^"]+)"\s+scores\s+(\d+)(?:\s+or more)?(?:\s+on the (output|trajectory))?(?:\s+by\s+(\d+)\s+judges?)?$/i);
+  if (m) return { type: "skill", skill: m[1], expect: "approve", minScore: parseInt(m[2], 10), ...subj(m[3]), ...judges(m[4]) };
 
-  // the skill "X" approves [on the output|trajectory]  -> eval (approved / not)
-  m = text.match(/^the skill\s+"([^"]+)"\s+approves(?:\s+on the (output|trajectory))?$/i);
-  if (m) return { type: "skill", skill: m[1], expect: "approve", ...subj(m[2]) };
+  // the skill "X" approves [on the output|trajectory] [by N judges]
+  m = text.match(/^the skill\s+"([^"]+)"\s+approves(?:\s+on the (output|trajectory))?(?:\s+by\s+(\d+)\s+judges?)?$/i);
+  if (m) return { type: "skill", skill: m[1], expect: "approve", ...subj(m[2]), ...judges(m[3]) };
 
   throw new ParseError(`could not understand "done when ${text}"`, lineNo);
 }
@@ -379,7 +402,7 @@ function interpretLoopBody(name: string | null, body: Line[], defaults?: ParseDe
     // command (`check: npm test`); a predicate phrase (`check: the skill "x" approves`) is parsed as-is.
     if ((m = t.match(/^(?:check|verify):\s*(.+)$/i))) {
       const val = m[1].trim();
-      const isPhrase = /^(the test|the skill|a human)\b/i.test(val) || /^".*"\s+(passes|succeeds|finds nothing)$/i.test(val);
+      const isPhrase = /^(the test|the skill|a human)\b/i.test(val) || /^".*"\s+(passes|succeeds|finds nothing)(\s+\d+\s+times?)?$/i.test(val);
       const pred: Predicate = isPhrase
         ? parsePredicate(val, ln.lineNo)
         : { type: "command", command: val.replace(/^"|"$/g, ""), expect: "exit-zero" };
@@ -697,6 +720,26 @@ function parseConfigLine(config: Config, ln: Line): boolean {
   // Config tier: declare ctx as this file's skill recommender/installer.
   if (/^recommend skills with ctx$/i.test(t)) {
     config.skillSource = { provider: "ctx" };
+    return true;
+  }
+  // Config tier: capability groups the file grants ctx (`grant ctx: skills, agents, mcps, harnesses`).
+  // Fails closed — only listed groups are granted; default (no line) is skills+agents in the adapter.
+  if ((m = t.match(/^grant ctx:\s*(.+)$/i))) {
+    const groups: CapabilityGroup[] = [];
+    for (const raw of m[1].split(/,|\band\b/).map((s) => s.trim().toLowerCase()).filter(Boolean)) {
+      const g = CTX_CAPABILITY_GROUPS[raw];
+      if (!g) {
+        throw new ParseError(`unknown ctx capability group "${raw}" (expected: skills, agents, mcps, harnesses)`, ln.lineNo);
+      }
+      if (!groups.includes(g)) groups.push(g);
+    }
+    config.ctxGrants = groups;
+    return true;
+  }
+  // Config tier: declare a user-owned/local/API model so ctx may recommend harnesses (gated, dry-run).
+  if ((m = t.match(/^ctx may use my own model\s+"([^"]+)"$/i))) {
+    const spec = m[1].trim();
+    config.ownModel = { provider: spec.split("/")[0].trim(), model: spec };
     return true;
   }
   return false;

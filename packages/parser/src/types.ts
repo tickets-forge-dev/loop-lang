@@ -80,6 +80,22 @@ export interface SkillDiscovery {
   intent?: string;
 }
 
+/**
+ * A capability group a `.loop` can grant ctx (`grant ctx: skills, agents, mcps, harnesses`).
+ * Fails closed: with no grant, ctx defaults to skills+agents. mcps/harnesses are recommend-only;
+ * harnesses additionally require an `ownModel`.
+ */
+export type CapabilityGroup = "skills" | "agents" | "mcps" | "harnesses";
+
+/**
+ * A user-owned/local/API model (`ctx may use my own model "<provider>/<model>"`). Declaring one
+ * unlocks ctx's harness recommendations (which otherwise stay gated, since harnesses pull software).
+ */
+export interface OwnModel {
+  provider: string;
+  model: string;
+}
+
 export interface Config {
   use?: string;
   useOverrides?: OverrideEntry[];
@@ -107,6 +123,13 @@ export interface Config {
   runsAs?: string;
   /** External skill recommender for the whole file (`recommend skills with ctx`). */
   skillSource?: SkillSource;
+  /**
+   * Capability groups this file grants ctx (`grant ctx: skills, agents, mcps, harnesses`).
+   * Threaded to ctx as permissions; fail-closed, default skills+agents. Absent = legacy behaviour.
+   */
+  ctxGrants?: CapabilityGroup[];
+  /** A user-owned model (`ctx may use my own model "…"`) that unlocks ctx harness recommendations. */
+  ownModel?: OwnModel;
 }
 
 export interface OverrideEntry {
@@ -211,16 +234,20 @@ export interface PlanSource {
 }
 
 export type Predicate =
-  | { type: "test"; target: string }
-  | { type: "command"; command: string; expect?: "exit-zero" | "empty" }
+  // `runs` (from `… passes N times`) re-runs the check N times and requires every run to pass —
+  // a flake guard against a green that only holds by luck. Absent / 1 = the usual single run.
+  | { type: "test"; target: string; runs?: number }
+  | { type: "command"; command: string; expect?: "exit-zero" | "empty"; runs?: number }
   | { type: "human"; description: string }
   /**
    * An eval: a review skill judges the goal (approve / score). `subject` selects what it
    * inspects — the produced `output` (default) or the `trajectory` (the path and tool calls
    * the agent took to get there). `bar` is an optional inline rubric (`the bar:`) naming the
-   * conditions the judge scores against.
+   * conditions the judge scores against. `judges` (from `… by N judges`) runs the eval N times
+   * independently and takes a majority vote — consensus smooths single-judge wobble. Absent /
+   * 1 = the usual single verdict.
    */
-  | { type: "skill"; skill: string; expect: "approve"; minScore?: number; subject?: "output" | "trajectory"; bar?: string };
+  | { type: "skill"; skill: string; expect: "approve"; minScore?: number; subject?: "output" | "trajectory"; bar?: string; judges?: number };
 
 export interface Transition {
   on: "pass" | "fail" | "blocked" | "attempts";

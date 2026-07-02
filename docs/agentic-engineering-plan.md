@@ -1,7 +1,7 @@
 # Plan — Agentic Engineering constructs for Loop
 
 > Bringing agentic-engineering discipline into Loop.
-> Branch: `claude/loop-lang-concepts-3p5tz1`. Companion pipeline: [`agentic-engineering.loop`](../agentic-engineering.loop).
+> Branch: `claude/loop-lang-concepts-3p5tz1`. Companion pipeline: [`agentic-engineering.loop`](../examples/agentic-engineering.loop).
 
 ## Context
 

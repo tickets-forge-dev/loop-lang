@@ -15,6 +15,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
+    "build:playground": "esbuild scripts/playground-entry.ts --bundle --format=iife --global-name=Loop --outfile=docs/playground/loop-lang.js --minify",
     "test": "npm run test --workspaces --if-present"
   },
   "engines": {

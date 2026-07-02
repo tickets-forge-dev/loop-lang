@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { appendFileSync, readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, resolve, relative, basename } from "node:path";
 import { createInterface } from "node:readline";
 import { parse } from "@loop-lang/parser";
@@ -11,6 +12,9 @@ import { CliHumanIO } from "./human.js";
 import { ClaudeCodeRunner } from "./runners/claudeCode.js";
 import { IpcHumanIO } from "./ipc.js";
 import { ShellGitIO } from "./runners/shellGit.js";
+import { ownModelBinaryWarning } from "./ownModel.js";
+import { eventSinkFromEnv } from "./eventSink.js";
+import { buildResumePlan } from "./resume.js";
 import type { LoopEvent } from "./types.js";
 import { summarizeModels, formatModelSummary, summarizeOpex, formatOpexSummary } from "./summary.js";
 
@@ -35,6 +39,8 @@ function render(e: LoopEvent): string {
       return `  ■ stage "${e.name}"`;
     case "stage-end":
       return `  ■ stage "${e.name}" → ${e.satisfied ? "satisfied" : "FAILED"}`;
+    case "resumed":
+      return `  ⏩ ${e.unit} ${e.name ? `"${e.name}"` : ""}${e.index !== undefined ? ` #${e.index + 1}` : ""} — resumed (already satisfied)`;
     case "loop-start":
       return `↻ loop ${e.name ? `"${e.name}"` : ""}`.trimEnd();
     case "node-enter":
@@ -229,7 +235,7 @@ async function main() {
   }
 
   if (!cmd || (cmd !== "run" && cmd !== "parse" && cmd !== "viz" && cmd !== "live") || !fileArg) {
-    console.error("usage: loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop>  [--model <alias>] [--live] [--events] [--out <path>]");
+    console.error("usage: loop-run <run|parse|viz|live|show|explain|ls|emit> <file.loop>  [--model <alias>] [--live] [--events] [--log <path>] [--resume <log>] [--out <path>]");
     process.exit(2);
   }
 
@@ -287,7 +293,30 @@ async function main() {
 
   const modelIdx = rest.indexOf("--model");
   const model = modelIdx >= 0 ? rest[modelIdx + 1] : undefined;
+  // `--log <path>` writes the full event stream to a local NDJSON log (overrides LOOP_LOG_FILE).
+  const logIdx = rest.indexOf("--log");
+  const logFile = logIdx >= 0 ? rest[logIdx + 1] : undefined;
   const target = file.config?.target ? resolve(baseDir, file.config.target) : baseDir;
+
+  // `--resume <log>`: rebuild what a prior run already finished from its event log and skip it —
+  // satisfied definitions / stages / flow steps / foreach items don't re-run; the first
+  // incomplete unit picks up (with flow carry-forward summaries restored from the log).
+  const resumeIdx = rest.indexOf("--resume");
+  const resumeLog = resumeIdx >= 0 ? rest[resumeIdx + 1] : undefined;
+  const sourceHash = createHash("sha256").update(readFileSync(path)).digest("hex");
+  let resume: import("./types.js").ResumePlan | undefined;
+  if (resumeLog) {
+    resume = buildResumePlan(readFileSync(resolve(baseDir, resumeLog), "utf8"));
+    if (resume.sourceHash && resume.sourceHash !== sourceHash) {
+      console.error(`⚠ resume: ${basename(path)} changed since the logged run — completed units are matched by name/position and may not correspond`);
+    }
+    if (resume.completed.size === 0) {
+      console.error(`↻ resume: nothing recorded as satisfied in ${resumeLog} — running from the start`);
+      resume = undefined;
+    } else {
+      console.error(`↻ resume: skipping ${resume.completed.size} completed unit(s) from ${resumeLog}`);
+    }
+  }
 
   const git = new ShellGitIO();
 
@@ -302,7 +331,25 @@ async function main() {
     } catch (err) {
       console.error(`⚠ ctx skill source requested but the MCP client could not load: ${String((err as Error)?.message ?? err)}`);
     }
+    // A declared own-model (`ctx may use my own model …`) only unlocks ctx harness recommendations;
+    // it never makes the loop run on that model. Warn if its local binary is missing so the author
+    // isn't surprised that running a recommended harness later would fail.
+    const ownModelWarning = ownModelBinaryWarning(file.config?.ownModel);
+    if (ownModelWarning) console.error(ownModelWarning);
   }
+
+  // Telemetry: stream every event to the control-plane collector (LOOP_EVENTS_URL) and/or append
+  // it to a local NDJSON log (LOOP_LOG_FILE). Best-effort and off by default — no env, no sink,
+  // behaves exactly as before.
+  const eventSink = eventSinkFromEnv(
+    {
+      loop_path: path,
+      loop_sha256: sourceHash,
+      principal: file.config?.runsAs,
+      runner: file.config?.runner,
+    },
+    { logFile }
+  );
 
   // `--events`: machine-readable NDJSON protocol for a UI host (e.g. the VSCode
   // extension) — streams Claude's live activity and answers human gates over stdin.
@@ -324,6 +371,8 @@ async function main() {
       human: ipc,
       git,
       ctx,
+      ctxGrants: file.config?.ctxGrants,
+      ownModel: file.config?.ownModel,
       baseDir: target,
       loadFile,
       readText,
@@ -331,11 +380,13 @@ async function main() {
       flowStack: [path],
       modelPolicy: file.config?.models,
       cliModel: model,
-      onEvent: (e) => emit({ kind: "event", event: e }),
+      resume,
+      onEvent: (e) => { eventSink?.post(e); emit({ kind: "event", event: e }); },
     });
     const ok = outcomes.every((o) => o.satisfied);
     emit({ kind: "end", ok });
     rl.close();
+    await eventSink?.flush();
     process.exit(ok ? 0 : 1);
   }
 
@@ -347,6 +398,8 @@ async function main() {
     human: new CliHumanIO(),
     git,
     ctx,
+    ctxGrants: file.config?.ctxGrants,
+    ownModel: file.config?.ownModel,
     baseDir: target,
     loadFile,
     readText,
@@ -354,6 +407,7 @@ async function main() {
     flowStack: [path],
     modelPolicy: file.config?.models,
     cliModel: model,
+    resume,
   };
   const traceEvents: LoopEvent[] = [];
   const onTrace = (e: LoopEvent) => {
@@ -372,7 +426,7 @@ async function main() {
     const html = renderLiveHtml(file, { title: basename(fileArg) });
     const srv = await startLiveServer(html);
     console.error(`\n  ↻ Loop live dashboard → http://127.0.0.1:${srv.port}\n`);
-    const outcomes = await run(file, { ...baseOpts, onEvent: (e) => { srv.emit(e); onTrace(e); } });
+    const outcomes = await run(file, { ...baseOpts, onEvent: (e) => { eventSink?.post(e); srv.emit(e); onTrace(e); } });
     reportSummary();
     const ok = outcomes.every((o) => o.satisfied);
     // Keep the dashboard up after the run — a fast loop can finish before the browser even
@@ -384,13 +438,14 @@ async function main() {
     return;
   }
 
-  const outcomes = await run(file, { ...baseOpts, onEvent: onTrace });
+  const outcomes = await run(file, { ...baseOpts, onEvent: (e) => { eventSink?.post(e); onTrace(e); } });
   reportSummary();
   // Observability: when `observe:` is on, print the OpEx report (token burn made visible).
   if (file.config?.observe?.trace || file.config?.observe?.meter) {
     console.error(formatOpexSummary(summarizeOpex(traceEvents)));
   }
   const ok = outcomes.every((o) => o.satisfied);
+  await eventSink?.flush();
   process.exit(ok ? 0 : 1);
 }
 

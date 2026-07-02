@@ -19,9 +19,12 @@ ctx-init --graph --model-mode skip          # seed the recommendation graph
 claude mcp add ctx -- ctx-mcp-server        # attach ctx's MCP tools
 ```
 
-That exposes four tools the Loop bridge uses: `ctx__recommend_bundle` (preview),
-`ctx__loop_provision` (recommend + install + return names), and
-`ctx__loop_topup` (add more on a failing cycle).
+That exposes the tools the Loop bridge uses: `ctx__recommend_bundle` (preview),
+`ctx__loop_provision` (recommend + install + return names), and `ctx__loop_topup`
+(add more on a failing cycle). `loop_provision`/`loop_topup` accept an optional
+`permissions` array (`skills, agents, mcps, harnesses`) plus `own_llm` /
+`model_provider` / `model`, and return the versioned `ctx.loop_adapter.v1`
+contract (see *Capability groups* below).
 
 ## Grammar
 
@@ -43,6 +46,32 @@ loop "harden the stripe webhook handler":
 | `recommend skills with ctx` | config | Declares ctx as the file's skill source. |
 | `use skills recommended by ctx [for "<intent>"]` | loop body | Author-time: bake resolved names into `use skills:`. Run-time: re-resolve before the first plan. |
 | `top up skills from ctx when a step needs more` | loop body | Run-time: after a cycle fails and reflects, pull additional skills before re-planning. |
+| `grant ctx: skills, agents, mcps, harnesses` | config | Capability groups the file lets ctx recommend. Fails closed; default (no line) = skills+agents. |
+| `ctx may use my own model "<provider>/<model>"` | config | Declares a user-owned/local/API model — unlocks harness recommendations (dry-run only). |
+
+## Capability groups (beyond skills)
+
+ctx recommends across four entity types; a `.loop` grants which ones apply. The
+model **fails closed** — with no `grant ctx:` line the grant defaults to
+`skills + agents` (the original behaviour), and only listed groups are ever
+returned.
+
+| Group | Installed? | Behaviour |
+|-------|-----------|-----------|
+| `skills` | yes → `~/.claude/skills` | Merged into the cycle's skill set, as before. |
+| `agents` | yes → `~/.claude` | Loaded the same way Loop loads named (sub)agents. |
+| `mcps` | **no — recommend-only** | Fitting MCP servers surfaced with a suggested `ctx-mcp-install <name>`; emitted on the `ctx` event. The runtime never auto-registers one. |
+| `harnesses` | **no — recommend-only, gated** | Recommended only when the loop declares a user-owned model (`ctx may use my own model …`); shipped as an explicit `ctx-harness-install <name> --dry-run` command. Never an automatic install. |
+
+The provision/top-up calls return the `ctx.loop_adapter.v1` contract:
+`{ version, permissions, use_skills, installed, skipped, unavailable,
+recommended, capabilities{skills,agents,mcps,harnesses}, harness_install,
+warnings }`. The runtime merges `use_skills` (skills + agents) into the loop and
+surfaces `capabilities.mcps` / `capabilities.harnesses` / `harness_install` on
+the `ctx` event for the host or a human to act on — it never installs an MCP
+server or a harness on its own.
+
+See `examples/ctx_capabilities.loop` for the full-capability example.
 
 ## How it works
 

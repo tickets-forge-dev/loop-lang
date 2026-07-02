@@ -98,6 +98,21 @@
           "properties": {
             "provider": { "type": "string", "enum": ["ctx"] }
           }
+        },
+        "ctxGrants": {
+          "type": "array",
+          "description": "Capability groups this file grants ctx (`grant ctx: skills, agents, mcps, harnesses`). Threaded to ctx as permissions; fails closed, default skills+agents. mcps/harnesses are recommend-only; harnesses also require `ownModel`.",
+          "items": { "type": "string", "enum": ["skills", "agents", "mcps", "harnesses"] }
+        },
+        "ownModel": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider", "model"],
+          "description": "A user-owned/local/API model (`ctx may use my own model \"<provider>/<model>\"`) — unlocks ctx harness recommendations (gated, dry-run only).",
+          "properties": {
+            "provider": { "type": "string" },
+            "model": { "type": "string" }
+          }
         }
       }
     },

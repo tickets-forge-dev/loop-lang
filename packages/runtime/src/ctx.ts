@@ -22,11 +22,46 @@ function parseResult(raw: unknown): CtxProvisionResult {
     return EMPTY;
   }
   const names = (obj.use_skills ?? obj.useSkills) as unknown;
+  // capabilities.<group> is a list of {name,...} entries (ctx.loop_adapter.v1); pull bare names.
+  const caps = obj.capabilities as Record<string, unknown> | undefined;
+  const groupNames = (g: string): string[] | undefined => {
+    const list = caps?.[g];
+    if (!Array.isArray(list)) return undefined;
+    return list
+      .map((e) => (e && typeof e === "object" ? (e as { name?: unknown }).name : e))
+      .filter((s): s is string => typeof s === "string");
+  };
+  const capabilities = caps
+    ? {
+        skills: groupNames("skills"),
+        agents: groupNames("agents"),
+        mcps: groupNames("mcps"),
+        harnesses: groupNames("harnesses"),
+      }
+    : undefined;
   return {
     useSkills: Array.isArray(names) ? names.filter((s): s is string => typeof s === "string") : [],
     installed: Array.isArray(obj.installed) ? (obj.installed as string[]) : undefined,
     skipped: Array.isArray(obj.skipped) ? (obj.skipped as string[]) : undefined,
+    capabilities,
+    harnessInstall: typeof obj.harness_install === "string" ? (obj.harness_install as string) : null,
+    warnings: Array.isArray(obj.warnings) ? (obj.warnings as string[]) : undefined,
   };
+}
+
+/** Build the optional ctx tool args (permissions + own-model) shared by provision and topup. */
+function ctxArgs(
+  permissions?: string[],
+  ownModel?: { provider: string; model: string }
+): Record<string, unknown> {
+  const a: Record<string, unknown> = {};
+  if (permissions && permissions.length) a.permissions = permissions;
+  if (ownModel) {
+    a.own_llm = true;
+    a.model_provider = ownModel.provider;
+    a.model = ownModel.model;
+  }
+  return a;
 }
 
 /**
@@ -66,12 +101,27 @@ export class McpCtxAdapter implements CtxAdapter {
     return parseResult(res);
   }
 
-  provision(input: { goal: string; intent?: string; baseDir: string }): Promise<CtxProvisionResult> {
-    return this.call("ctx__loop_provision", { goal: input.goal, intent: input.intent });
+  provision(input: {
+    goal: string; intent?: string; baseDir: string;
+    permissions?: string[]; ownModel?: { provider: string; model: string };
+  }): Promise<CtxProvisionResult> {
+    return this.call("ctx__loop_provision", {
+      goal: input.goal,
+      intent: input.intent,
+      ...ctxArgs(input.permissions, input.ownModel),
+    });
   }
 
-  topup(input: { goal: string; reflection: string; loaded: string[]; baseDir: string }): Promise<CtxProvisionResult> {
-    return this.call("ctx__loop_topup", { goal: input.goal, reflection: input.reflection, loaded: input.loaded });
+  topup(input: {
+    goal: string; reflection: string; loaded: string[]; baseDir: string;
+    permissions?: string[]; ownModel?: { provider: string; model: string };
+  }): Promise<CtxProvisionResult> {
+    return this.call("ctx__loop_topup", {
+      goal: input.goal,
+      reflection: input.reflection,
+      loaded: input.loaded,
+      ...ctxArgs(input.permissions, input.ownModel),
+    });
   }
 
   async close(): Promise<void> {
