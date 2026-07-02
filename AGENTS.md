@@ -486,3 +486,22 @@ The `/loopflow` skill has the full event cheat-sheet for the in-session push pro
 4. A `when it fails: reflect, then plan again` so the loop self-corrects.
 5. An `after N tries` thrash guard so it can't spin forever.
 6. Human gates on anything irreversible.
+
+## Authoring order — write the lines in this order
+
+**The finish line first, the safety net last.** Four zones, top to bottom (the file reads
+in the order a run degrades — promises first, failure handling last):
+
+1. **Contract** — `goal:`, then `done when` immediately under it. Write the check *before
+   any behavior* (loop engineering's TDD): if the check can't be written, the goal isn't
+   understood yet. Everything below serves this line.
+2. **Boundaries** — `look at:` (scope), then `allow …, ask me before …` (power), then any
+   human gate. Capability lines (`use skills`, `remember in`, `knowledge:`, `plan from`)
+   belong here too.
+3. **Engine** — `each cycle:` (plus `also:` finishing passes).
+4. **Safety net** — `when it fails:` (the back-edge), `when blocked:` (the escape hatch),
+   `after N tries:` (the floor) — in escalation order. **The last line of a loop is its
+   hard stop.** Never emit a reflect back-edge without a try ceiling.
+
+The same order applies inside every `stage`. Blank lines between zones are encouraged.
+Full rationale + the anatomy diagram: `docs/MANUAL.md` → *Anatomy — the authoring order*.

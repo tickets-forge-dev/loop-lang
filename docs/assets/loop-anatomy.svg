@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 720" font-family="ui-monospace, 'Ubuntu Mono', Consolas, monospace" role="img" aria-label="Anatomy of a healthy loop: contract, boundaries, engine, safety net — written in that order">
+  <defs>
+    <style>
+      .code { font-size: 16px; fill: #eef2f7; }
+      .kw   { fill: #34e0c4; }
+      .str  { fill: #9be58f; }
+      .cmt  { fill: #5b6675; }
+      .gate { fill: #ff86c2; }
+      .warn { fill: #ffb45a; }
+      .zone-label { font-size: 15px; font-weight: 700; letter-spacing: .08em; }
+      .zone-sub   { font-size: 12.5px; fill: #94a1b2; }
+      .badge-num  { font-size: 15px; font-weight: 700; fill: #0b0d12; }
+      .title      { font-size: 21px; font-weight: 700; fill: #eef2f7; font-family: Ubuntu, system-ui, sans-serif; }
+      .subtitle   { font-size: 13.5px; fill: #94a1b2; font-family: Ubuntu, system-ui, sans-serif; }
+    </style>
+  </defs>
+
+  <rect width="980" height="720" rx="14" fill="#0b0d12"/>
+
+  <!-- title -->
+  <text x="40" y="46" class="title">Anatomy of a healthy loop</text>
+  <text x="40" y="70" class="subtitle">Write it top to bottom: the finish line first, the safety net last. The file reads in the order a run degrades.</text>
+
+  <!-- ═══ ZONE 1 · THE CONTRACT ═══ -->
+  <rect x="30" y="96" width="600" height="106" rx="10" fill="#34e0c4" opacity="0.07"/>
+  <rect x="30" y="96" width="4" height="106" rx="2" fill="#34e0c4"/>
+  <text x="52" y="126" class="code"><tspan class="kw">loop</tspan> <tspan class="str">"fix the flaky checkout test"</tspan>:</text>
+  <text x="52" y="154" class="code">  <tspan class="kw">goal:</tspan> the checkout test passes reliably</text>
+  <text x="52" y="182" class="code">  <tspan class="kw">done when</tspan> <tspan class="str">"pnpm test checkout"</tspan> passes 3 times</text>
+
+  <circle cx="672" cy="148" r="15" fill="#34e0c4"/>
+  <text x="672" y="153.5" text-anchor="middle" class="badge-num">1</text>
+  <text x="700" y="140" class="zone-label" fill="#34e0c4">THE CONTRACT</text>
+  <text x="700" y="160" class="zone-sub">what you want + how you'll know.</text>
+  <text x="700" y="176" class="zone-sub">Can't write the check? You don't</text>
+  <text x="700" y="192" class="zone-sub">know what you're building yet.</text>
+
+  <!-- ═══ ZONE 2 · THE BOUNDARIES ═══ -->
+  <rect x="30" y="218" width="600" height="106" rx="10" fill="#84b6ff" opacity="0.07"/>
+  <rect x="30" y="218" width="4" height="106" rx="2" fill="#84b6ff"/>
+  <text x="52" y="248" class="code">  <tspan class="kw">look at:</tspan> src/checkout.ts, and the last failure</text>
+  <text x="52" y="276" class="code">  <tspan class="kw">allow</tspan> edits automatically, <tspan class="kw">but ask me before</tspan> migrations</text>
+  <text x="52" y="304" class="code">  <tspan class="gate">a human approves the plan first</tspan>        <tspan class="cmt"># if the work is risky</tspan></text>
+
+  <circle cx="672" cy="270" r="15" fill="#84b6ff"/>
+  <text x="672" y="275.5" text-anchor="middle" class="badge-num">2</text>
+  <text x="700" y="262" class="zone-label" fill="#84b6ff">THE BOUNDARIES</text>
+  <text x="700" y="282" class="zone-sub">what it may read, what it may do</text>
+  <text x="700" y="298" class="zone-sub">alone, where a human sits.</text>
+  <text x="700" y="314" class="zone-sub">Scope before power.</text>
+
+  <!-- ═══ ZONE 3 · THE ENGINE ═══ -->
+  <rect x="30" y="340" width="600" height="50" rx="10" fill="#5fd99a" opacity="0.07"/>
+  <rect x="30" y="340" width="4" height="50" rx="2" fill="#5fd99a"/>
+  <text x="52" y="371" class="code">  <tspan class="kw">each cycle:</tspan> plan, then act, then observe</text>
+
+  <circle cx="672" cy="364" r="15" fill="#5fd99a"/>
+  <text x="672" y="369.5" text-anchor="middle" class="badge-num">3</text>
+  <text x="700" y="352" class="zone-label" fill="#5fd99a">THE ENGINE</text>
+  <text x="700" y="372" class="zone-sub">the repeated movement —</text>
+  <text x="700" y="388" class="zone-sub">the default is usually right.</text>
+
+  <!-- ═══ ZONE 4 · THE SAFETY NET ═══ -->
+  <rect x="30" y="406" width="600" height="106" rx="10" fill="#ffb45a" opacity="0.07"/>
+  <rect x="30" y="406" width="4" height="106" rx="2" fill="#ffb45a"/>
+  <text x="52" y="436" class="code">  <tspan class="kw">when it fails:</tspan> <tspan class="warn">reflect</tspan> on the flake, <tspan class="kw">then plan again</tspan></text>
+  <text x="52" y="464" class="code">  <tspan class="kw">when blocked:</tspan> <tspan class="gate">ask a human</tspan></text>
+  <text x="52" y="492" class="code">  <tspan class="kw">after 6 tries:</tspan> stop and warn <tspan class="str">"still flaky"</tspan></text>
+
+  <circle cx="672" cy="458" r="15" fill="#ffb45a"/>
+  <text x="672" y="463.5" text-anchor="middle" class="badge-num">4</text>
+  <text x="700" y="436" class="zone-label" fill="#ffb45a">THE SAFETY NET</text>
+  <text x="700" y="456" class="zone-sub">the back-edge, the escape hatch,</text>
+  <text x="700" y="472" class="zone-sub">the floor. The last line is the</text>
+  <text x="700" y="488" class="zone-sub">hard stop — a loop ends with</text>
+  <text x="700" y="504" class="zone-sub">its guarantee.</text>
+
+  <!-- footer: healthy checklist -->
+  <line x1="40" y1="546" x2="940" y2="546" stroke="#232a36" stroke-width="1"/>
+  <text x="40" y="580" class="subtitle" font-weight="700" fill="#eef2f7">A healthy loop:</text>
+  <text x="40" y="606" class="subtitle">✓ finish line a machine can check (or an explicit human review)     ✓ context scoped to the change, not "the repo"</text>
+  <text x="40" y="630" class="subtitle">✓ risky actions gated, the rest automatic     ✓ a reflect back-edge AND a try ceiling — recovery with a floor</text>
+  <text x="40" y="654" class="subtitle">✗ smells: no done-when · "look at: everything" · reflect without after-N-tries · gates on trivia, none on deploys</text>
+
+  <text x="40" y="694" class="subtitle" fill="#5b6675">config tier (git: · models: · each cycle default) sits above all definitions · optional lines join their zone: use skills / remember in → boundaries · also: → engine</text>
+</svg>

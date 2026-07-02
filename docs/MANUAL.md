@@ -53,6 +53,71 @@ plan→act→observe; edits default to auto). The VSCode extension nudges you wh
 missing something load-bearing (e.g. no way to verify "done", or a back-edge with no
 thrash guard) — a warning, never an error. Structure guides; it doesn't cage.
 
+## Anatomy — the authoring order
+
+The parser doesn't care what order the lines come in. **You should.** A loop written in
+the canonical order reads top-to-bottom like the run itself degrades — promises at the
+top, failure handling at the bottom — and forces the two decisions that matter before any
+of the ones that don't. The standard: **write the finish line first, the safety net last.**
+
+<p align="center"><img src="assets/loop-anatomy.svg" alt="Anatomy of a healthy loop: 1 the contract (goal + done when), 2 the boundaries (look at, allow/ask, human gates), 3 the engine (each cycle), 4 the safety net (when it fails / when blocked / after N tries)" width="860"></p>
+
+### The four zones, in writing order
+
+| # | Zone | Lines | Why it comes here |
+|---|---|---|---|
+| 1 | **The contract** | `goal:` → `done when` | The destination and the finish line. Write `done when` *before any behavior* — this is loop engineering's TDD. If you can't write the check, you don't know what you're building yet; stop and figure that out first. Everything below exists to make this line pass. |
+| 2 | **The boundaries** | `look at:` → `allow …, ask me before …` → `a human approves/reviews …` | Scope before power. First what it may *read* (pin the loop inside your architecture), then what it may *do* alone, then where a person sits. Deciding gates now — while you're thinking about risk, not behavior — is what keeps them honest. |
+| 3 | **The engine** | `each cycle:` | The repeated movement. Usually the default `plan, then act, then observe` — written explicitly so a reader sees the shape without knowing the defaults. |
+| 4 | **The safety net** | `when it fails:` → `when blocked:` → `after N tries:` | Recovery (the reflect back-edge), the escape hatch (a human), and the floor — in escalation order. **The last line of a loop is its hard stop**: the file ends with the guarantee that it can't spin forever. |
+
+Line by line, the canonical skeleton:
+
+```loop
+loop "<name>":
+  goal: <the outcome, one sentence>                    # 1 ── contract
+  done when <a check a machine can run>                #      the finish line — write it FIRST
+
+  look at: <the few files that matter>, and the last failure   # 2 ── boundaries
+  allow edits automatically, but ask me before <the risky class>
+  a human approves the plan first                      #      (only when the work warrants it)
+
+  each cycle: plan, then act, then observe             # 3 ── engine
+
+  when it fails: reflect on <what to examine>, then plan again  # 4 ── safety net
+  when blocked:  ask a human
+  after 6 tries: stop and warn "<how you'll find it stuck>"     #      the floor, always last
+```
+
+**Why `done when` second and not last?** Because it's the decision that shapes every other
+line: the context you scope, the actions you allow, even the try ceiling are all sized to
+the check. Written last, `done when` tends to describe whatever the loop happened to do;
+written first, the loop is built to satisfy it. Same reason tests-before-code works.
+
+**Where the optional lines go** — each joins the zone it belongs to:
+
+| Line | Zone |
+|---|---|
+| `use skills:` / `use skills recommended by ctx` / `remember in` / `knowledge:` / `examples:` | 2 · boundaries (capabilities & context) |
+| `plan from "<file>"` | 2 · boundaries (the plan is an input) |
+| `also:` (finishing passes) | 3 · engine (extra movement after the goal) |
+| `hooks:` | 4 · safety net (deterministic checkpoints) |
+| `git:` block, `models:` | config tier — **above** all definitions, or file-top inside the loop |
+
+### What a healthy loop looks like
+
+- **A finish line a machine can check** — or an explicit `a human reviews before stopping`. Never neither.
+- **A fast, deterministic check** — `finds nothing` for scanners, `passes N times` where timing lurks.
+- **Scoped context** — the three files that matter plus `the last failure`, not "the repo".
+- **Gates on risk, autonomy on the rest** — migrations gated, edits automatic. Gating trivia trains you to rubber-stamp.
+- **Recovery AND a floor** — `reflect, then plan again` *always* paired with `after N tries`. A back-edge without a ceiling is how loops thrash to the hard cap.
+- **Reads like a story** — someone who's never seen LoopFlow should understand the file top to bottom: *what → how we'll know → what it may touch → how it moves → what happens when it goes wrong.*
+
+Smells, for the review pass: no `done when` · `look at:` missing or unbounded · a reflect
+back-edge with no try ceiling · a `warn` message that won't tell future-you what got stuck ·
+five gates on a rename. The same order applies inside every `stage` of a pipeline — each
+stage is a loop and reads as one.
+
 ## 1. Requirements
 
 - **Node.js 18+**

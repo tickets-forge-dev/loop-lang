@@ -192,6 +192,7 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
   <ol id="tocList">
     <li class="grp">Why LoopFlow</li>
     <li><a href="#what">What is a loop</a></li>
+    <li><a href="#anatomy">Anatomy — the order</a></li>
     <li><a href="#vs">Prompt vs LoopFlow</a></li>
     <li><a href="#vsbuiltins">vs /loop &amp; /goal</a></li>
     <li class="grp">Get started</li>
@@ -337,6 +338,34 @@ loop "add API rate limiting":
       <li><strong>You can't fake done.</strong> <code class="inl">done when</code> runs a <em>real</em> command — a test, a scanner, a script. The loop stops only when the world agrees.</li>
     </ul>
   </div>
+</section>
+
+<!-- anatomy — the authoring order -->
+<section id="anatomy">
+  <h2>Anatomy — write it in this order <span class="badge b-basic">the standard</span></h2>
+  <p>The parser doesn't care what order the lines come in. <strong>You should.</strong> The standard is one sentence: <strong>the finish line first, the safety net last.</strong> Four zones, top to bottom — and the file ends up reading in the same order a run degrades: promises at the top, failure handling at the bottom.</p>
+
+  <p align="center"><img src="assets/loop-anatomy.svg" alt="Anatomy of a healthy loop: 1 the contract (goal + done when), 2 the boundaries (look at, allow/ask, human gates), 3 the engine (each cycle), 4 the safety net (when it fails / when blocked / after N tries)" style="max-width:100%;border-radius:14px;border:1px solid var(--line)"></p>
+
+  <ol>
+    <li><strong>The contract</strong> — <code class="inl">goal:</code>, then <code class="inl">done when</code> <em>immediately</em> under it. Write the check <strong>before any behavior</strong> — this is loop engineering's TDD. If you can't write the check, you don't know what you're building yet; that's the signal to stop and think, not to keep typing. Everything below exists to make this line pass.</li>
+    <li><strong>The boundaries</strong> — <code class="inl">look at:</code> (what it may read), then <code class="inl">allow …, ask me before …</code> (what it may do alone), then any human gate. <em>Scope before power.</em> Decide gates now, while you're thinking about risk — not later, while you're thinking about behavior. Capability lines (<code class="inl">use skills</code>, <code class="inl">remember in</code>) live here too.</li>
+    <li><strong>The engine</strong> — <code class="inl">each cycle:</code>. Usually the default <code class="inl">plan, then act, then observe</code>, written out so a reader sees the shape. <code class="inl">also:</code> finishing passes join this zone.</li>
+    <li><strong>The safety net</strong> — <code class="inl">when it fails:</code> (recovery), <code class="inl">when blocked:</code> (the escape hatch), <code class="inl">after N tries:</code> (the floor) — in escalation order. <strong>The last line of a loop is its hard stop</strong>: the file literally ends with the guarantee that it can't spin forever.</li>
+  </ol>
+
+  <p><strong>Why <code class="inl">done when</code> second and not last?</strong> Because it shapes every other line — the context you scope, the actions you allow, the try ceiling are all sized to the check. Written last, <code class="inl">done when</code> describes whatever the loop happened to do; written first, the loop is built to satisfy it. Same reason tests-before-code works.</p>
+
+  <div class="key"><span class="kt">A healthy loop</span>
+    <ul>
+      <li>A finish line a machine can check — or an explicit <code class="inl">a human reviews before stopping</code>. Never neither.</li>
+      <li>Scoped context: the three files that matter + <code class="inl">the last failure</code> — not "the repo".</li>
+      <li>Gates on risk, autonomy on the rest. Gating trivia trains you to rubber-stamp.</li>
+      <li>Recovery <em>and</em> a floor: <code class="inl">reflect, then plan again</code> always paired with <code class="inl">after N tries</code>.</li>
+      <li>Smells: no <code class="inl">done when</code> · unbounded <code class="inl">look at</code> · a back-edge with no ceiling · a warn message that won't tell future-you what got stuck.</li>
+    </ul>
+  </div>
+  <p class="sub">The same order applies inside every <code class="inl">stage</code> of a pipeline — each stage is a loop and reads as one. Full rationale in <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md">the manual</a>.</p>
 </section>
 
 <!-- you are the loop today -->
