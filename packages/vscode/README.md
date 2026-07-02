@@ -35,9 +35,10 @@ comment describing intent and let it draft the `.loop`.
 
 ## Learn the language
 
-- Tutorial: <https://loopflow.live>
-- Playground (try it in the browser, no install): <https://loopflow.live/playground.html>
-- Manual: <https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md>
+- Tutorial + browser playground: linked from the
+  [project repository](https://github.com/tickets-forge-dev/loop-lang#readme)
+- Manual: [docs/MANUAL.md](https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md)
+- Grammar reference: [AGENTS.md](https://github.com/tickets-forge-dev/loop-lang/blob/master/AGENTS.md)
 
 ## Requirements
 
