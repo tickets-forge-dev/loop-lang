@@ -13,8 +13,8 @@
 <p align="center">
   <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/License-Apache_2.0-34e0c4.svg"></a>
   <a href="https://www.npmjs.com/package/@loop-lang/loop"><img alt="npm" src="https://img.shields.io/npm/v/@loop-lang/loop?color=84b6ff&label=%40loop-lang%2Floop"></a>
-  <a href="https://marketplace.visualstudio.com/items?itemName=Loop-Lang.loopflow"><img alt="VS Code Marketplace" src="https://img.shields.io/visual-studio-marketplace/v/Loop-Lang.loopflow?color=34e0c4&label=VS%20Code"></a>
-  <img alt="Node >=18" src="https://img.shields.io/badge/node-%3E%3D18-5fd99a.svg">
+  <a href="https://marketplace.visualstudio.com/items?itemName=Loop-Lang.loopflow"><img alt="VS Code Marketplace" src="https://img.shields.io/badge/VS%20Code-marketplace-34e0c4.svg"></a>
+  <img alt="Node 18+" src="https://img.shields.io/badge/node-%3E%3D18-5fd99a.svg">
 </p>
 
 ---
