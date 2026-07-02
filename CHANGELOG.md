@@ -6,6 +6,42 @@ Versions track the `@loop-lang/loop` installer package.
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-07-02
+
+> `@loop-lang/loop` 0.7.0 · `@loop-lang/{parser,runtime,stdlib,viz}` 0.4.0 · `loopflow` (vscode) 0.5.0
+
+### Added
+- **ctx as a skill source** — `recommend skills with ctx` / `use skills recommended by ctx`
+  / `top up skills from ctx`: a loop equips itself via the ctx MCP server before the first
+  plan and re-equips after a failed cycle reflects. Capability grants
+  (`grant ctx: skills, agents, mcps, harnesses`, fail-closed) and own-model gating
+  (`ctx may use my own model "…"`, dry-run-only harness recommendations).
+- **Verification reliability** — the flake guard (`done when "…" passes 3 times`: every
+  run must pass, first failure short-circuits) and judge panels
+  (`the skill "…" approves by 3 judges`: majority of independent verdicts, early-exit
+  once decided). Rendered in `show`/`explain` (`×3`, `· 3 judges`).
+- **Event log & telemetry** — `--log <path>` / `LOOP_LOG_FILE` appends every runtime
+  event as durable NDJSON (header + seq'd lines); `LOOP_EVENTS_URL` streams the same
+  events to a control-plane collector (shared run id, fan-out). **Secret redaction on by
+  default**: env-derived values and well-known credential shapes are scrubbed before any
+  sink persists an event (`LOOP_REDACT=off` to disable).
+- **Resume** — `loop-run run <file> --resume run.log` skips every unit the log proves
+  satisfied (definitions, stages, flow steps, for-each items), restores flow carry-forward
+  summaries, and warns when the `.loop` source changed since the logged run.
+- **Browser playground** — `docs/playground.html`: the parser, ASCII shape view, explain,
+  and soft linter bundled to 27 kB of client-side JS; parse-on-type with inline errors and
+  example loops. Linked from the tutorial.
+- **Docs** — "How verification works: what 'done' actually depends on" in the manual
+  (verdict factors: working dir, shell env, exit codes, `finds nothing` semantics, flake /
+  judge hardening); event-log, resume, and redaction sections; README aligned with the
+  tutorial (all `.loop` blocks verified against the parser).
+
+### Changed
+- **New logo** — the gap ring (one ring, one gap: the loop still iterating), with a
+  solid-tile variant as the favicon / app icon across the site and README.
+- `loopflow` (vscode) 0.5.0 — bundles the 0.4.0 parser (judge panels, flake guard, ctx
+  lines all recognized); output panel renders `⏩ resumed` events.
+
 ## [0.6.0] — 2026-06-29
 
 > `@loop-lang/loop` 0.6.0 · `@loop-lang/{parser,runtime,stdlib,viz}` 0.3.0 · `loop-vscode` 0.4.0
