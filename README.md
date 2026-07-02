@@ -38,10 +38,14 @@
 Requires Node 18+ and the [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) — full install options in the [manual](docs/MANUAL.md#2-install).
 
 ```bash
-npx @loop-lang/loop init      # installs the /loopflow skill + AGENTS.md
+npx @loop-lang/loop init      # /loopflow skill + AGENTS.md + the loop-first default (add --cursor / --copilot for other agents)
 ```
 
-Then, in a Claude Code chat:
+That last piece means **you usually don't type `/loopflow` at all**: `init` drops a gated
+default into CLAUDE.md, so when you ask for something *repeatable and verifiable* ("fix this
+flaky test until it's reliably green"), Claude reaches for a `.loop` on its own — while
+one-off questions and trivial edits are done directly, no loop ceremony. The gate is
+AGENTS.md's four-condition test; `/loopflow` stays the explicit override in both directions:
 
 ```
 /loopflow fix the failing test — done when the suite passes

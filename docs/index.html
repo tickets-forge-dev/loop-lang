@@ -281,10 +281,10 @@ loop "add API rate limiting":
 <!-- first 5 minutes -->
 <div class="note" id="quickstart" style="border-left-color:var(--fwd);background:linear-gradient(180deg,rgba(52,224,196,.08),rgba(255,255,255,.02))">
   <b style="color:var(--fwd)">First 5 minutes</b> — in any repo (Node&nbsp;18+, the <a href="https://docs.anthropic.com/en/docs/claude-code">Claude Code</a> CLI):
-  <pre class="sh" style="margin:8px 0 2px"><code>npx @loop-lang/loop init      # installs the /loopflow skill + AGENTS.md
-# then, in a Claude Code chat:
-/loopflow fix the failing test — done when the suite passes</code></pre>
-  Watch it plan → act → observe, reflect on a red test, and stop only when the check is green. Skeptical? → <a href="#vs">Why not just prompt?</a> · Full setup in <a href="#start">Getting started</a>.
+  <pre class="sh" style="margin:8px 0 2px"><code>npx @loop-lang/loop init      # /loopflow skill + AGENTS.md + the loop-first default
+# then just ask — no slash needed for loop-shaped work:
+fix the flaky checkout test — keep at it until the suite passes reliably</code></pre>
+  <code class="inl">init</code> teaches Claude to reach for a <code class="inl">.loop</code> <em>on its own</em> when the work is repeatable + verifiable — and to skip the ceremony for one-off edits. <code class="inl">/loopflow</code> is the explicit override. Watch it plan → act → observe, reflect on a red test, and stop only when the check is green. Skeptical? → <a href="#vs">Why not just prompt?</a> · Full setup in <a href="#start">Getting started</a>.
 </div>
 
 <!-- 1 -->
@@ -419,14 +419,16 @@ loop "add API rate limiting":
   <p><b>Prerequisites:</b> <strong>Node 18+</strong>, the <a href="https://docs.anthropic.com/en/docs/claude-code">Claude Code</a> CLI, and a <strong>git repo</strong>. The primary surface is a Claude Code chat — <code class="inl">/loopflow</code> writes and runs the loop with you, gates answered inline. One command installs everything:</p>
 
   <h3>1 · Install with npm</h3>
-  <p>From your repo, run the installer. In one step it writes the <code class="inl">/loopflow</code> skill <em>and</em> <code class="inl">AGENTS.md</code> (the full language reference) into the project:</p>
-  <pre class="sh"><code>npx @loop-lang/loop init            # install into this repo
+  <p>From your repo, run the installer. In one step it writes the <code class="inl">/loopflow</code> skill, <code class="inl">AGENTS.md</code> (the full language reference), <em>and</em> a <strong>gated loop-first default</strong> into <code class="inl">CLAUDE.md</code>:</p>
+  <pre class="sh"><code>npx @loop-lang/loop init            # install into this repo (add --cursor / --copilot for those agents too)
 npx @loop-lang/loop init --global   # or: install the /loopflow skill for every repo</code></pre>
+
+  <p><b>The default means you rarely type the slash.</b> Ask for something <em>repeatable and verifiable</em> — "fix this flaky test until it's reliably green" — and Claude authors + runs the <code class="inl">.loop</code> on its own. Ask a one-off question or a trivial edit and it just… does it, no loop ceremony. The gate is <code class="inl">AGENTS.md</code>'s four-condition test (repeats? "done" checkable? iterations affordable? self-verifiable?); <code class="inl">/loopflow</code> remains the explicit override in both directions.</p>
 
   <p>That writes a handful of plain files into your repo &mdash; nothing hidden, all yours to read and edit:</p>
   <pre class="tree"><code>your-repo/
 &#9500;&#9472; AGENTS.md                     <span class="cm"># the Loop language reference &mdash; every agent reads it</span>
-&#9500;&#9472; CLAUDE.md                     <span class="cm"># pointer so Claude Code knows this repo uses Loop</span>
+&#9500;&#9472; CLAUDE.md                     <span class="cm"># the gated loop-first default (reach for a .loop when work is repeatable + verifiable)</span>
 &#9500;&#9472; loop.config                   <span class="cm"># settings &mdash; live=false (dashboard off until you opt in)</span>
 &#9500;&#9472; .claude/skills/loopflow/
 &#9474;  &#9492;&#9472; SKILL.md                  <span class="cm"># the /loopflow skill &mdash; author + run loops in chat</span>

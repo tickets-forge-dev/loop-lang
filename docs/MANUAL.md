@@ -112,6 +112,7 @@ The published packages:
 
 ```bash
 npx @loop-lang/loop init         # scaffold Loop into a repo: /loopflow skill + AGENTS.md + examples + templates
+                                 # + the gated loop-first default in CLAUDE.md (--cursor / --copilot for other agents; --no-claude-md to skip)
 npm i -g @loop-lang/runtime      # the loop-run CLI used throughout this manual
 ```
 
@@ -758,11 +759,12 @@ Settings: `loop.cliPath` (path to the CLI for the Run button) and `loop.model`.
 Drop [`AGENTS.md`](../AGENTS.md) in the repo; any agent authors `.loop` from a
 plain-English request.
 
-`loop init --agents claude` (or `cursor` / `copilot`) also installs a **gated default**
-into the agent's memory file: for repeatable, verifiable work the agent reaches for a
-`.loop` on its own — gated by AGENTS.md's four-condition test — while one-off questions
-and trivial edits are done directly, no loop ceremony. `/loopflow` always works as the
-explicit override in both directions.
+`loop init` also installs a **gated default** into the agent's memory file (CLAUDE.md by
+default; add `--cursor` / `--copilot` or `--all-agents` for the others, `--no-claude-md`
+to skip): for repeatable, verifiable work the agent reaches for a `.loop` on its own —
+gated by AGENTS.md's four-condition test — while one-off questions and trivial edits are
+done directly, no loop ceremony. `/loopflow` always works as the explicit override in
+both directions.
 
 ### The Claude Code skill (`/loopflow`)
 
