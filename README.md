@@ -6,7 +6,7 @@
 
 <p align="center"><b>An open, natural-language DSL for loop engineering.</b><br/>Describe a staged, self-correcting, human-gated agent workflow in plain English, press ▶, and it runs on Claude Code.</p>
 
-<p align="center"><i>Stop tuning prompts. Start editing the loop.</i></p>
+<p align="center"><i>Stop babysitting the agent. Write the goal once — the loop plans, acts, reflects on red,<br/>and stops only when the check is green, at the gates you set.</i></p>
 
 <p align="center"><img src="docs/assets/loop-demo.svg" alt="A Loop turning a failing test green: plan → act → observe (FAIL) → reflect → plan → act → observe (PASS) → done" width="760"></p>
 
@@ -24,9 +24,12 @@
 
 <p align="center">
   <a href="https://loopflow.live">Tutorial</a> ·
-  <a href="https://loopflow.live/workshop.html">Workshop</a> ·
+  <a href="https://loopflow.live/playground.html">⚡ Playground</a> ·
+  <a href="https://loopflow.live/workshop.html">🛠️ Workshop</a> ·
+  <a href="https://loopflow.live/game.html">🎮 Lab</a> ·
   <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md">Manual</a> ·
-  <a href="https://loopflow.live/keywords/index.html">Keyword reference</a>
+  <a href="https://loopflow.live/keywords/index.html">Keywords</a> ·
+  <a href="docs/FAQ.md">FAQ</a>
 </p>
 
 ## Quickstart
@@ -88,23 +91,47 @@ Compose loops into **stages** and **pipelines**, with humans wired in where judg
 
 ```loop
 pipeline "ship feature":
-  stage security:
+
+  stage "security":
     goal: no high or critical vulnerabilities
     done when "semgrep --severity=high" finds nothing
-    each cycle: plan, act, observe
+    each cycle: plan, then act, then observe
     when it fails: reflect, then plan again
 
-  stage build:
+  stage "build":
     goal: feature works and tests pass
     a human approves the plan first
-    then each cycle: act, observe
     done when "pnpm test" passes
+    each cycle: act, then observe
 
-  stage ui:
+  stage "ui":
     goal: matches design, responsive at 375px
-    each cycle: plan, act, observe
+    each cycle: plan, then act, then observe
     a human reviews before stopping
 ```
+
+## Verify like you mean it
+
+`done when` is the loop's definition of reality — so LoopFlow gives verification real teeth.
+List several checks (**all must pass**), mix deterministic tests with LM-judged evals, and
+harden both sides against false greens:
+
+```loop
+loop "harden checkout":
+  goal: checkout works, reliably, and was built the right way
+  done when "pnpm test checkout" passes 3 times                  # flake guard: every run must pass
+  done when the skill "code-review" approves by 3 judges         # judge panel: majority of 3 verdicts
+  done when the skill "path-review" approves on the trajectory   # judges HOW it got there
+    the bar: didn't weaken a test to go green; no writes outside src/checkout
+```
+
+- **Flake guard** — `passes N times` re-runs a test/command; one lucky green isn't "done".
+- **Judge panel** — `by N judges` takes a majority of independent verdicts; one wobbly LM
+  judgment isn't "done" either.
+- **Trajectory evals** — catch what a green test can't: an agent that gamed the check.
+
+Full mechanics — what a verdict is actually affected by (working dir, shell env, exit codes) —
+in [How verification works](docs/MANUAL.md#how-verification-works--what-done-actually-depends-on).
 
 ## Skills and memory
 
@@ -126,6 +153,12 @@ loop "decide whether to cancel the morning run":
 - **`remember in "<file>"`** gives the loop a markdown memory: it reads past lessons into its
   first plan and appends an outcome entry when it stops. `reflect` is within-run memory;
   `remember` is its across-run counterpart. See [`examples/skills_memory.loop`](examples/skills_memory.loop).
+
+And a loop can **equip itself**: with [ctx](https://github.com/stevesolun/ctx) attached as the
+skill source, `use skills recommended by ctx` resolves + installs the right skill bundle for the
+goal before the first plan, and `top up skills from ctx` pulls more after a failed cycle
+reflects. Opt-in, fail-closed, inert without ctx — see
+[the integration guide](docs/MANUAL.md) and [`examples/ctx_capabilities.loop`](examples/ctx_capabilities.loop).
 
 ## Compose loops
 
@@ -223,12 +256,17 @@ shape live, no install.
 
 ## Status
 
-Early. v1 in progress: parser, runtime, VSCode extension, BMAD preset. See the [roadmap](#roadmap) and [open issues](../../issues).
+Active. Shipped: parser + runtime (pipelines, flows, for-each, evals, judge panels, flake
+guard), event log + `--resume`, secret-scrubbed telemetry, live dashboard, VSCode extension,
+template library, browser playground, ctx skill provisioning. See the [roadmap](#roadmap)
+and [open issues](../../issues).
 
 ## Roadmap
 
-- **v1** — parser, single-loop + sequential pipeline runtime on Claude Code, blocking human nodes, VSCode extension, BMAD preset.
-- **v2** — visual graph editor (the `loop-spec` IR is built for it), async human nodes, reactive stages, scheduling, a community preset registry (`use someone/their-method`).
+- **Next** — runner abstraction (run loops on your own local/API model), a GitHub Action
+  (loops as CI quality gates), a community template registry (`use someone/their-method`).
+- **Later** — visual graph editor (the `loop-spec` IR is built for it), async human nodes,
+  reactive stages, scheduling.
 
 ## Built with LoopFlow
 

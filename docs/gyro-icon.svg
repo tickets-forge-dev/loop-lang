@@ -1,5 +1,6 @@
 <svg width="256" height="256" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LoopFlow">
-  <!-- The LoopFlow mark: one ring, one gap — the loop that hasn't closed yet (still iterating). -->
-  <circle cx="12" cy="12" r="8.5" fill="none" stroke="#34e0c4" stroke-width="3.6"
-          stroke-linecap="round" stroke-dasharray="42.2 11.2"/>
+  <!-- The LoopFlow icon: the gap-ring mark as a solid tile — favicon / app icon / avatar. -->
+  <rect x="2" y="2" width="20" height="20" rx="6" fill="#34e0c4"/>
+  <circle cx="12" cy="12" r="6" fill="none" stroke="#0b0d12" stroke-width="3"
+          stroke-linecap="round" stroke-dasharray="29.6 8.1"/>
 </svg>
