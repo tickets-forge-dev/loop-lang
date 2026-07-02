@@ -13,6 +13,7 @@
 <p align="center">
   <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/License-Apache_2.0-34e0c4.svg"></a>
   <a href="https://www.npmjs.com/package/@loop-lang/loop"><img alt="npm" src="https://img.shields.io/npm/v/@loop-lang/loop?color=84b6ff&label=%40loop-lang%2Floop"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=Loop-Lang.loopflow"><img alt="VS Code Marketplace" src="https://img.shields.io/visual-studio-marketplace/v/Loop-Lang.loopflow?color=34e0c4&label=VS%20Code"></a>
   <img alt="Node >=18" src="https://img.shields.io/badge/node-%3E%3D18-5fd99a.svg">
 </p>
 
@@ -188,7 +189,8 @@ See [`examples/git_policy.loop`](examples/git_policy.loop) and the [manual](docs
 
 ## Authoring: by hand or by agent
 
-Write `.loop` by hand — the [VSCode extension](packages/vscode) gives syntax highlight,
+Write `.loop` by hand — the [**LoopFlow VS Code extension**](https://marketplace.visualstudio.com/items?itemName=Loop-Lang.loopflow)
+(`ext install Loop-Lang.loopflow` · [source](packages/vscode)) gives syntax highlight,
 context-aware Ctrl+Space autocomplete, hover docs, and live error squiggles (Copilot
 fills the AI-prediction lane). Or ask an AI assistant to write it: drop
 [AGENTS.md](AGENTS.md) in your repo and Claude Code / Copilot author `.loop` from a
@@ -244,7 +246,7 @@ shape live, no install.
 |---|---|
 | `@loop-lang/parser` | `.loop` text → `loop-spec` JSON (the open IR) |
 | `@loop-lang/runtime` | walks a spec, drives Claude Code, emits a live trace |
-| `@loop-lang/vscode` | highlight, formatter, ▶ Play CodeLens, live gutter trace |
+| [`loopflow` (VS Code)](https://marketplace.visualstudio.com/items?itemName=Loop-Lang.loopflow) | highlight, diagnostics, completion, templates, ▶ Run CodeLens |
 | `@loop-lang/stdlib` | `BMAD.loop` + starter presets |
 | `@loop-lang/viz` | `loop-run viz file.loop` → self-contained HTML schematic; also the live dashboard (`--live`) |
 | `spec/loop-spec.schema.json` | the open IR contract |

@@ -1,8 +1,8 @@
 {
   "name": "loopflow",
   "displayName": "LoopFlow",
-  "version": "0.5.0",
-  "description": "Syntax, formatting, best-practice templates, completion, and ▶ Run / Claude-session buttons for the LoopFlow (.loop) DSL.",
+  "version": "0.5.2",
+  "description": "Language support for the LoopFlow (.loop) DSL — syntax highlighting, live diagnostics, completion, best-practice templates, and ▶ Run buttons for self-correcting agent workflows.",
   "license": "Apache-2.0",
   "publisher": "Loop-Lang",
   "private": true,
@@ -15,9 +15,8 @@
   "keywords": [
     "loop",
     "agent",
-    "claude",
-    "ai",
     "workflow",
+    "automation",
     "dsl",
     "loop-engineering"
   ],
