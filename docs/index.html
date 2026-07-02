@@ -174,6 +174,16 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
   nav.toc{display:none;} main{padding:24px 18px 80px;}
   header.hero h1{font-size:42px;}
 }
+/* hero: the .loop you write (left) → the run it drives (right), one compact band */
+.heroduo{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch;margin-top:16px}
+.heroduo .pane{margin:0}
+.heroduo .duo-arrow{display:flex;align-items:center;justify-content:center;color:var(--fwd);font-size:20px;opacity:.8}
+.heroduo .termbody .ln{font-size:12.5px;line-height:1.55}
+.heroduo pre code{font-size:12.5px;line-height:1.6}
+@media (max-width:1100px){
+  .heroduo{grid-template-columns:1fr}
+  .heroduo .duo-arrow{transform:rotate(90deg);padding:0}
+}
 </style>
 </head>
 <body>
@@ -236,45 +246,36 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
   <div class="lede">Write the goal <em>once</em> — the loop plans, acts, reflects on red, and stops only when the check is green, at the gates you set.</div>
   <p class="sub">LoopFlow is a small natural-language DSL for <strong>loop engineering</strong>. A <code class="inl">.loop</code> file describes a self-correcting, human-gated coding workflow — its objective, the context it may read, the actions it may take, how it verifies itself, and when it stops. This page teaches the whole language from the first line to full A-to-Z pipelines, every section grounded in a real example you can run.</p>
 
-  <div class="pane term" style="margin-top:18px">
-    <div class="ph">/loopflow run rate-limit.loop<span class="dots">● ● ●</span></div>
-    <div class="termbody" style="height:auto">
-      <div class="ln tl-u">❯ /loopflow run rate-limit.loop</div>
-      <div class="ln tl-dim">  goal: requests are rate-limited per API key</div>
-      <div class="ln tl-plan">↻ cycle 1 · plan → act → observe</div>
-      <div class="ln tl-tool">● Bash  pnpm test rate-limit</div>
-      <div class="ln tl-bad">   ✗ 2 failing: resets-after-window, per-key-isolation</div>
-      <div class="ln tl-plan">~ reflect: the window resets per key, not globally</div>
-      <div class="ln tl-tool">● Edit src/api/limiter.ts</div>
-      <div class="ln tl-plan">↻ cycle 2 · plan → act → observe</div>
-      <div class="ln tl-tool">● Bash  pnpm test rate-limit</div>
-      <div class="ln tl-ok">   ✓ all green — done-when satisfied</div>
-      <div class="ln tl-tool">● Bash  git checkout -b rate-limiting</div>
-      <div class="ln tl-gate">⛐ gate: open a pull request?  ▸ approved</div>
-      <div class="ln tl-tool">● Bash  git push origin rate-limiting · gh pr create</div>
-      <div class="ln tl-ok">◼ done — PR #128 opened, never touched main</div>
-      <div class="ln tl-dim">— you wrote the goal once; the loop did the rest.</div>
-    </div>
-  </div>
-  <p class="cap" style="margin:10px 0 6px;text-align:center">↓ the one <code class="inl">.loop</code> that drove the run above — the whole job, written once</p>
-
-  <div class="pane good">
-    <div class="ph">rate-limit.loop</div>
-    <pre><code class="loop">git:
-  work on a branch
-  commit when the goal is met
-  open a pull request
-
-loop "add API rate limiting":
+  <div class="heroduo">
+    <div class="pane good">
+      <div class="ph">rate-limit.loop · <b style="color:var(--fwd)">you write this</b></div>
+      <pre><code class="loop">loop "add API rate limiting":
   goal: requests are rate-limited per API key
   done when "pnpm test rate-limit" passes
-  look at: the API and its middleware, and the last failure
+
+  look at: the API middleware, and the last failure
   allow edits automatically, but ask me before pushes
+
   each cycle: plan, then act, then observe
-  also: run a security check
   when it fails: reflect, then plan again
   after 6 tries: stop and warn "thrashing"</code></pre>
-    <div class="pfoot">Skill: <b>/loopflow</b> runs it · Memory: AGENTS.md + reflect · Git: branch + commit + PR, never main</div>
+    </div>
+    <div class="duo-arrow">→</div>
+    <div class="pane term">
+      <div class="ph">/loopflow run · <b style="color:var(--fwd)">it does the rest</b><span class="dots">● ● ●</span></div>
+      <div class="termbody" style="height:auto">
+        <div class="ln tl-plan">↻ cycle 1 · plan → act → observe</div>
+        <div class="ln tl-tool">● Bash  pnpm test rate-limit</div>
+        <div class="ln tl-bad">   ✗ 2 failing: resets-after-window</div>
+        <div class="ln tl-plan">~ reflect: window resets per key, not globally</div>
+        <div class="ln tl-tool">● Edit src/api/limiter.ts</div>
+        <div class="ln tl-plan">↻ cycle 2 · plan → act → observe</div>
+        <div class="ln tl-ok">   ✓ all green — done-when satisfied</div>
+        <div class="ln tl-gate">⛐ gate: open a pull request?  ▸ approved</div>
+        <div class="ln tl-ok">◼ done — PR #128 opened, never touched main</div>
+        <div class="ln tl-dim">— you wrote the goal once; the loop did the rest.</div>
+      </div>
+    </div>
   </div>
 </header>
 
