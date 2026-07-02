@@ -213,6 +213,51 @@ test("use skills: also accepts 'and' as a separator", () => {
   assert.deepEqual(loop.skills, ["a", "b", "c"]);
 });
 
+test("flake guard: `passes N times` carries a runs count on a command predicate", () => {
+  const loop = parse('loop "x":\n  goal: g\n  done when "pnpm test" passes 3 times').definitions[0];
+  assert.deepEqual(loop.doneWhen, [{ type: "command", command: "pnpm test", expect: "exit-zero", runs: 3 }]);
+});
+
+test("flake guard: `finds nothing N times` and `the test passes N times` carry runs", () => {
+  const cmd = parse('loop "x":\n  goal: g\n  done when "semgrep" finds nothing 5 times').definitions[0];
+  assert.deepEqual(cmd.doneWhen, [{ type: "command", command: "semgrep", expect: "empty", runs: 5 }]);
+
+  const tst = parse('loop "x":\n  goal: g\n  done when the test "a::b" passes 2 times').definitions[0];
+  assert.deepEqual(tst.doneWhen, [{ type: "test", target: "a::b", runs: 2 }]);
+});
+
+test("flake guard: a plain check (no `N times`) and `1 time` stay the single-run shape", () => {
+  const plain = parse('loop "x":\n  goal: g\n  done when "t" passes').definitions[0];
+  assert.deepEqual(plain.doneWhen, [{ type: "command", command: "t", expect: "exit-zero" }]); // no `runs` key
+
+  const one = parse('loop "x":\n  goal: g\n  done when "t" passes 1 time').definitions[0];
+  assert.deepEqual(one.doneWhen, [{ type: "command", command: "t", expect: "exit-zero" }]); // 1 == default → omitted
+});
+
+test("flake guard: the `check:` sugar also accepts `N times`", () => {
+  const loop = parse('loop "x":\n  goal: g\n  check: "pnpm test" passes 3 times').definitions[0];
+  assert.deepEqual(loop.doneWhen, [{ type: "command", command: "pnpm test", expect: "exit-zero", runs: 3 }]);
+});
+
+test("multi-judge: `approves by N judges` carries a judges count", () => {
+  const loop = parse('loop "x":\n  goal: g\n  done when the skill "review" approves by 3 judges').definitions[0];
+  assert.deepEqual(loop.doneWhen, [{ type: "skill", skill: "review", expect: "approve", judges: 3 }]);
+});
+
+test("multi-judge: composes with a score threshold and a subject", () => {
+  const loop = parse('loop "x":\n  goal: g\n  done when the skill "review" scores 8 or more on the trajectory by 5 judges').definitions[0];
+  assert.deepEqual(loop.doneWhen, [
+    { type: "skill", skill: "review", expect: "approve", minScore: 8, subject: "trajectory", judges: 5 },
+  ]);
+});
+
+test("multi-judge: a single judge (default or `by 1 judge`) keeps the single-verdict shape", () => {
+  const plain = parse('loop "x":\n  goal: g\n  done when the skill "review" approves').definitions[0];
+  assert.deepEqual(plain.doneWhen, [{ type: "skill", skill: "review", expect: "approve" }]); // no judges key
+  const one = parse('loop "x":\n  goal: g\n  done when the skill "review" approves by 1 judge').definitions[0];
+  assert.deepEqual(one.doneWhen, [{ type: "skill", skill: "review", expect: "approve" }]);
+});
+
 test("memory: 'keep a memory in' is an accepted alias", () => {
   const loop = parse('loop "x":\n  goal: g\n  keep a memory in "notes.md"').definitions[0];
   assert.deepEqual(loop.memory, { file: "notes.md" });
@@ -391,6 +436,54 @@ test("knowledge/examples/tools: context + MCP keywords", () => {
   assert.deepEqual(loop.context.knowledge, ["docs/api.md", "the architecture diagram"]);
   assert.deepEqual(loop.context.examples, ["routes/payments.ts"]);
   assert.deepEqual(loop.tools, ["github"]);
+});
+
+// ---- ctx skill source ----
+
+test("ctx: config-tier 'recommend skills with ctx' sets config.skillSource", () => {
+  const file = parse(read("ctx_skills.loop"));
+  assert.deepEqual(file.config.skillSource, { provider: "ctx" });
+});
+
+test("ctx: 'use skills recommended by ctx for ...' + 'top up skills from ctx'", () => {
+  const loop = parse(read("ctx_skills.loop")).definitions[0];
+  assert.equal(loop.name, "harden the stripe webhook handler");
+  assert.deepEqual(loop.skillDiscovery, {
+    provider: "ctx",
+    intent: "stripe webhook idempotency and signature verification",
+  });
+  assert.equal(loop.skillTopUp, true);
+});
+
+test("ctx: bare 'use skills recommended by ctx' carries no intent", () => {
+  const loop = parse('loop "x":\n  goal: g\n  use skills recommended by ctx\n  done when "t" passes').definitions[0];
+  assert.deepEqual(loop.skillDiscovery, { provider: "ctx" });
+  assert.equal(loop.skillTopUp, undefined);
+});
+
+test("ctx: discovery coexists with a hand-named 'use skills:' line", () => {
+  const loop = parse('loop "x":\n  goal: g\n  use skills: a, b\n  use skills recommended by ctx\n  done when "t" passes').definitions[0];
+  assert.deepEqual(loop.skills, ["a", "b"]);
+  assert.deepEqual(loop.skillDiscovery, { provider: "ctx" });
+});
+
+test("ctx: config-tier 'grant ctx:' parses the capability groups", () => {
+  const file = parse('grant ctx: skills, agents, mcps, harnesses\nloop "x":\n  goal: g\n  use skills recommended by ctx\n  done when "t" passes');
+  assert.deepEqual(file.config.ctxGrants, ["skills", "agents", "mcps", "harnesses"]);
+});
+
+test("ctx: 'grant ctx:' dedups + normalizes singular/'and', rejects unknown groups", () => {
+  const file = parse('grant ctx: skill, mcp and harness and harness\nloop "x":\n  goal: g\n  done when "t" passes');
+  assert.deepEqual(file.config.ctxGrants, ["skills", "mcps", "harnesses"]);
+  assert.throws(
+    () => parse('grant ctx: bogus\nloop "x":\n  goal: g\n  done when "t" passes'),
+    /unknown ctx capability group/,
+  );
+});
+
+test("ctx: 'ctx may use my own model' parses provider + model", () => {
+  const file = parse('ctx may use my own model "ollama/llama3.1"\nloop "x":\n  goal: g\n  done when "t" passes');
+  assert.deepEqual(file.config.ownModel, { provider: "ollama", model: "ollama/llama3.1" });
 });
 
 test("parallel stages: 'stages in parallel:' assigns a shared group id", () => {

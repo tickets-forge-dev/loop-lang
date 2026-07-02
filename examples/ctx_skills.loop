@@ -1,0 +1,15 @@
+# ctx as the skill source: instead of naming skills by hand, let ctx recommend and install
+# the smallest useful bundle for the goal — straight into ~/.claude/skills so the loop's
+# skill names resolve. Needs the ctx MCP server attached (claude mcp add ctx -- ctx-mcp-server);
+# with no ctx attached, the loop runs exactly as it would without these lines.
+recommend skills with ctx
+
+loop "harden the stripe webhook handler":
+  goal: webhook retries are idempotent and signature-checked, with tests
+  look at: api/webhooks/stripe.ts, api/webhooks/stripe.test.ts
+  use skills recommended by ctx for "stripe webhook idempotency and signature verification"
+  top up skills from ctx when a step needs more
+  each cycle: plan, then act, then observe
+  done when "pnpm test api/webhooks" passes
+  when it fails: reflect on the failing assertion, then plan again
+  after 6 tries: stop and warn "can't get webhooks green — needs a human"

@@ -76,6 +76,8 @@ allow edits automatically, but ask me before <classes>   action policy
 each cycle: plan, then act, then observe   the repeated steps (any subset, in order)
 also: <pass>, <pass>      extra finishing passes run after the goal is met
 use skills: <a>, <b>      named skills the loop may invoke during plan/act
+use skills recommended by ctx        let ctx pick + install the skills for the goal (needs the ctx MCP server); add `for "<intent>"` to override the query
+top up skills from ctx               run-time: pull more skills from ctx when a cycle fails and reflects (pairs with the line above)
 remember in "<file.md>"   cross-run memory: read lessons on start, append an outcome on stop
 reflect                   turn a failure into context for the next plan (the back-edge)
 
@@ -96,6 +98,9 @@ each cycle: plan, then act, then observe   (config tier: the default cycle for e
 rigor: vibe coding | structured ai-assisted | agentic engineering   (the spectrum dial; structured/agentic give every loop a back-edge + thrash guard for free)
 mode: conductor | orchestrator   (supervision posture: in-session/sync vs async/opens-a-PR)
 runs as: <identity>   (an auditable principal for unattended runs)
+recommend skills with ctx   (config tier: ctx is this file's skill source — recommends + installs skills per loop goal; see "Skill source: ctx" below)
+grant ctx: skills, agents, mcps, harnesses   (config tier: capability groups the file lets ctx recommend; fails closed, default skills+agents; mcps/harnesses are recommend-only)
+ctx may use my own model "<provider>/<model>"   (config tier: declares a user-owned/local/API model — unlocks ctx harness recommendations, always dry-run)
 observe:   (block) trace every cycle / meter tokens and cost / stop and warn if cost exceeds "$N"
 sandbox:   (block) no network access / allow egress to "host" only / cap cpu at … memory at … time at …
 hooks:     (loop body block) before each cycle | after act | on commit | on stop : "<cmd>" passes|finds nothing   (a failing hook blocks)
@@ -111,9 +116,11 @@ stages in parallel:    (inside a pipeline: the indented stages run concurrently)
 done when the test "billing.spec.ts::apostrophe" passes   # a named test
 done when "pnpm test" passes                               # a shell command, exit 0
 done when "semgrep --severity=high" finds nothing          # a shell command, empty output
+done when "pnpm test flaky" passes 3 times                 # flake guard: re-run the check, EVERY run must pass
 done when a human confirms "looks right at 375px"          # a human check
 done when the skill "email-review" approves                # an eval: approved / not
 done when the skill "email-review" scores 8 or more        # an eval: numeric threshold
+done when the skill "code-review" approves by 3 judges     # consensus: N independent verdicts, majority wins
 done when the skill "api-review" scores 8 or more on the output       # an eval of WHAT was produced
 done when the skill "path-review" approves on the trajectory          # an eval of HOW the agent got there
   the bar: didn't weaken a test to go green; no writes outside api/   # the rubric the judge scores against
@@ -121,6 +128,16 @@ done when the skill "path-review" approves on the trajectory          # an eval 
 
 The command in a predicate runs in the user's shell with their privileges (like an npm
 script). It IS meant to be a real command. Prefer a fast, deterministic check.
+
+**Flake guard — `passes N times`.** Append `N times` to a `test` or command predicate to re-run
+it `N` times and require every run to pass (the first failure short-circuits). Reach for it when a
+green can pass by luck — a timing- or order-dependent test — so "done" means "passes *reliably*",
+not "passed *once*".
+
+**Judge panel — `by N judges`.** Append `by N judges` to a skill predicate to collect `N`
+independent verdicts and take the majority (early-exit once decided). A single LM judge wobbles
+near the bar; consensus smooths the noise. The deterministic counterpart of the flake guard:
+flake guard for tests, judge panel for evals.
 
 ### Tests vs evals — list as many `done when` as you need
 
@@ -158,6 +175,58 @@ This is **skill-driven development**: build and battle-test each skill on its ow
 then have the loop coordinate them. Don't invent a loop around skills that don't exist yet —
 prove the skill manually, then wire it in (as an execution skill via `use skills:`, or as a
 verifier via `done when the skill "…" approves`). See `examples/skills_memory.loop`.
+
+### Skill source: ctx — let a recommender pick + install the skills
+
+`use skills:` assumes the skills already exist in `~/.claude/skills`. **ctx**
+([claude-ctx](https://github.com/stevesolun/ctx)) is the recommender that fills that gap:
+point it at a goal and it recommends the smallest useful bundle and installs the skill bodies
+into `~/.claude/skills` — so the names resolve. ctx is the layer beneath Loop; Loop stays the
+top, user-facing layer.
+
+```loop
+recommend skills with ctx               # config tier: ctx is this file's skill source
+
+loop "harden the stripe webhook handler":
+  goal: webhook retries are idempotent and signature-checked, with tests
+  use skills recommended by ctx for "stripe webhook idempotency"   # bake at author time, resolve at run time
+  top up skills from ctx when a step needs more                    # pull more on a failing cycle
+  done when "pnpm test api/webhooks" passes
+```
+
+- **Author time** (`/loopflow`): ctx recommends for the goal, you approve, the names are
+  installed and written into a `use skills:` line so the `.loop` stays self-contained.
+- **Run time** (`loop run`): the runtime resolves `use skills recommended by ctx` via the ctx
+  MCP server before the first plan, and `top up skills from ctx` after a failed cycle reflects.
+- **No ctx attached?** The lines are inert — the loop runs exactly as it would without them.
+
+**Beyond skills — the full capability set.** By default ctx provisions only `skills`
+(and the agents Loop loads the same way). A `grant ctx:` line widens what ctx may recommend to
+any of `skills, agents, mcps, harnesses`, **failing closed** — only listed groups are returned:
+
+```loop
+recommend skills with ctx
+grant ctx: skills, agents, mcps, harnesses          # capability grants (fail-closed)
+ctx may use my own model "ollama/llama3.1"          # unlocks harness recs (dry-run only)
+
+loop "stand up a local agent loop":
+  goal: an MCP agent loop running on local ollama with filesystem access
+  use skills recommended by ctx
+  done when "pytest tests/agent_loop" passes
+```
+
+- **skills / agents** install into `~/.claude/skills` (as before) and merge into the cycle's
+  skill set.
+- **mcps** are **recommend-only**: ctx surfaces fitting MCP servers + a suggested
+  `ctx-mcp-install <name>`; the runtime emits them on a `ctx` event, it never auto-registers one.
+- **harnesses** (autogen, langfuse, …) recommend **only** when you declare a user-owned model
+  (`ctx may use my own model "…"`), and ship as an explicit `ctx-harness-install <name> --dry-run`
+  command — never an automatic install. This is the one capability that pulls real software, so it
+  stays human-gated by design.
+
+Setup: `claude mcp add ctx -- ctx-mcp-server` (needs `pip install claude-ctx`). See
+`examples/ctx_skills.loop`, `examples/ctx_capabilities.loop`, and `docs/ctx-skill-source.md`.
+Full customer-facing walkthrough (setup, own-model, the capability model): `docs/ctx-integration-guide.md`.
 
 ### `remember in` — cross-run memory
 
@@ -381,6 +450,11 @@ flow, show the file chain. `loop-run ls` lists every loop in the repo.
 
 - `loop-run run file.loop` — execute it on Claude Code (plan/act/observe, reflect on failure,
   verify with `done when`, pause at human gates).
+- `loop-run run file.loop --log run.log` — also append every event to a local NDJSON log
+  (secrets are scrubbed before anything is persisted).
+- `loop-run run file.loop --resume run.log` — resume an interrupted run from its log: satisfied
+  stages / flow steps / for-each items are skipped, the first incomplete unit picks up (flow
+  carry-forward summaries restored from the log).
 - `loop-run show file.loop` — print the loop's flow as compact ASCII (and `loop-run ls` to list them).
 - `loop-run explain file.loop` — describe the loop in plain English (a friendly check of what it will do).
 - `loop-run viz file.loop` — open a visual HTML schematic of the flow.

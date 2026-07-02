@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { parse } from "@loop-lang/parser";
-import { run, runDefinition, MockRunner, ScriptedHumanIO } from "../dist/index.js";
+import { run, runDefinition, MockRunner, ScriptedHumanIO, ownModelBinaryWarning } from "../dist/index.js";
 import { MockGitIO } from "../dist/runners/mockGit.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -737,5 +737,137 @@ test("parallel stages run concurrently and all must satisfy", async () => {
   const outcome = await runDefinition(def, {
     runner, verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: "/p",
   });
+  assert.equal(outcome.satisfied, true);
+});
+
+// ---- ctx skill provisioning ----
+
+/** Records provision/topup calls; returns scripted skill names + recommend-only capabilities. */
+class MockCtxAdapter {
+  constructor({ provisionSkills = [], topupSkills = [], capabilities, harnessInstall, warnings } = {}) {
+    this.provisionCalls = [];
+    this.topupCalls = [];
+    this._p = provisionSkills;
+    this._t = topupSkills;
+    this._caps = capabilities;
+    this._harness = harnessInstall;
+    this._warnings = warnings;
+  }
+  _result(useSkills) {
+    return { useSkills, capabilities: this._caps, harnessInstall: this._harness, warnings: this._warnings };
+  }
+  async provision(input) { this.provisionCalls.push(input); return this._result(this._p); }
+  async topup(input) { this.topupCalls.push(input); return this._result(this._t); }
+}
+
+test("ctx: provision merges recommended skills into the first plan", async () => {
+  const def = parse('loop "x":\n  goal: harden webhooks\n  use skills recommended by ctx for "stripe"\n  done when "t" passes').definitions[0];
+  const runner = new MockRunner();
+  const ctx = new MockCtxAdapter({ provisionSkills: ["webhook-idempotency", "signature-check"] });
+  const { events, onEvent } = collect();
+  const outcome = await runDefinition(def, {
+    runner, verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: process.cwd(), ctx, onEvent,
+  });
+  assert.equal(ctx.provisionCalls.length, 1, "provisioned once before the first plan");
+  assert.equal(ctx.provisionCalls[0].intent, "stripe", "passed the explicit intent");
+  assert.deepEqual(runner.planCalls[0].skills, ["webhook-idempotency", "signature-check"]);
+  const ev = events.find((e) => e.type === "ctx" && e.action === "provision");
+  assert.ok(ev && ev.ok === true, "emitted a successful provision event");
+  assert.deepEqual(ev.skills, ["webhook-idempotency", "signature-check"]);
+  assert.equal(outcome.satisfied, true);
+});
+
+test("ctx: a discovery loop runs without a ctx adapter (degrades)", async () => {
+  const def = parse('loop "x":\n  goal: g\n  use skills recommended by ctx\n  done when "t" passes').definitions[0];
+  const runner = new MockRunner();
+  const { events, onEvent } = collect();
+  const outcome = await runDefinition(def, {
+    runner, verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: process.cwd(), onEvent,
+  });
+  const ev = events.find((e) => e.type === "ctx");
+  assert.ok(ev && ev.ok === false, "emitted a skipped ctx event");
+  assert.deepEqual(runner.planCalls[0].skills, [], "no skills, but the loop still ran");
+  assert.equal(outcome.satisfied, true);
+});
+
+test("ctx: provisioned skills extend the hand-named use skills list (dedup)", async () => {
+  const def = parse('loop "x":\n  goal: g\n  use skills: hand-a\n  use skills recommended by ctx\n  done when "t" passes').definitions[0];
+  const runner = new MockRunner();
+  const ctx = new MockCtxAdapter({ provisionSkills: ["hand-a", "ctx-b"] }); // hand-a is a duplicate
+  await runDefinition(def, {
+    runner, verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: process.cwd(), ctx,
+  });
+  assert.deepEqual(runner.planCalls[0].skills, ["hand-a", "ctx-b"], "deduped against the named skill");
+});
+
+test("ctx: top up pulls more skills after a reflection", async () => {
+  const def = parse(
+    'loop "x":\n  goal: g\n  use skills recommended by ctx\n  top up skills from ctx when a step needs more\n' +
+    '  done when "t" passes\n  when it fails: reflect, then plan again'
+  ).definitions[0];
+  const runner = new MockRunner();
+  const ctx = new MockCtxAdapter({ provisionSkills: ["base"], topupSkills: ["extra"] });
+  const { events, onEvent } = collect();
+  const outcome = await runDefinition(def, {
+    runner, verifier: new SeqVerifier([false, true]), human: new ScriptedHumanIO(), baseDir: process.cwd(), ctx, onEvent,
+  });
+  assert.ok(ctx.topupCalls.length >= 1, "topup fired after the failure");
+  assert.deepEqual(runner.planCalls[0].skills, ["base"], "first plan saw the provisioned base skill");
+  assert.deepEqual(runner.planCalls[1].skills, ["base", "extra"], "second plan saw the topped-up skill");
+  const topupEv = events.find((e) => e.type === "ctx" && e.action === "topup");
+  assert.ok(topupEv && topupEv.ok === true);
+  assert.deepEqual(topupEv.skills, ["extra"]);
+  assert.equal(outcome.satisfied, true);
+});
+
+test("ctx: no top up when a loop does not ask for it", async () => {
+  const def = parse(
+    'loop "x":\n  goal: g\n  use skills recommended by ctx\n' +
+    '  done when "t" passes\n  when it fails: reflect, then plan again'
+  ).definitions[0];
+  const runner = new MockRunner();
+  const ctx = new MockCtxAdapter({ provisionSkills: ["base"], topupSkills: ["extra"] });
+  await runDefinition(def, {
+    runner, verifier: new SeqVerifier([false, true]), human: new ScriptedHumanIO(), baseDir: process.cwd(), ctx,
+  });
+  assert.equal(ctx.topupCalls.length, 0, "no top up without `top up skills from ctx`");
+});
+
+test("ctx: own-model binary warning fires only for a missing LOCAL provider binary", () => {
+  const ollama = { provider: "ollama", model: "ollama/llama3.1" };
+  // local provider, binary missing -> warn
+  assert.match(ownModelBinaryWarning(ollama, () => false), /`ollama` binary isn't on PATH/);
+  // local provider, binary present -> silent
+  assert.equal(ownModelBinaryWarning(ollama, () => true), null);
+  // API/unknown provider has no local binary -> silent even if onPath is false
+  assert.equal(ownModelBinaryWarning({ provider: "openai", model: "gpt-4o" }, () => false), null);
+  // no own-model declared -> silent
+  assert.equal(ownModelBinaryWarning(undefined, () => false), null);
+});
+
+test("ctx: grants + own model thread to provision; mcps/harnesses surface but never merge into skills", async () => {
+  const def = parse('loop "x":\n  goal: build a local agent loop\n  use skills recommended by ctx\n  done when "t" passes').definitions[0];
+  const runner = new MockRunner();
+  const ctx = new MockCtxAdapter({
+    provisionSkills: ["fastapi-patterns"],
+    capabilities: { mcps: ["local-ollama-files"], harnesses: ["autogen"] },
+    harnessInstall: "ctx-harness-install autogen --dry-run",
+    warnings: [],
+  });
+  const { events, onEvent } = collect();
+  const outcome = await runDefinition(def, {
+    runner, verifier: new SeqVerifier([true]), human: new ScriptedHumanIO(), baseDir: process.cwd(), ctx, onEvent,
+    ctxGrants: ["skills", "agents", "mcps", "harnesses"],
+    ownModel: { provider: "ollama", model: "ollama/llama3.1" },
+  });
+  // The engine threads the file's grants + own model into the provision input.
+  assert.deepEqual(ctx.provisionCalls[0].permissions, ["skills", "agents", "mcps", "harnesses"]);
+  assert.deepEqual(ctx.provisionCalls[0].ownModel, { provider: "ollama", model: "ollama/llama3.1" });
+  // Skills merge into the plan; mcps/harnesses are recommend-only and must NOT enter the skill set.
+  assert.deepEqual(runner.planCalls[0].skills, ["fastapi-patterns"]);
+  const ev = events.find((e) => e.type === "ctx" && e.action === "provision");
+  assert.deepEqual(ev.mcps, ["local-ollama-files"]);
+  assert.deepEqual(ev.harnesses, ["autogen"]);
+  assert.equal(ev.harnessInstall, "ctx-harness-install autogen --dry-run");
   assert.equal(outcome.satisfied, true);
 });

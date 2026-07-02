@@ -255,6 +255,7 @@ function renderEvent(e: any): string | null {
     case "pipeline-start": return `▶ pipeline "${e.name}"`;
     case "stage-start": return `  ■ stage "${e.name}"`;
     case "stage-end": return `  ■ stage "${e.name}" → ${e.satisfied ? "satisfied" : "FAILED"}`;
+    case "resumed": return `  ⏩ ${e.unit} ${e.name ? `"${e.name}"` : ""}${e.index !== undefined ? ` #${e.index + 1}` : ""} — resumed`;
     case "loop-start": return `↻ loop ${e.name ? `"${e.name}"` : ""}`.trimEnd();
     case "node-enter": return `    · ${e.node} (try ${e.attempt})`;
     case "observe": return `    = ${e.passed ? "PASS" : "fail"}${e.output ? ` — ${String(e.output).split("\n")[0].slice(0, 80)}` : ""}`;

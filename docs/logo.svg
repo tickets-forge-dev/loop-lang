@@ -1,0 +1,5 @@
+<svg width="256" height="256" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LoopFlow">
+  <!-- The LoopFlow mark: one ring, one gap — the loop that hasn't closed yet (still iterating). -->
+  <circle cx="12" cy="12" r="8.5" fill="none" stroke="#34e0c4" stroke-width="3.6"
+          stroke-linecap="round" stroke-dasharray="42.2 11.2"/>
+</svg>

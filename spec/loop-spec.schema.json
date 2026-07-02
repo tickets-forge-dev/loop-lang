@@ -89,6 +89,30 @@
         "runsAs": {
           "type": "string",
           "description": "Identity the run executes as (`runs as: …`) — an auditable principal for unattended runs."
+        },
+        "skillSource": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider"],
+          "description": "External skill recommender for the whole file (`recommend skills with ctx`). Picks + installs skills per loop goal so `use skills recommended by ctx` lines resolve.",
+          "properties": {
+            "provider": { "type": "string", "enum": ["ctx"] }
+          }
+        },
+        "ctxGrants": {
+          "type": "array",
+          "description": "Capability groups this file grants ctx (`grant ctx: skills, agents, mcps, harnesses`). Threaded to ctx as permissions; fails closed, default skills+agents. mcps/harnesses are recommend-only; harnesses also require `ownModel`.",
+          "items": { "type": "string", "enum": ["skills", "agents", "mcps", "harnesses"] }
+        },
+        "ownModel": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider", "model"],
+          "description": "A user-owned/local/API model (`ctx may use my own model \"<provider>/<model>\"`) — unlocks ctx harness recommendations (gated, dry-run only).",
+          "properties": {
+            "provider": { "type": "string" },
+            "model": { "type": "string" }
+          }
         }
       }
     },
@@ -248,6 +272,21 @@
           "type": "array",
           "description": "MCP servers whose tools the loop may use (`use tools from the \"github\" server`).",
           "items": { "type": "string" }
+        },
+        "skillDiscovery": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider"],
+          "description": "ctx skill discovery (`use skills recommended by ctx [for \"<intent>\"]`). loopflow bakes resolved names into `skills` at author time; this record persists so a headless run re-resolves the bundle from ctx.",
+          "properties": {
+            "provider": { "type": "string", "enum": ["ctx"] },
+            "intent": { "type": "string", "description": "Optional override for what to recommend against; defaults to the loop's goal." }
+          }
+        },
+        "skillTopUp": {
+          "type": "boolean",
+          "description": "Pull more skills from ctx mid-loop when a step needs more (`top up skills from ctx …`).",
+          "default": false
         },
         "memory": {
           "description": "Cross-run memory: a markdown file the loop reads on start (its lessons feed the first plan) and appends an outcome entry to on stop.",

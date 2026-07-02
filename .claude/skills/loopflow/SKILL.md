@@ -41,6 +41,8 @@ allow edits automatically, but ask me before <classes>   action policy
 each cycle: plan, then act, then observe   the repeated steps (any subset, in order)
 also: <pass>, <pass>      extra finishing passes after the goal is met
 use skills: <a>, <b>      named skills the loop may invoke during plan/act
+use skills recommended by ctx   ctx recommends + installs the skills for the goal (needs the ctx MCP server); add `for "<intent>"` to override the query
+top up skills from ctx    run-time: pull more skills from ctx when a cycle fails and reflects
 remember in "<file.md>"   cross-run memory: read lessons on start, append an outcome on stop
 when it fails: reflect on <focus>, then plan again
 when it passes and the goal is met: stop
@@ -57,6 +59,9 @@ models: fast <m>, strong <m> model tiering — plan/reflect/also→fast, act→s
 schedule: <when>             run unattended on a cadence
 runner: <agent>              which agent executes the loop
 target: <dir>                operate on another directory/repo
+recommend skills with ctx    ctx is this file's skill source — recommends + installs skills per loop goal
+grant ctx: skills, agents, mcps, harnesses   capability groups ctx may recommend (fail-closed; default skills+agents; mcps/harnesses are recommend-only)
+ctx may use my own model "<provider>/<model>"   declares a user-owned model — unlocks harness recommendations (dry-run only)
 ```
 
 Predicates:
@@ -157,6 +162,34 @@ Walk these quickly, naming the keyword each time so they learn it:
 
 Don't forget the menu in Step 2 also covers `use the <method> method` — pull a whole
 preset (e.g. BMAD) instead of hand-picking passes.
+
+### Skill discovery — offer ctx when the right skills aren't named yet
+
+`use skills:` assumes the skills already exist in `~/.claude/skills`. If the user doesn't
+already know which skills the loop needs, offer to let **ctx**
+([claude-ctx](https://github.com/stevesolun/ctx)) pick them: it recommends the smallest
+useful bundle for the goal and installs the bodies, so the names resolve. It is **opt-in**
+and only works when the ctx MCP server is attached (`claude mcp add ctx -- ctx-mcp-server`).
+
+When ctx's tools are available (`ctx__loop_provision`, `ctx__recommend_bundle`):
+1. After the goal is set, call `ctx__recommend_bundle` (read-only preview) or
+   `ctx__loop_provision` with the goal — show the user the recommended skills with their
+   reasons before installing anything.
+2. On approval, `ctx__loop_provision` installs them and returns the resolved names. Write a
+   real `use skills: <names>` line **and** a `use skills recommended by ctx` line — the
+   first keeps the `.loop` self-contained and reproducible; the second lets a headless
+   `loop run` re-resolve the bundle from ctx.
+3. Offer `top up skills from ctx` if the loop should pull more skills when a cycle fails.
+4. **Beyond skills** — if the goal needs more than skills, add a `grant ctx: skills, agents,
+   mcps, harnesses` line for the groups that apply (fail-closed; omit it for skills-only).
+   `mcps` and `harnesses` are **recommend-only** — ctx surfaces them with an install command
+   the user runs; the loop never auto-installs them. Harnesses additionally need a
+   `ctx may use my own model "<provider>/<model>"` line, and always come as a `--dry-run`
+   command. Pass the granted groups (and own-model) to `ctx__loop_provision` as `permissions` /
+   `own_llm` / `model_provider` / `model`.
+
+When ctx is **not** attached, skip this silently and author `use skills:` by hand as usual —
+the loop runs the same either way.
 
 Offer the defaults inline (*"I'll add a tests + security pass, gate the migration, a
 6-try guard, work on a branch, one model throughout, no schedule — sound right?"*) so the
@@ -280,6 +313,13 @@ the user explicitly asks for the headless runner.)
    - **plan** — inspect the `look at:` files; decide the smallest change toward the goal.
      If the loop declares `use skills:`, you may invoke those named skills (via the Skill
      tool) to do the work — coordinate them rather than re-deriving everything inline.
+   - **ctx skills** — if the loop declares `recommend skills with ctx` /
+     `use skills recommended by ctx`, resolve the bundle once at the start of the run: call
+     `ctx__loop_provision` with the goal (and any `for "<intent>"`) to install the skills
+     and get their names, then treat those as part of `use skills:` for this run. If the
+     loop also says `top up skills from ctx`, call `ctx__loop_topup` with your reflection
+     after a failed cycle and fold any new skills in before re-planning. If the ctx tools
+     aren't attached, skip this and run with whatever `use skills:` already names.
    - **act** — make the edits. Honor the policy: for `ask me before <X>`, ask the user
      before doing X (migrations, pushes, etc.); auto classes you may do directly.
    - **observe** — run the `done when` check and read pass/fail. For a command or named test,

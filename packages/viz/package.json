@@ -1,6 +1,6 @@
 {
   "name": "@loop-lang/viz",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Render a LoopFlow loop-spec as a self-contained HTML control-loop schematic — the plan/act/observe cycle and the reflect back-edge, made visible.",
   "license": "Apache-2.0",
   "type": "module",
@@ -36,7 +36,7 @@
     "src"
   ],
   "dependencies": {
-    "@loop-lang/parser": "0.3.0"
+    "@loop-lang/parser": "0.4.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
