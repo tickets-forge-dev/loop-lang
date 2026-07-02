@@ -20,7 +20,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build           # build all workspaces so parser/runtime/viz types exist
-      - run: npm run build -w loop-vscode   # syncs the template library + bundles
+      - run: npm run build -w loopflow      # syncs the template library + bundles (renamed from loop-vscode)
       - run: npx --yes @vscode/vsce@latest publish --no-dependencies
         working-directory: packages/vscode
         env:
