@@ -219,6 +219,7 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
     <li><a href="#start">Install + first loop</a></li>
     <li class="grp">Core syntax · the five decisions</li>
     <li><a href="#donewhen">done when — verify</a></li>
+    <li><a href="#trust">Why done can't be faked</a></li>
     <li><a href="#material">Context &amp; knowledge</a></li>
     <li><a href="#cycle">The cycle + reflect</a></li>
     <li><a href="#humans">Human gates</a></li>
@@ -503,6 +504,34 @@ loop "fix the failing auth test":
       <li>A loop with <em>no</em> <code class="inl">done when</code> has no machine check, so it must finish through a human path — a review gate, an approved plan-first pass (a plan-only loop), or an explicit <code class="inl">when …: stop</code> — otherwise it runs to the hard cap. Always give it a real check when one exists.</li>
     </ul>
   </div>
+</section>
+
+<!-- why you can't fake done -->
+<section id="trust">
+  <h2>Why "done" can't be faked <span class="badge b-basic">the trust model</span></h2>
+  <p>The most common question about LoopFlow: <em>the model says it's done — why should I believe it?</em> You shouldn't. Nobody asks the model. <strong>The verdict never comes out of the model's mouth.</strong></p>
+  <p>At the <code class="inl">observe</code> step, the <strong>runtime</strong> — plain deterministic code, not the LLM — spawns your check as a real OS process and reads the <strong>exit code from the operating system</strong>. Exit 0 = pass. Anything else = fail. Between cycles the model can claim whatever it likes; the loop stops only when the process <em>your machine ran</em> returns 0. The model does the work. The OS grades it.</p>
+
+  <p><strong>The forces that decide "done", stacked worst-case to best-case:</strong></p>
+  <table>
+    <tr><th>Force</th><th>What it defends against</th><th>The line</th></tr>
+    <tr><td><strong>The exit code</strong></td><td>the model's own claim of success</td><td><code class="inl">done when "pnpm test" passes</code></td></tr>
+    <tr><td><strong>Output emptiness</strong></td><td>a scanner that "passed" by printing warnings</td><td><code class="inl">done when "semgrep …" finds nothing</code></td></tr>
+    <tr><td><strong>The conjunction</strong></td><td>passing one check while failing another — <em>all</em> <code class="inl">done when</code> lines must pass</td><td>list several</td></tr>
+    <tr><td><strong>The flake guard</strong></td><td>one lucky green on a flaky test</td><td><code class="inl">passes 3 times</code></td></tr>
+    <tr><td><strong>The judge panel</strong></td><td>a single LM judge's generous moment, on subjective work</td><td><code class="inl">the skill "review" approves by 3 judges</code> — independent verdicts, majority wins, every vote logged</td></tr>
+    <tr><td><strong>The trajectory eval</strong></td><td>the agent gaming the check itself — e.g. weakening a test to go green</td><td><code class="inl">approves on the trajectory</code> + <code class="inl">the bar: didn't weaken a test to pass</code></td></tr>
+    <tr><td><strong>Action gates</strong></td><td>the agent touching what it shouldn't to get to green</td><td><code class="inl">ask me before editing tests</code></td></tr>
+    <tr><td><strong>The try ceiling</strong></td><td>an unfixable goal burning tokens forever</td><td><code class="inl">after 6 tries: stop and warn "…"</code></td></tr>
+  </table>
+
+  <div class="key"><span class="kt">The honest caveat</span>
+    <ul>
+      <li>The agent can't fake an exit code — but it <em>could</em> try to game the check itself (weaken the test, hard-code the answer). That's exactly what the bottom half of the table exists for: gate test-file edits, demand repeat greens, and put a trajectory judge on <em>how</em> it got there, not just that it did.</li>
+      <li>Your check runs with <strong>your privileges</strong>, in the loop's working directory, with your shell env — a test runner that exits 0 on failure will make the loop lie to you. The check is the loop's definition of reality; write it like you mean it.</li>
+    </ul>
+  </div>
+  <p class="sub">Full mechanics — every factor that can flip a verdict (working dir, env, truncation, the npm-test desugar) — in <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md#how-verification-works--what-done-actually-depends-on">the manual</a>.</p>
 </section>
 
 <!-- 4 -->

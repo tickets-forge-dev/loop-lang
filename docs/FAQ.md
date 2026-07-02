@@ -138,6 +138,16 @@ and a more capable model executing the wrong unstated goal *faster* is not an im
 anything, the better the model, the more the bottleneck moves to authoring intent clearly, which
 is the exact thing LoopFlow makes editable.
 
+## Can't the model just fake "done"?
+
+No — nobody asks it. At the `observe` step the **runtime** (deterministic code, not the LLM)
+spawns your `done when` command as a real OS process and reads the **exit code from the
+operating system**. The model can claim success all it likes; the loop stops only when the
+process your machine ran returns 0. For subjective checks, `approves by 3 judges` takes a
+majority of independent LM verdicts. For the sneakier move — gaming the check itself — see
+the next answer. The full trust stack, force by force:
+[Why "done" can't be faked](https://loopflow.live/#trust).
+
 ## The model can just ignore your gates and constraints.
 
 The model-interpreted parts can drift — but the load-bearing parts aren't left to the model:
