@@ -179,14 +179,14 @@ entries:
     verify_as: "restore drill passes end to end"
   - slug: dependency-triage-loop
     title: "The dependency triage loop"
-    category: engineering
+    category: operations
     author: "Damian Galarza (@dgalarza)"
     source: "https://signals.forwardfuture.com/loop-library/loops/dependency-triage-loop/"
     concept: "Use this when a repository has several open Dependabot pull requests and an authorized maintainer wants them reviewed safely without stale c"
     verify_as: "each dep PR: CI green then merged or closed"
   - slug: nightly-changelog-sweep
     title: "The nightly changelog loop"
-    category: engineering
+    category: content
     author: "Matthew Berman"
     source: "https://signals.forwardfuture.com/loop-library/loops/nightly-changelog-sweep/"
     concept: "Use this when a project changes frequently enough that user-facing release notes can drift from merged pull requests, commits, deployments,"

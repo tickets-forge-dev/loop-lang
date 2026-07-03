@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="/gyro-icon.svg" />
+<title>Loop market — verified .loop workflows</title>
+<meta name="description" content="A library of verified LoopFlow workflows: every loop parses, carries a machine-checkable done-when, and is reviewed as a pull request before it ships." />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Loop market — verified .loop workflows" />
+<meta property="og:description" content="Copy-and-adapt loops with real verification: flake guards, judge panels, finds-nothing scans. Every entry CI-validated." />
+<meta property="og:url" content="https://loopflow.live/market/" />
+<meta property="og:image" content="https://loopflow.live/assets/og-card.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://loopflow.live/assets/og-card.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  /* brand: tutorial tokens verbatim (design.md → brand) */
+  :root{
+    --bg:#0b0d12; --card:#0e1118; --ink:#eef2f7; --muted:#94a1b2; --line:rgba(255,255,255,.1);
+    --teal:#34e0c4; --orange:#ffb45a; --pink:#ff86c2; --blue:#84b6ff; --green:#9be58f;
+    --mono:"Ubuntu Mono",ui-monospace,monospace; --ui:"Ubuntu",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--blue)}
+  button{font-family:var(--ui)}
+  :focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:4px}
+
+  header{display:flex;align-items:center;gap:12px;padding:16px 26px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  header svg{flex:none}
+  header h1{font-size:17px;margin:0;font-weight:700}
+  header .tag{font-size:12.5px;color:var(--muted)}
+  header .grow{flex:1}
+  .submit-btn{display:inline-block;background:var(--teal);color:#0b0d12;font-weight:700;font-size:13.5px;
+    padding:8px 14px;border-radius:9px;text-decoration:none}
+  .backlink{font-size:13px;margin-right:6px}
+
+  .bar{max-width:1240px;margin:26px auto 6px;padding:0 26px}
+  .bar .hint{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+  .bar .hint b{color:var(--teal)}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  #q{flex:1;min-width:220px;background:var(--card);border:1px solid var(--line);border-radius:10px;
+     color:var(--ink);font-family:var(--ui);font-size:14px;padding:10px 14px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{background:var(--card);border:1px solid var(--line);color:var(--muted);font-size:12.5px;
+        padding:7px 12px;border-radius:999px;cursor:pointer}
+  .chip[aria-pressed="true"]{color:#0b0d12;background:var(--teal);border-color:var(--teal);font-weight:700}
+  #count{color:var(--muted);font-size:12.5px;margin:10px 2px 0}
+
+  /* layout: auto-fill grid, 360px min (design.md → layout) */
+  .grid{max-width:1240px;margin:16px auto 60px;padding:0 26px;display:grid;
+        grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
+  @media (max-width:720px){.grid{grid-template-columns:1fr}}
+
+  /* card anatomy (design.md → card) */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:9px}
+  .card .top{display:flex;align-items:center;gap:8px}
+  .badge{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#0b0d12;
+         padding:3px 9px;border-radius:999px}
+  .b-engineering{background:var(--teal)} .b-evaluation{background:var(--orange)}
+  .b-design{background:var(--pink)} .b-operations{background:var(--blue)} .b-content{background:var(--green)}
+  .glyph{color:var(--muted);font-family:var(--mono);font-size:15px;margin-left:auto}
+  .card h2{font-size:18px;margin:0;font-weight:700;line-height:1.3}
+  .goal{color:var(--muted);font-size:13.5px;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .dw{font-family:var(--mono);font-size:13px;color:var(--teal);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0}
+  .dw::before{content:"done when ";color:var(--muted)}
+  .foot{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:6px}
+  .author{font-size:12px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .author a{color:var(--muted)}
+  .btn{background:transparent;border:1px solid var(--line);color:var(--ink);font-size:12.5px;
+       padding:6px 12px;border-radius:8px;cursor:pointer}
+  .btn:hover{border-color:var(--teal)}
+  .btn.copied{color:var(--teal);border-color:var(--teal)}
+
+  /* detail: inline expand (design.md → detail view) */
+  .src{display:none;margin-top:4px}
+  .card.open .src{display:block}
+  .src pre{background:#0b0e14;border:1px solid var(--line);border-radius:10px;padding:14px;overflow:auto;
+           font-family:var(--mono);font-size:12.5px;line-height:1.6;color:#c9d4e0;margin:0;max-height:420px}
+  .src .meta{font-size:12px;color:var(--muted);margin:8px 2px 0}
+
+  /* states (design.md → states) */
+  .empty{max-width:1240px;margin:40px auto;padding:0 26px;color:var(--muted);display:none}
+  .empty button{margin-left:8px}
+
+  .cta{max-width:1240px;margin:0 auto 70px;padding:26px;border:1px solid rgba(52,224,196,.35);border-radius:14px;
+       background:linear-gradient(180deg,rgba(52,224,196,.07),transparent)}
+  .cta h2{margin:0 0 6px;font-size:17px}
+  .cta p{margin:0 0 14px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<header>
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="#34e0c4" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="42.2 11.2"/></svg>
+  <h1>Loop market</h1>
+  <span class="tag">verified .loop workflows — every entry parses, checks itself, and shipped through a reviewed PR</span>
+  <span class="grow"></span>
+  <a class="backlink" href="../index.html">← the tutorial</a>
+  <a class="submit-btn" href="https://github.com/tickets-forge-dev/loop-lang/new/master/marketplace/loops" rel="noopener">＋ Submit your loop</a>
+</header>
+
+<div class="bar">
+  <p class="hint">The bar for every loop here: <b>parses</b> + <b>a machine-checkable done when</b> + <b>attribution</b> — CI enforces it on every submission.</p>
+  <div class="controls">
+    <input id="q" type="search" placeholder="Search loops — title, goal, author…" aria-label="Search loops" />
+    <div class="chips" id="chips" role="group" aria-label="Filter by category"></div>
+  </div>
+  <div id="count" aria-live="polite"></div>
+</div>
+
+<div class="grid" id="grid"></div>
+<div class="empty" id="empty">No loops match — <button class="btn" id="reset">clear the filters</button></div>
+
+<div class="cta">
+  <h2>Built a loop worth sharing?</h2>
+  <p>Uploads are pull requests: add a <code>.loop</code> under <code>marketplace/loops/</code>, CI runs the same validator you see above, a maintainer reviews, merge = published. Attribution required, prose-only verification rejected.</p>
+  <a class="submit-btn" href="https://github.com/tickets-forge-dev/loop-lang/blob/master/marketplace/CONTRIBUTING.md" rel="noopener">Read the bar → CONTRIBUTING.md</a>
+</div>
+
+<script>
+const CATS = ["all","engineering","evaluation","design","operations","content"];
+let DATA = [], active = "all", query = "";
+
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+
+function render() {
+  const grid = document.getElementById("grid");
+  const hits = DATA.filter((e) =>
+    (active === "all" || e.category === active) &&
+    (!query || (e.title + " " + e.goal + " " + e.author + " " + e.keywords).toLowerCase().includes(query)));
+  document.getElementById("count").textContent = `${hits.length} loop${hits.length === 1 ? "" : "s"}`;
+  document.getElementById("empty").style.display = hits.length ? "none" : "block";
+  grid.innerHTML = hits.map((e, i) => `
+    <article class="card" data-i="${DATA.indexOf(e)}">
+      <div class="top">
+        <span class="badge b-${e.category}">${e.category}</span>
+        <span class="glyph" title="${e.shape}">${e.glyph} ${e.shape}</span>
+      </div>
+      <h2>${esc(e.title)}</h2>
+      <p class="goal">${esc(e.goal)}</p>
+      <p class="dw">${esc(e.doneWhen)}</p>
+      <div class="foot">
+        <span class="author">concept via ${e.source ? `<a href="${esc(e.source)}" rel="noopener">${esc(e.author)}</a>` : esc(e.author)}</span>
+        <button class="btn copy" aria-label="Copy ${esc(e.title)} source">Copy</button>
+        <button class="btn view" aria-expanded="false" aria-label="View ${esc(e.title)} source">View</button>
+      </div>
+      <div class="src"><pre>${esc(e.text)}</pre>
+        <p class="meta">${e.concept ? esc(e.concept) : ""}</p>
+      </div>
+    </article>`).join("");
+}
+
+document.getElementById("grid").addEventListener("click", async (ev) => {
+  const btn = ev.target.closest("button"); if (!btn) return;
+  const card = btn.closest(".card");
+  const entry = DATA[+card.dataset.i];
+  if (btn.classList.contains("copy")) {
+    await navigator.clipboard.writeText(entry.text);
+    btn.textContent = "✓ copied"; btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1200);
+  } else if (btn.classList.contains("view")) {
+    const open = card.classList.toggle("open");
+    btn.setAttribute("aria-expanded", String(open));
+    btn.textContent = open ? "Hide" : "View";
+  }
+});
+
+document.getElementById("q").addEventListener("input", (e) => { query = e.target.value.trim().toLowerCase(); render(); });
+document.getElementById("reset").addEventListener("click", () => {
+  query = ""; active = "all"; document.getElementById("q").value = "";
+  document.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.cat === "all")));
+  render();
+});
+
+fetch("catalog.json").then((r) => r.json()).then((cat) => {
+  DATA = cat.entries;
+  // sort: category → title (design.md → discovery)
+  DATA.sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
+  const chips = document.getElementById("chips");
+  chips.innerHTML = CATS.map((c) => {
+    const n = c === "all" ? DATA.length : DATA.filter((e) => e.category === c).length;
+    return `<button class="chip" data-cat="${c}" aria-pressed="${c === "all"}">${c} (${n})</button>`;
+  }).join("");
+  chips.addEventListener("click", (ev) => {
+    const chip = ev.target.closest(".chip"); if (!chip) return;
+    active = chip.dataset.cat;
+    document.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c === chip)));
+    render();
+  });
+  render();
+}).catch(() => {
+  document.getElementById("count").innerHTML = 'Could not load the catalog — <a href="javascript:location.reload()">retry</a>';
+});
+</script>
+</body>
+</html>
