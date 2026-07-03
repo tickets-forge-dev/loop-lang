@@ -254,6 +254,10 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
 
 <main>
 <header class="hero">
+  <a href="market/" style="display:flex;align-items:center;gap:10px;margin:0 0 18px;padding:10px 16px;border:1px solid rgba(52,224,196,.4);border-radius:999px;background:linear-gradient(90deg,rgba(52,224,196,.1),rgba(255,255,255,.02));text-decoration:none;font-size:13.5px;color:var(--ink);width:fit-content;flex-wrap:wrap">
+    <span style="background:var(--fwd);color:#0b0d12;font-weight:700;font-size:11px;letter-spacing:.08em;padding:3px 9px;border-radius:999px">NEW</span>
+    <b>The Loop market is open</b><span style="color:var(--muted)">— 29 verified workflows, every one with a real <code class="inl">done when</code></span><span style="color:var(--fwd);font-weight:700">→</span>
+  </a>
   <h1>Stop babysitting the agent.</h1>
   <div class="lede">Write the goal <em>once</em> — the loop plans, acts, reflects on red, and stops only when the check is green, at the gates you set.</div>
   <p class="sub">LoopFlow is a small natural-language DSL for <strong>loop engineering</strong>. A <code class="inl">.loop</code> file describes a self-correcting, human-gated coding workflow — its objective, the context it may read, the actions it may take, how it verifies itself, and when it stops. This page teaches the whole language from the first line to full A-to-Z pipelines, every section grounded in a real example you can run.</p>
@@ -476,8 +480,9 @@ loop "fix the failing auth test":
   <div class="note"><b>Safe from the first run:</b> with no <code class="inl">git:</code> block, LoopFlow works on a branch and commits when the goal is met, and <strong>never pushes to <code class="inl">main</code>/<code class="inl">master</code></strong> — see the <a href="keywords/git.html">git</a> keyword.</div>
 
   <h3>Rather learn hands-on?</h3>
-  <p>Three guided ways to get the language into your fingers before the deep dive below:</p>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:10px 0 2px">
+  <p>Four guided ways to get the language into your fingers before the deep dive below:</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 2px">
+    <a href="market/" style="display:block;padding:13px 15px;border:1px solid color-mix(in srgb,var(--fwd) 40%,var(--line));border-radius:11px;color:var(--fwd);font-weight:700;font-size:14px;text-align:center;">🛒 Loop market — start from a real one →<span style="display:block;color:var(--muted);font-weight:500;font-size:12px;margin-top:3px">29 verified workflows: copy, adapt, or submit yours</span></a>
     <a href="playground.html" style="display:block;padding:13px 15px;border:1px solid color-mix(in srgb,var(--blue) 40%,var(--line));border-radius:11px;color:var(--blue);font-weight:700;font-size:14px;text-align:center;">⚡ Playground — try it live →<span style="display:block;color:var(--muted);font-weight:500;font-size:12px;margin-top:3px">type a .loop, see its shape — right in the browser</span></a>
     <a href="workshop.html" style="display:block;padding:13px 15px;border:1px solid color-mix(in srgb,var(--fwd) 40%,var(--line));border-radius:11px;color:var(--fwd);font-weight:700;font-size:14px;text-align:center;">🛠️ Workshop — learn by doing →<span style="display:block;color:var(--muted);font-weight:500;font-size:12px;margin-top:3px">build a small todo app, one loop at a time</span></a>
     <a href="game.html" style="display:block;padding:13px 15px;border:1px solid color-mix(in srgb,var(--gate) 40%,var(--line));border-radius:11px;color:var(--gate);font-weight:700;font-size:14px;text-align:center;">🎮 LoopFlow Lab — learn by playing →<span style="display:block;color:var(--muted);font-weight:500;font-size:12px;margin-top:3px">an interactive game of loop engineering</span></a>
