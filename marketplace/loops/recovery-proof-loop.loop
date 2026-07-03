@@ -1,0 +1,17 @@
+# The recovery proof loop — a backup you haven't restored is a rumor.
+# concept via Eric Lott — https://signals.forwardfuture.com/loop-library/loops/recovery-proof-loop/
+# The drill is the verification: restore the latest backup into a clean environment,
+# run the integrity suite against the restored system, and record the evidence.
+# Anything touching live systems is gated — the drill must never become the incident.
+
+loop "recovery proof":
+  goal: the latest backup restores into a clean environment and passes the integrity suite, with the drill recorded as evidence
+  done when "bash scripts/restore-drill.sh" passes    # TODO: restore to an isolated env + integrity checks + write the drill record
+
+  look at: the backup manifest, the restore runbook, the last drill record, and the last failure
+  allow edits automatically, but ask me before touching any production system or live credential
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on which restore step or integrity check failed, then plan again
+  when blocked: ask a human
+  after 5 tries: stop and warn "recovery drill failing — treat as an incident because the backups may be bad"

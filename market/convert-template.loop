@@ -1,0 +1,17 @@
+# Per-entry template — the for-each hands one curated entry (slug, title, author,
+# source, concept) in as context. Write an ORIGINAL .loop implementing the concept:
+# a real machine-checkable `done when` (never prose), scoped look-at, a reflect
+# back-edge, a thrash guard, gates where the concept touches anything risky.
+# Header comment must attribute: concept via <author>, <source url>.
+# Follow the authoring order: contract → boundaries → engine → safety net.
+
+loop "convert one concept to a verified .loop":
+  goal: marketplace/loops/<slug>.loop exists, implements the entry's concept with a real done-when, carries the attribution header, and passes the marketplace validator
+  done when "node market/validate-marketplace.mjs" passes
+
+  look at: the curated entry in context, AGENTS.md, templates/bugfix.loop, and the last failure
+  allow edits automatically
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the validator output, then plan again
+  after 3 tries: stop and warn "conversion stuck on this entry"

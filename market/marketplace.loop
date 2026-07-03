@@ -1,0 +1,17 @@
+# The loop that builds the loop marketplace.
+# Storage decision: the Git repo IS the registry — marketplace/loops/*.loop,
+# uploads are PRs, CI validates every submission with the real parser.
+# Source data: market/ff-loops.json (70 community loop concepts, scanned 2026-07-03).
+
+git:
+  work on a branch "loop-market"
+  commit each story
+
+flow "loop marketplace":
+  run "curate.loop"
+  then for each entry in "curated.yaml":
+    run "convert-template.loop"
+  then run "design.loop"
+  then run "site.loop"
+  then run "uploads.loop":
+    a human approves first

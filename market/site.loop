@@ -1,0 +1,18 @@
+# Stage 3 — the gallery. A static market page on loopflow.live in the tutorial's
+# visual language: search + category filter, one card per loop (title, goal, the
+# done-when line, shape glyph, author attribution, Copy + View source), reading a
+# catalog.json generated from marketplace/loops/ by the real parser.
+
+loop "build the marketplace page":
+  goal: market/build-catalog.mjs parses every marketplace/loops/*.loop into docs/market/catalog.json, docs/market/index.html renders the gallery (search, category filter, copy button, attribution), and the tutorial nav links it
+  done when "node market/build-catalog.mjs && node market/check-site.mjs" passes
+
+  look at: market/design.md, docs/playground.html, docs/index.html, marketplace/loops/, and the last failure
+  allow edits automatically, but ask me before touching docs/index.html nav
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the failing check, then plan again
+  when blocked: ask a human
+  after 5 tries: stop and warn "market page stuck"
+
+  a human reviews before stopping

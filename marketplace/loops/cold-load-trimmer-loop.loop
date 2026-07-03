@@ -1,0 +1,17 @@
+# The cold-load trimmer — a first visit that doesn't download the world.
+# concept via Christian Katzmann — https://signals.forwardfuture.com/loop-library/loops/cold-load-trimmer-loop/
+# A bundle-size budget the build must clear, plus a green suite so trimming never
+# breaks behavior. Gate dependency removal — dropping a package is the classic
+# fast-but-wrong trim.
+
+loop "cold-load trimmer":
+  goal: the first-visit payload is under budget with all features intact
+  done when "node scripts/bundle-budget.mjs --max 250kb" passes   # TODO: your budget + bundler stats source
+  done when "npm test" passes
+
+  look at: the bundler's stats output, the heaviest chunks, lazy-load boundaries, and the last failure
+  allow edits automatically, but ask me before removing a dependency or a feature flag
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the single heaviest remaining chunk, then plan again
+  after 8 tries: stop and warn "cold load stuck — remaining weight may be product surface"

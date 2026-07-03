@@ -1,0 +1,18 @@
+# Stage 4 — the upload rails. Uploads ARE pull requests: a submission guide, a PR
+# template, a "Submit your loop" path on the market page (prefilled GitHub new-file
+# URL), and a CI job that validates every marketplace loop with the real parser +
+# linter — so a merged PR is a published, verified loop. Human-gated: this touches
+# CI and the public contribution surface.
+
+loop "open the marketplace for uploads":
+  goal: marketplace/CONTRIBUTING.md explains the PR path and the bar (real done-when, attribution, no secrets), a pull-request template covers it, .github/workflows/marketplace.yml runs the validator on PRs, and the market page links "Submit your loop"
+  done when "node market/validate-marketplace.mjs --with-ci" passes
+
+  look at: .github/workflows/ci.yml, market/validate-marketplace.mjs, docs/market/index.html, and the last failure
+  allow edits automatically, but ask me before changing existing workflows
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 4 tries: stop and warn "upload rails stuck"
+
+  a human reviews before stopping

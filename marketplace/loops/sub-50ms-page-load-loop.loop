@@ -1,0 +1,16 @@
+# The sub-50ms page-load loop — drive every route under a hard latency budget.
+# concept via Matthew Berman — https://signals.forwardfuture.com/loop-library/loops/sub-50ms-page-load-loop/
+# Needs a stable perf harness that exits non-zero when any route misses the budget.
+# The flake guard matters here: performance numbers wobble, so one lucky run is not "done".
+
+loop "sub-50ms page load":
+  goal: every route in the perf manifest renders under its latency budget, measured by the harness, reliably
+  done when "npm run perf:check" passes 3 times            # TODO: your harness; exits non-zero on any budget miss
+
+  look at: the perf manifest, the slowest route's code path, and the last failure
+  allow edits automatically, but ask me before removing features or changing caching semantics
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the single worst route in the harness output, then plan again
+  when blocked: ask a human
+  after 8 tries: stop and warn "perf budget stuck — remaining routes may need architectural work"

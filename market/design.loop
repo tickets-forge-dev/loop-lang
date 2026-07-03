@@ -1,0 +1,27 @@
+# Stage 2.5 — the UI/UX decisions, decided BEFORE the page is built and approved
+# by a human. The artifact is market/design.md; site.loop builds from it, not from
+# improvisation. Decisions the file must nail down:
+#   layout      — gallery grid vs list; card size; how many per row; mobile stacking
+#   card        — anatomy: title, goal line, done-when line, shape glyph (↻/▶/→),
+#                 category badge, author attribution, votes placeholder, Copy / View
+#   discovery   — search behavior (fields indexed), category filter chips, sort order
+#   detail view — inline expand vs per-loop page; what "View source" shows
+#   copy action — what exactly gets copied (raw .loop text), success feedback
+#   submit      — where "Submit your loop" sits and what it opens (prefilled PR)
+#   states      — empty search, loading, a loop that fails to parse (never render it)
+#   brand       — tutorial's tokens: #0b0d12 field, teal #34e0c4, Ubuntu/Ubuntu Mono,
+#                 the gap-ring mark; must feel like loopflow.live, not a bolt-on
+#   a11y        — keyboard nav through cards, focus states, contrast on badges
+
+loop "decide the marketplace UI/UX":
+  goal: market/design.md records a decision for every item in the checklist above, each as "decision — rationale", concrete enough that site.loop needs no design judgment
+  done when "node market/check-design.mjs" passes
+
+  look at: docs/playground.html, docs/index.html, the tutorial's hands-on cards, and the last failure
+  allow edits automatically
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on which decision the checker found missing, then plan again
+  after 4 tries: stop and warn "design decisions stuck"
+
+  a human reviews before stopping

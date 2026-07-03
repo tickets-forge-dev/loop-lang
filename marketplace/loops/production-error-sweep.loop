@@ -1,0 +1,18 @@
+# The production error sweep — burn the live error feed down to quiet.
+# concept via Matthew Berman — https://signals.forwardfuture.com/loop-library/loops/production-error-sweep/
+# Point it at your telemetry (Sentry/PostHog/logs): trace each error to its cause,
+# fix, and stop only when the query over the recent window comes back clean.
+# Deploys stay human-gated — the loop fixes; you ship.
+
+loop "production error sweep":
+  goal: the production error feed for the last 24h contains no unexplained, unfixed errors
+  done when "node scripts/error-feed.mjs --window 24h --max 0" passes   # TODO: your telemetry query; non-zero when errors remain
+  done when "npm test" passes                                           # fixes must not break the suite
+
+  look at: the telemetry dashboard export, the traced stack for the top error, and the last failure
+  allow edits automatically, but ask me before deploys or config changes in production
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the top remaining error's stack trace, then plan again
+  when blocked: ask a human
+  after 6 tries: stop and warn "error sweep stuck — remaining errors need a human read"

@@ -1,0 +1,21 @@
+# The full product evaluation loop — an end-to-end QA pass that ends in evidence.
+# concept via Matthew Berman — https://signals.forwardfuture.com/loop-library/loops/full-product-evaluation-loop/
+# Deterministic e2e suite for what code can check; a review skill judges the
+# report's completeness (every declared surface exercised, every finding traced).
+# A human signs the final verdict — release judgment stays yours.
+
+loop "full product evaluation":
+  goal: every user-facing surface exercised end to end with each finding fixed or filed with a reproduction
+  done when "npm run test:e2e" passes                             # TODO: your e2e suite
+  done when the skill "qa-report-review" approves on the output   # judges the evaluation report: coverage of surfaces, findings traced
+    the bar: every surface in the product map appears in the report; no finding without a reproduction or a filed issue
+
+  look at: the product surface map, the e2e suite, open bug reports, and the last failure
+  allow edits automatically, but ask me before changing test infrastructure or seeding production-like data
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the surface with the weakest evidence, then plan again
+  when blocked: ask a human
+  after 8 tries: stop and warn "evaluation stuck — remaining findings need triage"
+
+  a human reviews before stopping
