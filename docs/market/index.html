@@ -175,7 +175,7 @@ document.getElementById("reset").addEventListener("click", () => {
   render();
 });
 
-fetch("catalog.json").then((r) => r.json()).then((cat) => {
+fetch("/market/catalog.json").then((r) => r.json()).then((cat) => {
   DATA = cat.entries;
   // sort: category → title (design.md → discovery)
   DATA.sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
