@@ -1,0 +1,18 @@
+# Stage 1 — pick the best 20–30 concepts from the scanned library and write the
+# work list the for-each will iterate. Selection criteria: verifiable with a real
+# command (our whole edge), category spread, no duplicates of our templates/.
+# Each entry carries attribution (author, source URL) — we implement the CONCEPT
+# as an original .loop; we do not copy their prose.
+
+loop "curate the conversion list":
+  goal: market/curated.yaml lists 20-30 entries picked from market/ff-loops.json, each with slug, title, category, author, source url, and a one-line concept note — plus market/check-curated.mjs that validates exactly that shape
+  done when "node market/check-curated.mjs" passes
+
+  look at: market/ff-loops.json, templates/README.md, and the last failure
+  allow edits automatically
+
+  a human approves the plan first
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on what the checker rejected, then plan again
+  after 4 tries: stop and warn "curation stuck — pick the list by hand"

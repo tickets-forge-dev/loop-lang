@@ -1,0 +1,207 @@
+# curated.yaml — 29 concepts selected from the Forward Future Loop Library scan
+# (market/ff-loops.json, 2026-07-03). Approved by Idan. Each becomes an ORIGINAL
+# .loop implementing the concept with a real done-when; attribution required.
+entries:
+  - slug: overnight-docs-sweep
+    title: "The docs sweep"
+    category: engineering
+    author: "Matthew Berman"
+    source: "https://signals.forwardfuture.com/loop-library/loops/overnight-docs-sweep/"
+    concept: "Use this whenever implementation changes may have left READMEs, setup guides, API references, examples, or runbooks behind."
+    verify_as: "doc-drift checker + resolving links (finds nothing)"
+  - slug: sub-50ms-page-load-loop
+    title: "The sub-50 ms page-load loop"
+    category: engineering
+    author: "Matthew Berman"
+    source: "https://signals.forwardfuture.com/loop-library/loops/sub-50ms-page-load-loop/"
+    concept: "Use this when a product has a defined set of routes, a stable performance harness, and a 50 ms target that maps to a specific metric and env"
+    verify_as: "perf harness budget passes"
+  - slug: production-error-sweep
+    title: "The production error sweep"
+    category: engineering
+    author: "Matthew Berman"
+    source: "https://signals.forwardfuture.com/loop-library/loops/production-error-sweep/"
+    concept: "Use this as a scheduled reliability pass when an agent can read production telemetry, trace failures into the repository, run the relevant t"
+    verify_as: "telemetry error count under threshold"
+  - slug: exhaustive-logging-coverage-loop
+    title: "The logging coverage loop"
+    category: engineering
+    author: "Matthew Berman"
+    source: "https://signals.forwardfuture.com/loop-library/loops/exhaustive-logging-coverage-loop/"
+    concept: "Use this when important user flows, service boundaries, background jobs, or failure paths are difficult to trace because the system's loggin"
+    verify_as: "logging-coverage checker over key flows"
+  - slug: test-suite-speed-loop
+    title: "The test-suite speed loop"
+    category: engineering
+    author: "Matthew Berman"
+    source: "https://signals.forwardfuture.com/loop-library/loops/test-suite-speed-loop/"
+    concept: "Use this when slow tests are delaying local feedback or continuous integration and the project has stable commands for measuring runtime and"
+    verify_as: "suite wall-clock under budget"
+  - slug: repository-cleanup-loop
+    title: "The repository cleanup loop"
+    category: engineering
+    author: "Matthew Berman"
+    source: "https://signals.forwardfuture.com/loop-library/loops/repository-cleanup-loop/"
+    concept: "Use this when abandoned branches, old worktrees, unclear pull requests, or unmerged commits make it difficult to know which repository state"
+    verify_as: "branch/worktree audit finds nothing"
+  - slug: fresh-clone-loop
+    title: "The fresh-clone loop"
+    category: engineering
+    author: "0xUmbra"
+    source: "https://signals.forwardfuture.com/loop-library/loops/fresh-clone-loop/"
+    concept: "Use this to test whether a repository's onboarding instructions work in a clean environment without undocumented help."
+    verify_as: "clean-env clone, setup, test all pass"
+  - slug: propagation-compliance-loop
+    title: "The propagation compliance loop"
+    category: engineering
+    author: "@iamTristan"
+    source: "https://signals.forwardfuture.com/loop-library/loops/propagation-compliance-loop/"
+    concept: "Use this after changing something that appears in several files—such as a version number, feature name, count, rule, setting, or identifier—"
+    verify_as: "grep for the stale value finds nothing"
+  - slug: cold-load-trimmer-loop
+    title: "The cold-load trimmer loop"
+    category: engineering
+    author: "Christian Katzmann"
+    source: "https://signals.forwardfuture.com/loop-library/loops/cold-load-trimmer-loop/"
+    concept: "Use this when a web app feels heavy on its first visit because it downloads too much code, styling, media, or other data before showing the"
+    verify_as: "bundle-size budget passes"
+  - slug: test-stabilizer-loop
+    title: "The test stabilizer loop"
+    category: engineering
+    author: "hungtv27 (@hungtv27)"
+    source: "https://signals.forwardfuture.com/loop-library/loops/test-stabilizer-loop/"
+    concept: "Use this when a test suite produces inconsistent results across otherwise comparable runs and the failures may come from shared state, timin"
+    verify_as: "flake guard: the suite passes 5 times"
+  - slug: error-message-rewrite-loop
+    title: "The error-message rewrite loop"
+    category: engineering
+    author: "Will Undrell (@WillUndrll)"
+    source: "https://signals.forwardfuture.com/loop-library/loops/error-message-rewrite-loop/"
+    concept: "Use this when a product exposes raw, internal, inconsistent, or unhelpful error messages and the complete user-facing error surface needs a"
+    verify_as: "error-string lint + human review"
+  - slug: dependency-cve-burndown-loop
+    title: "The dependency-CVE burndown loop"
+    category: engineering
+    author: "hungtv27 (@hungtv27)"
+    source: "https://signals.forwardfuture.com/loop-library/loops/dependency-cve-burndown-loop/"
+    concept: "Use this when dependency scans report high or critical CVEs and remediation should reflect whether vulnerable code is actually reachable in"
+    verify_as: "dependency audit finds no high/critical"
+  - slug: quality-streak-loop
+    title: "The quality streak loop"
+    category: evaluation
+    author: "Matthew Berman"
+    source: "https://signals.forwardfuture.com/loop-library/loops/quality-streak-loop/"
+    concept: "Use this when product quality needs a strict consecutive-success bar and failures should permanently improve the test and benchmark suite."
+    verify_as: "the check passes N times in a row"
+  - slug: full-product-evaluation-loop
+    title: "The full product evaluation loop"
+    category: evaluation
+    author: "Matthew Berman"
+    source: "https://signals.forwardfuture.com/loop-library/loops/full-product-evaluation-loop/"
+    concept: "Use this for an exhaustive, end-to-end application QA pass when a production-like local environment and complete interactive-surface coverag"
+    verify_as: "e2e suite green + review skill approves"
+  - slug: devils-advocate-design-loop
+    title: "The devil's-advocate loop"
+    category: evaluation
+    author: "Anonymous contributor"
+    source: "https://signals.forwardfuture.com/loop-library/loops/devils-advocate-design-loop/"
+    concept: "Use this before committing to an architecture, interface, rollout plan, or other consequential design that benefits from structured adversar"
+    verify_as: "a judge panel: approves by 3 judges"
+  - slug: promise-to-proof-loop
+    title: "The promise-to-proof loop"
+    category: evaluation
+    author: "Felix Haeberle (@felixhaberle)"
+    source: "https://signals.forwardfuture.com/loop-library/loops/promise-to-proof-loop/"
+    concept: "Use this when what a product says it does may no longer match what it actually does across marketing, documentation, demos, support answers,"
+    verify_as: "claims-vs-behavior checker + eval"
+  - slug: multi-llm-convergence-loop
+    title: "The multi-LLM convergence loop"
+    category: evaluation
+    author: "Donn Felker (@donnfelker)"
+    source: "https://signals.forwardfuture.com/loop-library/loops/multi-llm-convergence-loop/"
+    concept: "Use this when an important plan, specification, design, document, or code change benefits from two independent AI perspectives rather than o"
+    verify_as: "independent judges converge (majority)"
+  - slug: literature-search-verification-loop
+    title: "The literature-search verification loop"
+    category: evaluation
+    author: "Nathan Nguyen"
+    source: "https://signals.forwardfuture.com/loop-library/loops/literature-search-verification-loop/"
+    concept: "Use this when a literature search must produce a high-precision, auditable paper set rather than an unverified list of citations."
+    verify_as: "every citation resolves (checker)"
+  - slug: war-loops-frontend-designer
+    title: "War Loops: frontend reconstruction"
+    category: design
+    author: "Swayam"
+    source: "https://signals.forwardfuture.com/loop-library/loops/war-loops-frontend-designer/"
+    concept: "Use War Loops when an authorized interface must be rebuilt from a URL or image and judged on appearance, motion, and responsive behavior."
+    verify_as: "judge scores the rebuild 8+ vs reference"
+  - slug: ui-ux-score-loop
+    title: "The UI/UX Score Loop"
+    category: design
+    author: "Hayden Cassar (@hcassar93)"
+    source: "https://signals.forwardfuture.com/loop-library/loops/ui-ux-score-loop/"
+    concept: "Use this for a real task such as signup, login, onboarding, checkout, sharing, or creating and editing an item when the entire experience ca"
+    verify_as: "eval judges the task on the trajectory"
+  - slug: pixel-safe-css-trim-loop
+    title: "The pixel-safe CSS trim loop"
+    category: design
+    author: "Christian Katzmann"
+    source: "https://signals.forwardfuture.com/loop-library/loops/pixel-safe-css-trim-loop/"
+    concept: "Use this when a website's styling files may contain unused declarations, duplicated rules, or old overrides and representative pages and int"
+    verify_as: "pixel-diff identical AND stylesheet smaller"
+  - slug: accessibility-repair-loop
+    title: "The accessibility repair loop"
+    category: design
+    author: "Eric Lott"
+    source: "https://signals.forwardfuture.com/loop-library/loops/accessibility-repair-loop/"
+    concept: "Use this when a website or app has a defined accessibility target and you can repeatedly test the relevant pages, components, or tasks for p"
+    verify_as: "accessibility scan finds nothing"
+  - slug: stale-safe-batch-release-loop
+    title: "The stale-safe batch release loop"
+    category: operations
+    author: "Matthew Berman"
+    source: "https://signals.forwardfuture.com/loop-library/loops/stale-safe-batch-release-loop/"
+    concept: "Use this when several branches or pull requests may be ready at once and the release must avoid stale worktrees, partial overlays, and incom"
+    verify_as: "each branch rebased + green before merge"
+  - slug: post-release-baseline-loop
+    title: "The post-release baseline loop"
+    category: operations
+    author: "Matthew Berman"
+    source: "https://signals.forwardfuture.com/loop-library/loops/post-release-baseline-loop/"
+    concept: "Use this immediately after a release when future regressions or improvements need to be measured against the exact version now in production"
+    verify_as: "baseline artifact exists and validates"
+  - slug: recovery-proof-loop
+    title: "The Recovery Proof loop"
+    category: operations
+    author: "Eric Lott"
+    source: "https://signals.forwardfuture.com/loop-library/loops/recovery-proof-loop/"
+    concept: "Use this when backup existence is not enough and the organization needs repeatable proof that required systems can be restored from document"
+    verify_as: "restore drill passes end to end"
+  - slug: dependency-triage-loop
+    title: "The dependency triage loop"
+    category: engineering
+    author: "Damian Galarza (@dgalarza)"
+    source: "https://signals.forwardfuture.com/loop-library/loops/dependency-triage-loop/"
+    concept: "Use this when a repository has several open Dependabot pull requests and an authorized maintainer wants them reviewed safely without stale c"
+    verify_as: "each dep PR: CI green then merged or closed"
+  - slug: nightly-changelog-sweep
+    title: "The nightly changelog loop"
+    category: engineering
+    author: "Matthew Berman"
+    source: "https://signals.forwardfuture.com/loop-library/loops/nightly-changelog-sweep/"
+    concept: "Use this when a project changes frequently enough that user-facing release notes can drift from merged pull requests, commits, deployments,"
+    verify_as: "changelog matches merged PRs (diff check)"
+  - slug: research-to-artifact-loop
+    title: "The research-to-artifact loop"
+    category: content
+    author: "Hiten Shah (@hnshah)"
+    source: "https://signals.forwardfuture.com/loop-library/loops/research-to-artifact-loop/"
+    concept: "Use this when research should end in a specific decision, brief, recommendation, specification, page, or other artifact rather than a pile o"
+    verify_as: "artifact validator + review skill"
+  - slug: pre-publish-source-check-loop
+    title: "The pre-publish source-check loop"
+    category: content
+    author: "Ryan Banze (@RyanBanze)"
+    source: "https://signals.forwardfuture.com/loop-library/loops/pre-publish-source-check-loop/"
+    concept: "Use this immediately before publishing an article, newsletter, post, report, or other factual draft whose claims, quotations, and attributio"
+    verify_as: "every cited source resolves (checker)"
