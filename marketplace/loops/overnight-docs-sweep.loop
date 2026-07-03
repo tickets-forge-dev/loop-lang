@@ -1,0 +1,18 @@
+# The docs sweep — keep every doc true to the code it describes.
+# concept via Matthew Berman — https://signals.forwardfuture.com/loop-library/loops/overnight-docs-sweep/
+# Run it after a stretch of implementation work (or on a schedule): it hunts drift
+# between code and READMEs/setup guides/examples, fixes what it finds, and can only
+# stop when the link checker and the drift checker both report clean.
+
+loop "docs sweep":
+  goal: every README, setup guide, and example matches the current code — no dead links, no stale commands, no renamed flags
+  done when "npx markdown-link-check README.md docs/**/*.md" passes        # TODO: your doc globs
+  done when "node scripts/check-doc-drift.mjs" passes                      # TODO: your drift checker (commands in docs actually run, flags exist)
+
+  look at: README.md, docs/, the public CLI surface, and the last failure
+  allow edits automatically, but ask me before changing any public API to match a doc
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on which doc drifted and why, then plan again
+  when blocked: ask a human
+  after 6 tries: stop and warn "docs sweep stuck — the drift may be a code bug rather than a doc bug"

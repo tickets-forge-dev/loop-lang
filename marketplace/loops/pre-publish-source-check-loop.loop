@@ -1,0 +1,18 @@
+# The pre-publish source check — no claim ships without a living source.
+# concept via Ryan Banze (@RyanBanze) — https://signals.forwardfuture.com/loop-library/loops/pre-publish-source-check-loop/
+# The last gate before publishing anything factual: a checker resolves every cited
+# link and flags every unsourced factual claim; a judge reads for claims smuggled in
+# without citations. The fix is a source or a softer sentence — never a dead link.
+
+loop "pre-publish source check":
+  goal: every factual claim in the draft carries a source that resolves, and no claim ships unsourced
+  done when "node scripts/check-sources.mjs draft.md" passes   # TODO: extracts claims+links; fails on dead links or bare claims
+  done when the skill "fact-screen" approves on the output
+    the bar: no factual assertion without a citation or an explicit "author's estimate" marker; quoted figures match their sources
+
+  look at: the draft, its citation list, the checker's flag list, and the last failure
+  allow edits automatically, but ask me before deleting a claim central to the piece
+
+  each cycle: act, then observe
+  when it fails: reflect on the flagged claims — source them or soften them, then plan again
+  after 5 tries: stop and warn "source check stuck — remaining claims may be unverifiable"

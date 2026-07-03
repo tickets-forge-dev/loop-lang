@@ -1,0 +1,17 @@
+# The pixel-safe CSS trim — a smaller stylesheet that renders identically.
+# concept via Christian Katzmann — https://signals.forwardfuture.com/loop-library/loops/pixel-safe-css-trim-loop/
+# Two checks lock the contract: the visual diff must be pixel-identical on every
+# reference route, AND the stylesheet must actually shrink. Remove a rule, screenshot,
+# compare — any pixel moved means the rule was live.
+
+loop "pixel-safe CSS trim":
+  goal: the stylesheet is measurably smaller and every reference route renders pixel-identical to the baseline
+  done when "node scripts/visual-diff.mjs --baseline .baseline --threshold 0" passes   # TODO: your capture + diff harness
+  done when "node scripts/css-size.mjs --smaller-than-baseline" passes                 # TODO: fails unless bytes went down
+
+  look at: the coverage report of unused selectors, the stylesheet's oldest sections, and the last failure
+  allow edits automatically
+
+  each cycle: act, then observe
+  when it fails: reflect on which route's pixels moved and which rule did it, then plan again
+  after 8 tries: stop and warn "trim plateaued — the remaining CSS is all load-bearing"

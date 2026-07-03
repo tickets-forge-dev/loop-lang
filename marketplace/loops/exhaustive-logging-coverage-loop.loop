@@ -1,0 +1,17 @@
+# The logging coverage loop — every critical flow observable before you need it.
+# concept via Matthew Berman — https://signals.forwardfuture.com/loop-library/loops/exhaustive-logging-coverage-loop/
+# Declare the flows that must be traceable (user journeys, service boundaries,
+# background jobs, failure paths) in a manifest; a checker walks them and fails on
+# any flow with no log line at entry, exit, or error.
+
+loop "logging coverage":
+  goal: every flow in the logging manifest emits structured logs at entry, exit, and error paths
+  done when "node scripts/check-logging.mjs" passes    # TODO: your checker over the flow manifest
+  done when "npm test" passes                          # added logging must not change behavior
+
+  look at: the logging manifest, the flows it names, the logger module, and the last failure
+  allow edits automatically, but ask me before changing log levels in production config
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on which flow the checker flagged, then plan again
+  after 6 tries: stop and warn "logging coverage stuck"

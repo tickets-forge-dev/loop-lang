@@ -1,0 +1,17 @@
+# The quality streak loop — done means N consecutive greens, and a failure resets the streak.
+# concept via Matthew Berman — https://signals.forwardfuture.com/loop-library/loops/quality-streak-loop/
+# LoopFlow's flake guard implements the streak natively: `passes 7 times` requires
+# seven consecutive green runs inside one observe — any failure short-circuits and
+# sends the loop back through reflect, which must harden the check that broke.
+
+loop "quality streak":
+  goal: the quality gate holds a streak — consecutive green runs with every failure turned into a permanent fix
+  done when "npm run quality:check" passes 7 times    # TODO: your gate (tests + lint + typecheck in one command); streak length to taste
+
+  look at: the last streak-breaking failure and the code path it implicates, and the last failure
+  allow edits automatically, but ask me before loosening any threshold the gate enforces
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on what broke the streak and how to make it impossible again, then plan again
+  when blocked: ask a human
+  after 10 tries: stop and warn "streak keeps breaking — the gate may be measuring noise"

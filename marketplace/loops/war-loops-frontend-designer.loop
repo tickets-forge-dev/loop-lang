@@ -1,0 +1,20 @@
+# War Loops: frontend reconstruction — rebuild an interface until a judge can't tell it apart.
+# concept via Swayam — https://signals.forwardfuture.com/loop-library/loops/war-loops-frontend-designer/
+# For authorized rebuilds (your own legacy UI, a licensed design): implement, capture
+# a screenshot, and let a judge score the match against the reference. Deterministic
+# checks keep it honest; the judge scores what pixels can't diff — motion, feel, spacing rhythm.
+
+loop "frontend reconstruction":
+  goal: the rebuilt interface matches the reference in layout, spacing, type, and interaction feel
+  done when "npm run build && node scripts/capture.mjs" passes             # TODO: builds + captures screenshots of the target routes
+  done when the skill "visual-match" scores 8 or more on the output
+    the bar: layout and hierarchy match the reference; spacing rhythm and type scale consistent; interactive states present; deductions listed with screen regions
+
+  look at: the reference captures, the current build's captures side by side, and the last failure
+  allow edits automatically
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the region with the biggest visual gap, then plan again
+  after 10 tries: stop and warn "reconstruction plateaued — remaining gaps need the reference's assets"
+
+  a human reviews before stopping

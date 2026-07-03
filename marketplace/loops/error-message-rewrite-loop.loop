@@ -1,0 +1,19 @@
+# The error-message rewrite loop — every user-facing error says what happened and what to do.
+# concept via Will Undrell (@WillUndrll) — https://signals.forwardfuture.com/loop-library/loops/error-message-rewrite-loop/
+# A lint pass enforces the mechanical bar (no raw internals, no codes without text,
+# actionable phrasing patterns); a human reviews the voice before the loop may stop —
+# tone is judgment, structure is a checker.
+
+loop "error-message rewrite":
+  goal: every user-facing error message states what happened and what the user can do, in the product's voice
+  done when "node scripts/lint-error-messages.mjs" passes   # TODO: your checker — flags raw stack traces, bare codes, non-actionable phrasing
+  done when "npm test" passes
+
+  look at: the error catalog or the surfaces that raise user-facing errors, the product's voice guide, and the last failure
+  allow edits automatically, but ask me before changing error codes that external clients match on
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on which messages the linter still flags, then plan again
+  after 6 tries: stop and warn "error rewrite stuck"
+
+  a human reviews before stopping

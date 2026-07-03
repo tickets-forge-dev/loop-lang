@@ -1,0 +1,16 @@
+# The fresh-clone loop — your onboarding docs, proven in a clean room.
+# concept via 0xUmbra — https://signals.forwardfuture.com/loop-library/loops/fresh-clone-loop/
+# Clones the repo into a throwaway directory and follows the README setup verbatim.
+# If a fresh machine couldn't do it, the loop can't stop — undocumented steps get
+# documented, broken steps get fixed.
+
+loop "fresh clone":
+  goal: a clean clone can install, build, and test using only what the README says
+  done when "bash scripts/fresh-clone-check.sh" passes    # TODO: clone to a temp dir, run the documented setup + test commands, exit non-zero on any step
+
+  look at: README.md, the setup scripts the README names, and the last failure
+  allow edits automatically, but ask me before adding new required system dependencies
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the first step that failed in the clean room, then plan again
+  after 6 tries: stop and warn "fresh clone still failing — environment assumptions run deep"

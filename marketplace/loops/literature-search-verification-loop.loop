@@ -1,0 +1,18 @@
+# The literature-search verification loop — a paper set where every entry is real and on-topic.
+# concept via Nathan Nguyen — https://signals.forwardfuture.com/loop-library/loops/literature-search-verification-loop/
+# LLM search hallucinates citations; this loop makes the bibliography earn its place.
+# A checker resolves every DOI/URL and validates metadata; a judge screens relevance
+# against the research question. High precision beats high volume.
+
+loop "literature-search verification":
+  goal: every paper in the result set resolves to a real publication and is relevant to the research question
+  done when "node scripts/verify-citations.mjs" passes                 # TODO: resolves each DOI/URL, checks title+authors match the entry
+  done when the skill "relevance-screen" approves on the output
+    the bar: every retained paper addresses the stated question; every exclusion has a one-line reason
+
+  look at: the research question, the candidate bibliography, the verification log, and the last failure
+  allow edits automatically
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on which entries failed to resolve or screen, then plan again
+  after 6 tries: stop and warn "verification stuck — remaining candidates may not exist"

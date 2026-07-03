@@ -1,0 +1,17 @@
+# The accessibility repair loop — drive the a11y scanner to zero, for real.
+# concept via Eric Lott — https://signals.forwardfuture.com/loop-library/loops/accessibility-repair-loop/
+# `finds nothing` is the right predicate: the scanner must report zero violations on
+# every target page. The suite stays green so fixes don't break behavior, and
+# suppressing rules to get to zero is gated — that's cheating, not repairing.
+
+loop "accessibility repair":
+  goal: every target page passes the accessibility scan with zero violations at the chosen standard
+  done when "npx pa11y-ci" finds nothing        # TODO: your page list + standard (WCAG2AA) in .pa11yci
+  done when "npm test" passes
+
+  look at: the scanner's violation list grouped by rule, the components generating them, and the last failure
+  allow edits automatically, but ask me before disabling or downgrading any scanner rule
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the rule with the most remaining violations, then plan again
+  after 8 tries: stop and warn "a11y repair stuck — remaining violations may need design changes"

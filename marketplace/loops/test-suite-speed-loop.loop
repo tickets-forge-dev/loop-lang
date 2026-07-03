@@ -1,0 +1,17 @@
+# The test-suite speed loop — make the suite fast without making it weaker.
+# concept via Matthew Berman — https://signals.forwardfuture.com/loop-library/loops/test-suite-speed-loop/
+# Two checks on purpose: the time budget AND the full suite green — so "faster by
+# deleting tests" can never satisfy the loop. Pair with a trajectory eval if you
+# want a judge confirming no test was weakened.
+
+loop "test-suite speed":
+  goal: the full test suite runs under the time budget with every test still passing and none weakened
+  done when "node scripts/time-budget.mjs --max 120s -- npm test" passes   # TODO: budget + your suite
+  done when "npm test" passes
+
+  look at: the slowest test files from the runner's timing report, test setup/teardown, and the last failure
+  allow edits automatically, but ask me before deleting or skipping any test
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the top item in the timing report, then plan again
+  after 8 tries: stop and warn "suite speed stuck — remaining time may be irreducible setup"

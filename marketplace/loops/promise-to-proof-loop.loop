@@ -1,0 +1,17 @@
+# The promise-to-proof loop — what the product claims is what the product does.
+# concept via Felix Haeberle (@felixhaberle) — https://signals.forwardfuture.com/loop-library/loops/promise-to-proof-loop/
+# Extract every claim from marketing pages, docs, and README into a manifest; a
+# checker maps each claim to a passing test or a reproducible demo. Claims with no
+# proof get one — or get rewritten to what's true.
+
+loop "promise to proof":
+  goal: every public claim about the product maps to a passing proof — a test, a benchmark, or a scripted demo
+  done when "node scripts/check-claims.mjs" passes   # TODO: your claims manifest → proof mapping; fails on any unproven claim
+  done when "npm test" passes
+
+  look at: the claims manifest, marketing copy and README, the proofs directory, and the last failure
+  allow edits automatically, but ask me before weakening any public claim to make it pass
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the boldest unproven claim, then plan again
+  after 6 tries: stop and warn "promise gap remains — some claims need a product decision"

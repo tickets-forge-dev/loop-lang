@@ -1,0 +1,20 @@
+# The UI/UX score loop — a real user task, judged on the journey rather than the screenshot.
+# concept via Hayden Cassar (@hcassar93) — https://signals.forwardfuture.com/loop-library/loops/ui-ux-score-loop/
+# Pick one task (signup, checkout, share). The e2e run proves it works; the
+# trajectory eval judges what it was LIKE — steps, dead ends, unclear states —
+# because a flow can pass and still be miserable.
+
+loop "UI/UX score":
+  goal: the chosen user task is completable and scores well on the experience of completing it
+  done when "npm run test:e2e -- --grep signup" passes                     # TODO: your task's e2e spec
+  done when the skill "ux-review" scores 8 or more on the trajectory
+    the bar: no step where the next action is unclear; errors explain recovery; no more steps than the task inherently needs; loading and empty states present
+
+  look at: the task's screens and copy, the e2e trace of the journey, and the last failure
+  allow edits automatically, but ask me before changing the task's scope or removing steps users rely on
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the worst moment in the journey the judge described, then plan again
+  after 8 tries: stop and warn "UX score plateaued — remaining friction may be structural"
+
+  a human reviews before stopping
