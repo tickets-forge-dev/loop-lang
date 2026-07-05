@@ -25,10 +25,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700&family=Ubuntu+Mono:ital,wght@0,400;0,700&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg:#0b0d12; --ink:#eef2f7; --muted:#94a1b2; --line:rgba(255,255,255,.1);
-    --fwd:#34e0c4; --reflect:#ffb45a; --gate:#ff86c2; --stop:#5fd99a; --blue:#84b6ff; --str:#9be58f;
-    --mono:"Ubuntu Mono",ui-monospace,monospace; --ui:"Ubuntu",system-ui,sans-serif;
-    --err:#ff7a7a; --warn:#ffb45a;
+    --bg:#fbfbfd; --ink:#1d1d1f; --muted:#6e6e73; --line:#e5e5ea;
+    --fwd:#0071e3; --reflect:#b45f06; --gate:#bf5af2; --stop:#248a3d; --blue:#0071e3; --str:#276b36;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+    --err:#d70015; --warn:#b45f06;
   }
   *{box-sizing:border-box}
   body{margin:0;color:var(--ink);font-family:var(--ui);background:var(--bg);line-height:1.55;-webkit-font-smoothing:antialiased}
@@ -42,16 +42,16 @@
   .pane{display:flex;flex-direction:column;min-width:0}
   .pane + .pane{border-left:1px solid var(--line)}
   .bar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
-  .bar select{background:#131722;color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-family:var(--ui);font-size:12px}
+  .bar select{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-family:var(--ui);font-size:12px}
   .bar .status{margin-left:auto;font-family:var(--mono)}
   .bar .status.ok{color:var(--stop)} .bar .status.err{color:var(--err)}
-  textarea{flex:1;width:100%;resize:none;border:0;outline:0;background:transparent;color:var(--ink);
+  textarea{flex:1;width:100%;resize:none;border:0;outline:0;background:#fff;color:var(--ink);
     font-family:var(--mono);font-size:14px;line-height:1.6;padding:16px 18px;tab-size:2;white-space:pre}
   .out{flex:1;overflow:auto;padding:16px 18px}
   .out h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px;font-weight:700}
   .out h3:first-child{margin-top:0}
   pre{margin:0;font-family:var(--mono);font-size:13.5px;line-height:1.65;white-space:pre-wrap}
-  pre.flow{color:var(--fwd)}
+  pre.flow{color:var(--blue)}
   .explain{color:var(--muted);font-size:13.5px}
   .problem{font-family:var(--mono);font-size:13px;padding:8px 12px;border-radius:8px;margin:6px 0}
   .problem.error{color:var(--err);border:1px solid color-mix(in srgb,var(--err) 35%,transparent);background:color-mix(in srgb,var(--err) 8%,transparent)}
