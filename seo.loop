@@ -1,0 +1,32 @@
+# seo.loop — self-correcting on-page SEO for the loopflow.live docs site.
+# Runs the seo-audit skill to both DO the work and CHECK it: audit → fix → re-audit,
+# looping until the audit finds no Critical issues on any page.
+
+loop "seo: loopflow.live docs":
+  # ── Contract: the finish line, and how it's verified ──────────────────────────
+  goal: every public page under docs/ has complete, unique on-page SEO — a unique
+        <title> and meta description, a full Open Graph + Twitter card with an
+        absolute og:image, a self-referential canonical URL, exactly one <h1>,
+        alt text on meaningful images, and valid JSON-LD.
+
+  done when the skill "seo-audit" approves
+    the bar: zero Critical issues on any audited page; every og:image / og:url /
+             canonical is an absolute https URL; titles and meta descriptions are
+             unique per page (no duplicates across the site).
+
+  # ── Boundaries: what it may read, and how much power it has ───────────────────
+  look at: docs/index.html, docs/game.html, docs/playground.html,
+           docs/workshop.html, docs/keywords/, and the last failure
+  allow edits automatically, but ask me before changing visible page copy or headings
+
+  use skills: seo-audit
+  remember in "docs/seo.memory.md"
+
+  # ── Engine: the repeated cycle ────────────────────────────────────────────────
+  each cycle: plan, then act, then observe
+
+  # ── Safety net: back-edge, escape hatch, hard stop ────────────────────────────
+  when it fails:            reflect on which pages and which tags still fail, then plan again
+  when blocked:             ask a human
+  a human reviews before stopping
+  after 8 tries:            stop and warn "SEO still failing after 8 passes — narrow look at: to the worst pages"
