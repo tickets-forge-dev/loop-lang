@@ -37,7 +37,8 @@
 <h2>Syntax</h2>
 <pre class="syntax"><code><span class="tok-kw">loop</span> <span class="tok-str">"&lt;name&gt;"</span>:</code></pre>
 <h2>What it does</h2>
-<p>The core construct: a <b>goal</b>, a way to verify it (<code class="inl">done when</code>), the repeated steps, and what to do on failure. The smallest real loop is just a goal and a done-when.</p>
+<p>The core construct of LoopFlow: a <b>goal</b>, a way to verify it (<code class="inl">done when</code>), the repeated steps (<code class="inl">each cycle</code>), and what to do on failure. Every cycle runs plan → act → observe, then the <code class="inl">done when</code> predicate decides — pass and the loop stops, fail and it <code class="inl">reflect</code>s the failure into the next plan. That back-edge is the whole point: a loop is a normal agent that <em>checks its own work and tries again</em> until a verifiable definition of done is met.</p>
+<p>Reach for a <code class="inl">loop</code> when the task is repeatable <em>and</em> "done" is checkable — a bug with a failing test, a refactor gated by a command, a migration with a verification step. If there's no way to verify completion, there's no loop; the <code class="inl">done when</code> line is written first, before any behavior, because a check that can never pass loops forever. The smallest real loop is just a <code class="inl">goal</code> and a <code class="inl">done when</code>; everything else — <code class="inl">look at:</code> for scope, human gates for risky work, <code class="inl">after N tries</code> for a thrash guard — is added as the job demands. Blocks start at column 0 and their body is indented two spaces.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">loop</span> <span class="tok-str">"fix the failing checkout tax test"</span>:
   <span class="tok-kw">goal</span>: the tax line is correct at checkout
@@ -57,6 +58,20 @@
   <path class="dg-reflect" d="M 462 90 C 360 178, 192 178, 90 90" marker-end="url(#dgAr)"/>
   <text class="dg-el-r" x="276" y="172">when it fails → reflect, then plan again</text>
 </svg><figcaption>Every cycle runs <b>plan → act → observe</b>; the <b>done&nbsp;when</b> check decides — pass → <b>stop</b>, fail → <b>reflect</b> into the next plan.</figcaption></figure>
+<h2>Example — with a thrash guard</h2>
+<pre><code><span class="tok-kw">loop</span> <span class="tok-str">"fix billing apostrophe bug"</span>:
+  <span class="tok-kw">goal</span>: settings save when the company name has an apostrophe
+  <span class="tok-kw">done when</span> the test <span class="tok-str">"billing.spec.ts::apostrophe"</span> <span class="tok-kw">passes</span>
+  <span class="tok-kw">look at</span>: billing/form.tsx, api/settings.ts, and the last failure
+  <span class="tok-kw">when</span> it fails: <span class="tok-kw">reflect</span>, <span class="tok-kw">then</span> <span class="tok-kw">plan</span> again
+  <span class="tok-kw">after</span> 6 tries: <span class="tok-kw">stop</span> and warn <span class="tok-str">"thrashing"</span></code></pre><span class="cap">the finish line first, the safety net last</span>
+<h2>Common mistakes</h2>
+<ul>
+<li><b>A loop with no <code class="inl">done when</code>.</b> A <code class="inl">loop</code> requires a goal, but a goal without a verifiable check is just a prompt — the loop can never confirm it's finished. Write the <code class="inl">done when</code> line before any behavior.</li>
+<li><b>A back-edge with no ceiling.</b> Never emit <code class="inl">when it fails: reflect</code> without an <code class="inl">after N tries: stop and warn</code>. A reflect edge with no floor can loop forever on a check that never goes green.</li>
+<li><b>Paraphrasing the predicate command.</b> The shell command in <code class="inl">done when</code> runs verbatim in your shell — quote it exactly. A misremembered command is a loop that can never pass.</li>
+<li><b>Indentation drift.</b> <code class="inl">loop</code> sits at column 0; its body is indented two spaces. Mixed indentation is the most common parse error — run <code class="inl">loop-run show file.loop</code> to check the shape.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="goal.html"><code>goal</code></a><a href="done-when.html"><code>done when</code></a><a href="each-cycle.html"><code>each cycle</code></a><a href="pipeline.html"><code>pipeline</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>

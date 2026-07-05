@@ -37,10 +37,30 @@
 <h2>Syntax</h2>
 <pre class="syntax"><code><span class="tok-kw">target</span>: &lt;dir&gt;</code></pre>
 <h2>What it does</h2>
-<p>The working directory / scope the runner operates in — useful with a method or a scheduled run to point the loop at a specific codebase or subtree.</p>
+<p><code class="inl">target:</code> names the working directory the runner operates in — the root it plans, edits, and runs its <code class="inl">done when</code> command from. It's a <b>config-tier</b> line: it sits at the top of the file, before any <code class="inl">loop</code> or <code class="inl">pipeline</code>, and applies to every definition below it.</p>
+<p>Why reach for it? Most of the time you run a <code class="inl">.loop</code> from the repo root and the target is implicit. You set <code class="inl">target:</code> when the loop shouldn't operate on the whole checkout — a monorepo where the work lives in one package, a scheduled or unattended run that has no interactive cwd to inherit, or a method (like BMAD) whose stages should scope to a subtree instead of the entire tree. Pointing the runner at the smallest directory that still contains the work keeps its context tight and stops it from wandering into unrelated code.</p>
+<p><code class="inl">target:</code> is about <i>where the runner stands</i>, which is coarse; <code class="inl">look at:</code> is about <i>which files it reads</i>, which is fine-grained. They compose: target picks the subtree, <code class="inl">look at:</code> narrows the agent's attention within it. Quote paths exactly — a relative path resolves against the loop file's own location.</p>
 <h2>Example</h2>
 <pre><code>use the BMAD <span class="tok-kw">method</span>
-<span class="tok-kw">target</span>: ./src</code></pre><span class="cap">scope to a subtree</span>
+<span class="tok-kw">target</span>: ./src</code></pre><span class="cap">scope a method to a subtree</span>
+
+<h2>Example — target with a schedule</h2>
+<pre><code><span class="tok-kw">schedule</span>: every weekday at 7am
+<span class="tok-kw">runner</span>: claude code
+<span class="tok-kw">target</span>: ./services/billing
+
+<span class="tok-kw">loop</span> <span class="tok-str">"keep billing deps current"</span>:
+  <span class="tok-kw">goal</span>: no known-vulnerable dependencies in the billing service
+  <span class="tok-kw">done when</span> <span class="tok-str">"pnpm audit --audit-level=high"</span> <span class="tok-kw">finds nothing</span>
+  <span class="tok-kw">after</span> 4 <span class="tok-kw">tries</span>: <span class="tok-kw">stop</span> and <span class="tok-kw">warn</span> <span class="tok-str">"needs a human"</span></code></pre><span class="cap">an unattended run scoped to one service</span>
+
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Putting <code class="inl">target:</code> inside a loop body.</b> It's a config-tier line — it belongs at the top of the file, above the first definition. Nested under a <code class="inl">loop</code> it's out of place.</li>
+<li><b>Confusing it with <code class="inl">look at:</code>.</b> <code class="inl">target:</code> sets the runner's directory; <code class="inl">look at:</code> lists the files the agent reads. Scoping the subtree does not replace pointing the agent at the right files.</li>
+<li><b>A <code class="inl">done when</code> command that assumes the repo root.</b> The predicate runs from the target directory. If your command's paths were written for the repo root, they'll miss once the runner is scoped to a subtree — write them relative to the target.</li>
+<li><b>Relying on it interactively when the cwd already fits.</b> Running from the repo root, <code class="inl">target:</code> is redundant. Its real value is unattended and scheduled runs, or a monorepo subtree — don't add it just to restate where you already are.</li>
+</ul>
 
 <h2>Related</h2>
 <div class="related"><a href="schedule.html"><code>schedule</code></a><a href="use-method.html"><code>use the &lt;X&gt; method</code></a></div>

@@ -38,13 +38,37 @@
 <pre class="syntax"><code><span class="tok-kw">stage</span> &lt;name&gt;:
   <span class="tok-kw">goal</span>: …</code></pre>
 <h2>What it does</h2>
-<p>One step of a <code class="inl">pipeline</code>. A stage's body is an ordinary loop (goal, done-when, gates, transitions) — a single story. A stage-level <code class="inl">git:</code> or <code class="inl">models:</code> block lands on that stage's loop.</p>
+<p>One step of a <code class="inl">pipeline</code>. A stage's body is an ordinary loop — it takes the same lines a top-level <code class="inl">loop</code> takes (<code class="inl">goal</code>, <code class="inl">done when</code>, <code class="inl">look at</code>, gates, <code class="inl">each cycle</code>, transitions) — so a single stage is a single story with its own self-correcting cycle.</p>
+<p>Reach for stages when an epic is too big to verify in one <code class="inl">done when</code>. Splitting it into stages gives each story its own checkable finish line, and the pipeline runs them <b>in order</b>: a stage that ends unsatisfied halts the ones after it, so a broken foundation never lets later work pile on top of it. That ordering is the whole point — it keeps a large piece of work honest one verifiable step at a time instead of one giant, unverifiable leap.</p>
+<p>Config cascades down to a stage. A file-level <code class="inl">each cycle:</code>, <code class="inl">models:</code>, or <code class="inl">git:</code> block is the default for every stage; the stage overrides just itself by writing its own line. A stage-level <code class="inl">git:</code> or <code class="inl">models:</code> block lands on that stage's loop only. Put human gates on the risky stages — <code class="inl">a human approves before …</code> blocks that stage until someone signs off, which is where deploys and migrations belong.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">stage</span> <span class="tok-str">"story: email and password login"</span>:
   <span class="tok-kw">goal</span>: users log <span class="tok-kw">in</span> with email and password
   <span class="tok-kw">look at</span>: src/auth/, docs/architecture.md
   <span class="tok-kw">done when</span> <span class="tok-str">"pnpm test auth/login"</span> <span class="tok-kw">passes</span>
   <span class="tok-kw">after</span> 8 <span class="tok-kw">tries</span>: <span class="tok-kw">stop</span> and <span class="tok-kw">warn</span> <span class="tok-str">"login story stuck"</span></code></pre><span class="cap">a story stage</span>
+
+<h2>Example — two stages in order</h2>
+<pre><code><span class="tok-kw">pipeline</span> <span class="tok-str">"epic: checkout v2"</span>:
+
+  <span class="tok-kw">stage</span> <span class="tok-str">"story: cart totals"</span>:
+    <span class="tok-kw">goal</span>: cart shows correct totals with tax
+    <span class="tok-kw">look at</span>: src/cart/, src/tax/
+    <span class="tok-kw">done when</span> <span class="tok-str">"pnpm test cart"</span> <span class="tok-kw">passes</span>
+    <span class="tok-kw">when</span> it fails: <span class="tok-kw">reflect</span>, <span class="tok-kw">then</span> <span class="tok-kw">plan</span> again
+
+  <span class="tok-kw">stage</span> <span class="tok-str">"story: checkout submit"</span>:
+    <span class="tok-kw">goal</span>: order submits and payment is captured
+    <span class="tok-kw">a human approves before</span> charging the card
+    <span class="tok-kw">done when</span> <span class="tok-str">"pnpm test checkout"</span> <span class="tok-kw">passes</span></code></pre><span class="cap">the cart story must pass before checkout runs</span>
+
+<h2>Common mistakes</h2>
+<ul>
+<li><b>A <code class="inl">stage</code> outside a <code class="inl">pipeline</code>.</b> Stages only exist inside a <code class="inl">pipeline</code> — a bare <code class="inl">stage</code> at column 0 won't parse. An epic is a <code class="inl">pipeline</code>; each story is a <code class="inl">stage</code> under it.</li>
+<li><b>A stage with no <code class="inl">done when</code>.</b> A stage's body is a loop, and a loop needs a checkable finish line. Without one the pipeline can't tell the story is done and can't safely advance to the next stage.</li>
+<li><b>Wrong indentation.</b> <code class="inl">pipeline</code> sits at column 0, each <code class="inl">stage</code> is indented under it, and the stage's own body indents another level. Mixing levels reparses your stage lines as pipeline lines.</li>
+<li><b>Ordering hazards left ungated.</b> Stages run top to bottom and a failure halts the rest — so put the irreversible work (a migration, a deploy) behind <code class="inl">a human approves before …</code> rather than letting it run unattended just because an earlier stage went green.</li>
+</ul>
 
 <h2>Related</h2>
 <div class="related"><a href="pipeline.html"><code>pipeline</code></a><a href="loop.html"><code>loop</code></a><a href="human-gates.html"><code>human gates</code></a></div>

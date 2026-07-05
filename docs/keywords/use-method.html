@@ -37,11 +37,29 @@
 <h2>Syntax</h2>
 <pre class="syntax"><code>use the &lt;X&gt; <span class="tok-kw">method</span></code></pre>
 <h2>What it does</h2>
-<p>Pulls in a method — a <b>library of stages</b> (e.g. BMAD's analyze → architect → story → qa) — so a tiny file behaves like a hand-written pipeline. Methods are libraries, not syntax: import behavior instead of repeating stages.</p>
+<p>Pulls in a method — a <b>library of stages</b> (e.g. BMAD's analyze → architect → story → qa) — so a tiny file behaves like a hand-written pipeline. Methods are libraries, not syntax: you import proven behavior instead of retyping the same stages in every file.</p>
+<p>Why it matters: a mature workflow is a fixed sequence of stories with the same gates and checks every time. Copy-pasting that pipeline into every <code class="inl">.loop</code> is error-prone and drifts as the method evolves. <code class="inl">use the &lt;X&gt; method</code> collapses the whole sequence into one line — the method supplies the stages, their order, and their default gates; your file just declares intent. It's a config-tier line, so it belongs at the top of the file, above any definition, alongside companions like <code class="inl">runner:</code> and <code class="inl">target:</code>.</p>
+<p>A method preset can also carry its own <code class="inl">git:</code> block — a version-control strategy the whole imported pipeline runs under. That default is the weakest tier: your file's own <code class="inl">git:</code> block, or a per-loop one, overrides it. Because a method is a plain library of stages, it stays method-neutral — BMAD is one example, not the syntax; the same mechanism imports any stage library that ships for Loop.</p>
 <h2>Example</h2>
 <pre><code>use the BMAD <span class="tok-kw">method</span>   <span class="tok-com"># import the method's whole pipeline</span>
-<span class="tok-kw">run</span> with claude code
+<span class="tok-kw">runner</span>: claude code
 <span class="tok-kw">target</span>: ./src</code></pre><span class="cap">examples/methods/use-bmad.loop</span>
+
+<h2>Example — override the method's git default</h2>
+<pre><code>use the BMAD <span class="tok-kw">method</span>       <span class="tok-com"># preset may carry its own git: block</span>
+<span class="tok-kw">target</span>: ./packages/api
+
+<span class="tok-kw">git</span>:
+  <span class="tok-kw">work in a worktree</span>       <span class="tok-com"># this file wins over the method's default</span>
+  <span class="tok-kw">commit</span> each story</code></pre><span class="cap">the file's git: block overrides the preset's</span>
+
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Writing it inside a loop body.</b> <code class="inl">use the &lt;X&gt; method</code> is config-tier — it goes at the top of the file, before any <code class="inl">loop</code> or <code class="inl">pipeline</code>. It imports a pipeline; it isn't a line you put inside one.</li>
+<li><b>Assuming the method's <code class="inl">git:</code> block is final.</b> A preset's git strategy is the lowest tier of the cascade. If you need a different branch or commit cadence, add your own <code class="inl">git:</code> block — it overrides the method's.</li>
+<li><b>Expecting new syntax.</b> A method is a stage library, not a keyword — it can't do anything a hand-written <code class="inl">pipeline</code> couldn't. If you need to see the shape it expands to, print the flow.</li>
+<li><b>Treating it as BMAD-only.</b> The mechanism is method-neutral. Name whichever method's library ships for your project; don't assume BMAD is the only value the line accepts.</li>
+</ul>
 
 <h2>Related</h2>
 <div class="related"><a href="pipeline.html"><code>pipeline</code></a><a href="schedule.html"><code>schedule</code></a><a href="target.html"><code>target</code></a></div>

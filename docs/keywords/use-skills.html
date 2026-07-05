@@ -37,7 +37,9 @@
 <h2>Syntax</h2>
 <pre class="syntax"><code><span class="tok-kw">use skills</span>: &lt;skill-a&gt;, &lt;skill-b&gt;</code></pre>
 <h2>What it does</h2>
-<p>Lists skills the agent is allowed to call while it works — so the loop coordinates proven, reusable skills instead of one mega-prompt. Pair it with <code class="inl">done when the skill "&lt;name&gt;" approves</code> to let a review skill decide the verdict.</p>
+<p>Lists the skills the agent is allowed to call while it plans and acts — so the loop coordinates proven, reusable skills instead of one giant prompt. This is <b>skill-driven development</b>: you build and battle-test each skill on its own, then wire the loop to orchestrate them. The names must already resolve (in <code class="inl">~/.claude/skills</code>); if they don't exist yet, prove the skill by hand first, then add it here.</p>
+<p>Why it matters: a monolithic prompt is hard to debug and impossible to reuse. Naming skills keeps each capability small, independently tested, and shared across loops — the loop's job shrinks to deciding <i>when</i> to call each one. There are two roles a skill can play, and they're distinct. As an <b>execution</b> skill listed under <code class="inl">use skills:</code>, it's a tool the agent may invoke during a cycle. As a <b>verifier</b>, it decides the verdict via <code class="inl">done when the skill "&lt;name&gt;" approves</code> (or <code class="inl">scores 8 or more</code>, or <code class="inl">approves by 3 judges</code>). Pairing the two — an execution skill that does the work and a review skill that judges it — is the common shape.</p>
+<p>If the skills don't exist locally, let a recommender install them: <code class="inl">use skills recommended by ctx</code> resolves the bundle at run time (with <code class="inl">recommend skills with ctx</code> at the config tier). With no ctx attached those lines are inert and the loop runs unchanged.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">loop</span> <span class="tok-str">"harden the upload endpoint"</span>:
   <span class="tok-kw">goal</span>: no high-severity findings in the upload path
@@ -45,6 +47,23 @@
   <span class="tok-kw">done when</span> the skill <span class="tok-str">"security-review"</span> approves
   <span class="tok-kw">each cycle</span>: plan, then act, then observe
   <span class="tok-kw">when</span> it fails: reflect, then plan again</code></pre><span class="cap">a loop that drives two named skills</span>
+
+<h2>Example — skills chosen by ctx</h2>
+<pre><code><span class="tok-kw">recommend skills with ctx</span>              <span class="tok-com"># config tier: ctx is the skill source</span>
+
+<span class="tok-kw">loop</span> <span class="tok-str">"harden the stripe webhook handler"</span>:
+  <span class="tok-kw">goal</span>: webhook retries are idempotent and signature-checked, with tests
+  <span class="tok-kw">use skills recommended by ctx</span> <span class="tok-kw">for</span> <span class="tok-str">"stripe webhook idempotency"</span>
+  <span class="tok-kw">top up skills from ctx</span> <span class="tok-kw">when</span> a step needs more
+  <span class="tok-kw">done when</span> <span class="tok-str">"pnpm test api/webhooks"</span> <span class="tok-kw">passes</span></code></pre><span class="cap">let ctx pick + install the bundle</span>
+
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Naming a skill that doesn't exist.</b> <code class="inl">use skills:</code> assumes the names resolve in <code class="inl">~/.claude/skills</code>. Inventing a skill around capabilities you haven't built means the loop calls nothing. Prove the skill manually first, or let <code class="inl">ctx</code> install it.</li>
+<li><b>Confusing the execution role with the verifier role.</b> Listing a skill under <code class="inl">use skills:</code> only permits the agent to <i>call</i> it — it does not make it the finish line. To let a skill decide "done", it must appear in a <code class="inl">done when the skill "…" approves</code> predicate.</li>
+<li><b>Trusting a green test alone when "done" also means "built right".</b> An execution skill can make a test pass the wrong way. Add a trajectory eval — <code class="inl">done when the skill "…" approves on the trajectory</code> with a <code class="inl">the bar:</code> line — to judge how the work was done, not just the result.</li>
+<li><b>Assuming ctx lines do something without ctx.</b> <code class="inl">use skills recommended by ctx</code> is inert unless the ctx MCP server is attached; it won't error, but it also won't install anything. For a self-contained file, list the resolved skills under <code class="inl">use skills:</code>.</li>
+</ul>
 
 <h2>Related</h2>
 <div class="related"><a href="done-when.html"><code>done when</code></a><a href="remember-in.html"><code>remember in</code></a><a href="reflect.html"><code>reflect</code></a></div>

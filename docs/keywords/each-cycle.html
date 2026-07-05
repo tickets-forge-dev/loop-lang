@@ -37,7 +37,8 @@
 <h2>Syntax</h2>
 <pre class="syntax"><code><span class="tok-kw">each cycle</span>: <span class="tok-kw">plan</span>, <span class="tok-kw">then</span> <span class="tok-kw">act</span>, <span class="tok-kw">then</span> <span class="tok-kw">observe</span></code></pre>
 <h2>What it does</h2>
-<p>Lists the steps a cycle repeats — any subset of <b>plan</b>, <b>act</b>, <b>observe</b>, in order. This is the default, so you can omit it. <code class="inl">plan</code> runs read-only; <code class="inl">act</code> makes the change; <code class="inl">observe</code> runs the done-when check.</p>
+<p>Defines the <b>repeated unit of work</b> — the steps the loop runs, in order, on every pass until the goal is met. It's any subset of three verbs: <code class="inl">plan</code> reads context and decides the next move read-only; <code class="inl">act</code> makes the actual change; <code class="inl">observe</code> runs the <code class="inl">done when</code> check to see if the loop is finished. The full <code class="inl">plan, then act, then observe</code> is the default self-correcting unit, so you can omit the line entirely and get it for free.</p>
+<p>You'd write the line to <b>trim the cycle</b> when a phase is wasted effort. A mechanical, well-scoped change often doesn't need a planning step — <code class="inl">act, then observe</code> just does it and checks, saving a model call per cycle. On the other end, an ambiguous task benefits from keeping <code class="inl">plan</code> so the agent reasons before it writes. The order is fixed to the verbs you list; you don't invent new steps. Two related places also set it: a config-tier <code class="inl">each cycle:</code> at the top of the file sets the default for every loop below, and a loop's own line overrides that default just for itself. Whatever the shape, the <code class="inl">observe</code> step is what closes the loop — it runs the predicate that decides pass (stop) or fail (reflect into the next plan), so a cycle without a way to observe can never end on its own.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">each cycle</span>: <span class="tok-kw">plan</span>, <span class="tok-kw">then</span> <span class="tok-kw">act</span>, <span class="tok-kw">then</span> <span class="tok-kw">observe</span>   <span class="tok-com"># full self-correcting unit</span>
 <span class="tok-kw">each cycle</span>: <span class="tok-kw">act</span>, <span class="tok-kw">then</span> <span class="tok-kw">observe</span>              <span class="tok-com"># skip planning — just do + check</span></code></pre><span class="cap">two shapes</span>
@@ -54,6 +55,13 @@
   <path class="dg-reflect" d="M 462 90 C 360 178, 192 178, 90 90" marker-end="url(#dgAr)"/>
   <text class="dg-el-r" x="276" y="172">when it fails → reflect, then plan again</text>
 </svg><figcaption>Every cycle runs <b>plan → act → observe</b>; the <b>done&nbsp;when</b> check decides — pass → <b>stop</b>, fail → <b>reflect</b> into the next plan.</figcaption></figure>
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Dropping <code class="inl">observe</code>.</b> Without it the loop never runs its <code class="inl">done when</code> check, so it can't tell it's finished. Every cycle needs a way to observe or it runs blind to the hard cap.</li>
+<li><b>Cutting <code class="inl">plan</code> on an ambiguous task.</b> <code class="inl">act, then observe</code> saves a call, but on fuzzy work the agent writes before it reasons and thrashes. Keep planning unless the change is genuinely mechanical.</li>
+<li><b>Inventing steps.</b> The vocabulary is exactly <code class="inl">plan</code>, <code class="inl">act</code>, <code class="inl">observe</code>. A verb like "review" or "test" isn't a cycle step — put verification in <code class="inl">done when</code> and after-work in <code class="inl">also</code>.</li>
+<li><b>Forgetting the config-tier default wins by scope.</b> A file-level <code class="inl">each cycle:</code> sets the default; a loop's own line overrides it just for that loop. If a stage isn't cycling as you expect, check which level set it.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="reflect.html"><code>reflect</code></a><a href="when.html"><code>when … (transitions)</code></a><a href="loop.html"><code>loop</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>

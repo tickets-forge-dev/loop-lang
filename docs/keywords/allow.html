@@ -37,10 +37,23 @@
 <h2>Syntax</h2>
 <pre class="syntax"><code><span class="tok-kw">allow</span> edits <span class="tok-kw">automatically</span>, but <span class="tok-kw">ask me before</span> migrations or pushes</code></pre>
 <h2>What it does</h2>
-<p>Splits actions into <b>auto</b> and <b>confirm</b> classes. The canonical classes are <code class="inl">edit</code>, <code class="inl">migrate</code>, <code class="inl">push</code>, <code class="inl">deploy</code>, <code class="inl">delete</code>. <code class="inl">allow … automatically</code> grants without asking; <code class="inl">ask me before …</code> pauses once per run and remembers your answer.</p>
+<p>The <b>action policy</b> — it splits what the loop may do into an <b>auto</b> class it performs without asking and a <b>confirm</b> class that pauses for you first. The canonical classes are <code class="inl">edit</code>, <code class="inl">migrate</code>, <code class="inl">push</code>, <code class="inl">deploy</code>, <code class="inl">delete</code>. <code class="inl">allow … automatically</code> grants a class outright; <code class="inl">ask me before …</code> makes the loop stop and wait for a yes/no before it takes that action, then remembers your answer for the rest of the run.</p>
+<p>This is how you get an unattended loop that is still <b>safe on the irreversible parts</b>. The whole point of a self-correcting loop is that it iterates on its own — but iterating freely over a schema migration, a force-push, or a production deploy is how a green run leaves real damage behind. The policy line lets you say "edit source all you like, but stop at the blast radius": routine work stays fast, risky work stays gated. Reach for it whenever a loop can touch anything you'd want a human to sign off on. It pairs with <code class="inl">a human approves before …</code>, which is a harder, per-stage gate for the truly one-way doors; <code class="inl">ask me before …</code> is the lighter, run-scoped control for everyday risk. When no policy is given, the loop follows the git strategy's defaults — edits allowed, no push.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">allow</span> edits <span class="tok-kw">automatically</span>, but <span class="tok-kw">ask me before</span> migrations or pushes</code></pre><span class="cap">per-class policy</span>
+<pre><code><span class="tok-kw">loop</span> <span class="tok-str">"tidy the invoices module"</span>:
+  <span class="tok-kw">goal</span>: invoices code is clean and the suite is green
+  <span class="tok-kw">done when</span> <span class="tok-str">"pnpm test invoices"</span> <span class="tok-kw">passes</span>
+  <span class="tok-kw">look at</span>: src/invoices/, and the last failure
+  <span class="tok-kw">allow</span> edits <span class="tok-kw">automatically</span>, but <span class="tok-kw">ask me before</span> deletes or migrations</code></pre><span class="cap">gate only the irreversible actions</span>
 
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Gating nothing on an unattended run.</b> <code class="inl">allow edits automatically</code> with no <code class="inl">ask me before …</code> lets the loop migrate, delete, and push on its own. On anything irreversible, always name a confirm class.</li>
+<li><b>Using <code class="inl">ask me before</code> for a hard stop.</b> It pauses once and remembers your answer for the run — fine for everyday risk, but for a true one-way door (charging a card, a prod deploy) use <code class="inl">a human approves before …</code>, a per-stage gate that blocks every time.</li>
+<li><b>Expecting it to override git safety.</b> The policy can't authorize a push to <code class="inl">main</code>/<code class="inl">master</code> — that's blocked unconditionally regardless of what you allow. Set the branch strategy in a <code class="inl">git:</code> block, not here.</li>
+<li><b>Inventing action classes.</b> Stick to the canonical classes — <code class="inl">edit</code>, <code class="inl">migrate</code>, <code class="inl">push</code>, <code class="inl">deploy</code>, <code class="inl">delete</code>. A made-up class may not map to anything the runner recognizes.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="look-at.html"><code>look at</code></a><a href="human-gates.html"><code>human gates</code></a><a href="git.html"><code>git:</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>

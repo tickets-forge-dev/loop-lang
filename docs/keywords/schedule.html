@@ -37,11 +37,28 @@
 <h2>Syntax</h2>
 <pre class="syntax"><code><span class="tok-kw">schedule</span>: &lt;<span class="tok-kw">when</span>&gt;</code></pre>
 <h2>What it does</h2>
-<p>Part of the config tier — when the loop runs: <code class="inl">manual</code>, <code class="inl">nightly</code>, <code class="inl">on push</code>, or a cron expression. (v1 runs <code class="inl">manual</code>; others parse.)</p>
+<p>Part of the config tier — it declares <em>when</em> the loop runs rather than what it does: <code class="inl">manual</code>, <code class="inl">nightly</code>, <code class="inl">on push</code>, or a cron expression. It sits at the top of the file, before any definition, alongside its siblings <code class="inl">runner:</code> (which agent executes it), <code class="inl">target:</code> (which directory), and <code class="inl">notify:</code> (where results go). Together these turn a hand-run loop into an unattended, recurring job.</p>
+<p>Reach for <code class="inl">schedule:</code> on loops whose value comes from <em>repetition</em> — a nightly dependency audit, a security scan on every push, a weekly link-checker. The keyword only sets the cadence; the loop still needs a real <code class="inl">done when</code> check and a thrash guard, because an unattended run has no human watching each cycle. That is the point of pairing it with <code class="inl">notify:</code> — the loop reports its outcome to Slack or email so a failed or blocked run surfaces to a person even though nobody launched it by hand. Note the current runtime executes <code class="inl">manual</code> and simply <em>parses</em> the other cadences, so today <code class="inl">schedule:</code> documents intent and wires the config; treat scheduled cadences as declarative until the runner enforces them, and don't assume a <code class="inl">nightly</code> line alone will wake the loop up.</p>
 <h2>Example</h2>
 <pre><code>use the audit <span class="tok-kw">method</span>
 <span class="tok-kw">schedule</span>: nightly
 <span class="tok-kw">notify</span>: slack</code></pre><span class="cap">a scheduled audit</span>
+<pre><code><span class="tok-kw">schedule</span>: on push
+<span class="tok-kw">runner</span>: claude
+<span class="tok-kw">target</span>: services/api
+
+<span class="tok-kw">loop</span> <span class="tok-str">"gate the api on every push"</span>:
+  <span class="tok-kw">goal</span>: no high-severity findings in the api service
+  <span class="tok-kw">done when</span> <span class="tok-str">"semgrep --severity=high services/api"</span> finds nothing
+  <span class="tok-kw">after</span> 3 tries: stop <span class="tok-kw">and</span> warn <span class="tok-str">"scan still failing"</span></code></pre><span class="cap">a scan wired to run on push</span>
+
+<h2>Common mistakes</h2>
+<ul>
+  <li><b>Expecting a cadence to fire today.</b> The v1 runtime executes <code class="inl">manual</code> and only parses <code class="inl">nightly</code> / <code class="inl">on push</code> / cron. A <code class="inl">schedule: nightly</code> line records intent but won't wake the loop yet — run it by hand or via your own scheduler until the runner enforces cadence.</li>
+  <li><b>Putting it inside a loop body.</b> <code class="inl">schedule:</code> is a config-tier line — it belongs at the top of the file, before any <code class="inl">loop</code> / <code class="inl">pipeline</code> / <code class="inl">flow</code>. Indented under a definition it is a parse error.</li>
+  <li><b>Scheduling without a notifier.</b> An unattended run nobody watches needs a <code class="inl">notify:</code> so failures reach a human. A silent scheduled loop can fail every night unnoticed.</li>
+  <li><b>No thrash guard on a recurring run.</b> Without <code class="inl">after N tries: stop and warn</code>, a scheduled loop that can't reach green can loop and burn tokens with no one at the keyboard. Floor every unattended loop.</li>
+</ul>
 
 <h2>Related</h2>
 <div class="related"><a href="use-method.html"><code>use the &lt;X&gt; method</code></a><a href="target.html"><code>target</code></a><a href="notify.html"><code>notify</code></a></div>

@@ -40,7 +40,8 @@
   <span class="tok-kw">commit</span> <span class="tok-kw">when</span> the <span class="tok-kw">goal</span> is met
   open a pull request</code></pre>
 <h2>What it does</h2>
-<p>By default — no block — LoopFlow works on a branch, commits when the goal is met, and <b>never pushes to main/master</b>. A <code class="inl">git:</code> block refines: <code class="inl">work in place / on a branch / in a worktree</code>; <code class="inl">commit when the goal is met / each cycle / each story / never</code>; <code class="inl">push when done</code>; <code class="inl">open a pull request</code>. Cascades file → loop.</p>
+<p>A <code class="inl">git:</code> block sets the version-control strategy — how the loop branches, commits, and pushes. With <b>no block at all</b>, LoopFlow works on a branch, commits once when the goal is met, and does <b>not</b> push. A block refines any of three axes: <b>where</b> the work happens (<code class="inl">work in place / on a branch / on a branch "name" / in a worktree</code>); <b>when</b> it commits (<code class="inl">commit when the goal is met / each cycle / each story / never</code>); and <b>whether</b> it leaves the machine (<code class="inl">push when done</code>, then optionally <code class="inl">open a pull request</code>).</p>
+<p>Reach for an explicit block when the default cadence doesn't fit the job. <code class="inl">commit each cycle</code> gives you a granular history (and easy rollback) while a loop iterates; <code class="inl">commit each story</code> lands one commit per <code class="inl">stage</code> of a pipeline; <code class="inl">work in a worktree</code> isolates a risky run from your working tree entirely. The block sits at one of two levels: at the <b>config tier</b> (top of the file, before any definition) it applies to every loop in the file; inside a <b>loop body</b> it refines just that loop. The cascade is lowest-wins — built-in default, then a repo-wide <code class="inl">loop.config</code>, then the file's block, then a per-loop block — so you set the broad policy once and override only where needed. One rule sits outside the cascade and cannot be overridden by any block: <b>never push to <code class="inl">main</code> or <code class="inl">master</code></b>. A <code class="inl">push when done</code> aimed at a protected branch is an error that surfaces before the loop runs, not a surprise after.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">git</span>:
   work on a <span class="tok-kw">branch</span>
@@ -58,6 +59,13 @@
   <text class="dg-pill" x="646" y="74">🔒 never</text><text class="dg-pill" x="646" y="92">push to main</text>
   <text class="dg-sub" x="646" y="116">always on —</text><text class="dg-sub" x="646" y="131">can't be</text><text class="dg-sub" x="646" y="146">overridden</text>
 </svg><figcaption>Three layers, each refining the one above. The protected-branch rule sits outside all of them: pushing to main/master is always refused.</figcaption></figure>
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Expecting to push to main.</b> <code class="inl">push when done</code> on <code class="inl">main</code>/<code class="inl">master</code> is refused unconditionally — no block can override it — and it fails up front, before the loop starts. Push a feature branch and <code class="inl">open a pull request</code> instead.</li>
+<li><b><code class="inl">work in place</code> + <code class="inl">push when done</code> on a protected branch.</b> Same unconditional error: editing the current branch as-is and then pushing it, when that branch is protected, is caught before the run.</li>
+<li><b>Misreading the cascade.</b> Lowest wins — a per-loop block overrides the file block, which overrides <code class="inl">loop.config</code>. If a loop isn't committing the way you expect, check for a narrower block quietly overriding the broader one.</li>
+<li><b><code class="inl">commit each cycle</code> on a long loop.</b> Great for granular history and rollback, but a thrashing loop can produce a noisy pile of commits. If that's not what you want, keep the default <code class="inl">commit when the goal is met</code> for a single clean commit.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="allow.html"><code>allow / ask me before</code></a><a href="models.html"><code>models:</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>

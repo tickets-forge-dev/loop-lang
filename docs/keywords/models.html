@@ -37,7 +37,8 @@
 <h2>Syntax</h2>
 <pre class="syntax"><code><span class="tok-kw">models</span>: <span class="tok-kw">fast</span> &lt;model&gt;, <span class="tok-kw">strong</span> &lt;model&gt;</code></pre>
 <h2>What it does</h2>
-<p>Name two tiers and the engine auto-assigns <b>plan / reflect / also → fast</b> and <b>act → strong</b> (<code class="inl">observe</code> is a shell check, no model). Override a phase or use <code class="inl">all</code>; cascades file → loop → stage; <code class="inl">--model</code> overrides everything. A stack of cheap calls plus one strong <code class="inl">act</code> — and an end-of-run per-tier cost summary so the spend is measurable.</p>
+<p>Name two tiers — a <code class="inl">fast</code> model and a <code class="inl">strong</code> one — and the engine auto-assigns them by phase: <b>plan / reflect / also → fast</b> and <b>act → strong</b>. <code class="inl">observe</code> is a shell check with no model at all, so it never costs a token. The reasoning is economic: most cycles are cheap thinking (planning the change, digesting a failure, running finishing passes) and only the <code class="inl">act</code> phase writes code that has to be right. Paying strong-model rates for every plan and reflect is waste; tiering routes the expensive model to the one phase that needs it and lets a cheap model carry the rest.</p>
+<p>You can override any single phase or set them all at once — <code class="inl">models: act fast</code> pulls <code class="inl">act</code> down to the cheap tier, <code class="inl">models: all strong</code> puts everything on the strong one. Like other config-tier lines it cascades <b>file → loop → stage</b> (nearest wins), and a command-line <code class="inl">--model</code> flag overrides everything. At the end of a run the engine prints a per-tier cost summary, so the spend is measurable rather than a guess. Pair it with an <code class="inl">observe:</code> cost cap to stop a run before it overspends.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">models</span>: <span class="tok-kw">fast</span> haiku, <span class="tok-kw">strong</span> opus        <span class="tok-com"># file default</span>
 <span class="tok-com"># override: `models: act fast`  or  `models: all strong`</span></code></pre><span class="cap">tier the cycle</span>
@@ -52,6 +53,17 @@
   <rect class="dg-box dg-act dg-fa" x="150" y="92" width="150" height="40" rx="9"/><text class="dg-lbl" x="225" y="117">act</text>
   <text class="dg-sub" x="470" y="117">observe = shell check · no model</text>
 </svg><figcaption>Cheap model for the thinking phases, strong model for writing code. The end-of-run summary shows the call mix per tier.</figcaption></figure>
+<h2>Example — tier plus a cost cap</h2>
+<pre><code><span class="tok-kw">models</span>: <span class="tok-kw">fast</span> haiku, <span class="tok-kw">strong</span> opus
+<span class="tok-kw">observe</span>:
+  meter tokens and cost
+  <span class="tok-kw">stop</span> and warn <span class="tok-kw">if</span> cost exceeds <span class="tok-str">"$5"</span></code></pre><span class="cap">cheap thinking, one strong act, a spend ceiling</span>
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Pulling <code class="inl">act</code> onto the fast tier to save money.</b> <code class="inl">act</code> is the phase that writes code — a weak model here produces changes that fail the check and force more cycles, costing <em>more</em> overall. Keep <code class="inl">act strong</code> and economize on plan/reflect.</li>
+<li><b>Expecting <code class="inl">observe</code> to use a model.</b> <code class="inl">observe</code> runs your <code class="inl">done when</code> shell command; it has no model tier and never appears in the cost summary. Naming a model for it does nothing.</li>
+<li><b>Forgetting the cascade direction.</b> A per-loop or per-stage <code class="inl">models:</code> line overrides the file-level one, and <code class="inl">--model</code> overrides them all. If a run uses the wrong tier, check the nearest scope, not just the top of the file.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="git.html"><code>git:</code></a><a href="each-cycle.html"><code>each cycle</code></a><a href="use-method.html"><code>use the &lt;X&gt; method</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>

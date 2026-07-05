@@ -38,8 +38,16 @@
 <pre class="syntax"><code><span class="tok-kw">when</span> it fails: <span class="tok-kw">reflect</span>, <span class="tok-kw">then</span> <span class="tok-kw">plan</span> again</code></pre>
 <h2>What it does</h2>
 <p>The back-edge — the loop's working memory. On a failed check, <b>reflect</b> reads the failure output and writes a short diagnosis, which becomes context for the next <b>plan</b>. The difference between retrying blindly and learning from each miss.</p>
+<p>Without a back-edge, a loop that fails its <code class="inl">done when</code> check simply tries again from the same starting state and tends to make the same mistake — burning tokens on a thrash. <b>reflect</b> breaks that cycle by inserting a diagnosis step between <b>observe</b> and the next <b>plan</b>: it names <em>why</em> the last cycle failed so the next plan starts from a hypothesis instead of a blank slate. You steer what it looks at with <code class="inl">reflect on &lt;focus&gt;</code> — for example <code class="inl">reflect on which layer broke</code> tells the agent to localize the failure to a component before re-planning. This is <em>within-run</em> memory; its across-run counterpart is <code class="inl">remember in</code>, which persists lessons to a file. Two things make reflect actually work: the failure output has to reach the next plan (end your <code class="inl">look at:</code> with <code class="inl">and the last failure</code>), and every reflect back-edge needs a floor — an <code class="inl">after N tries: stop and warn</code> guard — so a loop that can't diagnose its way out eventually halts instead of looping forever.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">when</span> it fails: <span class="tok-kw">reflect</span> on which layer broke, <span class="tok-kw">then</span> <span class="tok-kw">plan</span> again</code></pre><span class="cap">the reflect back-edge</span>
+<pre><code><span class="tok-kw">loop</span> <span class="tok-str">"fix the checkout total"</span>:
+  <span class="tok-kw">goal</span>: cart total is correct with tax and discounts
+  <span class="tok-kw">look at</span>: src/cart/, src/tax/, <span class="tok-kw">and</span> the last failure
+  <span class="tok-kw">done when</span> <span class="tok-str">"pnpm test cart"</span> <span class="tok-kw">passes</span>
+  <span class="tok-kw">each cycle</span>: <span class="tok-kw">plan</span>, <span class="tok-kw">then</span> <span class="tok-kw">act</span>, <span class="tok-kw">then</span> <span class="tok-kw">observe</span>
+  <span class="tok-kw">when</span> it fails: <span class="tok-kw">reflect</span> on which layer broke, <span class="tok-kw">then</span> <span class="tok-kw">plan</span> again
+  <span class="tok-kw">after</span> 6 tries: stop <span class="tok-kw">and</span> warn <span class="tok-str">"thrashing on the total"</span></code></pre><span class="cap">reflect wired into a full loop, floored by a thrash guard</span>
 <h2>How it runs</h2>
 <figure class="fig"><svg viewBox="0 0 720 210" role="img" aria-label="plan act observe stop with reflect back-edge">
   <line class="dg-edge" x1="158" y1="61" x2="206" y2="61" marker-end="url(#dgA)"/>
@@ -53,6 +61,12 @@
   <path class="dg-reflect" d="M 462 90 C 360 178, 192 178, 90 90" marker-end="url(#dgAr)"/>
   <text class="dg-el-r" x="276" y="172">when it fails → reflect, then plan again</text>
 </svg><figcaption>Every cycle runs <b>plan → act → observe</b>; the <b>done&nbsp;when</b> check decides — pass → <b>stop</b>, fail → <b>reflect</b> into the next plan.</figcaption></figure>
+<h2>Common mistakes</h2>
+<ul>
+  <li><b>Forgetting <code class="inl">and the last failure</code> in <code class="inl">look at:</code>.</b> reflect writes a diagnosis, but the next plan only sees it if the failure is in scope. Without that trailing item the loop reflects into a void and repeats itself — the single most common reason a reflect loop still thrashes.</li>
+  <li><b>A back-edge with no floor.</b> <code class="inl">when it fails: reflect, then plan again</code> creates an unbounded retry. Always pair it with <code class="inl">after N tries: stop and warn</code> so a loop that can't diagnose its way out halts instead of burning tokens forever.</li>
+  <li><b>Reflecting on nothing specific.</b> A bare <code class="inl">reflect</code> is fine, but <code class="inl">reflect on &lt;focus&gt;</code> aims the diagnosis (which layer, which test, which assumption). A vague focus yields a vague plan; name the axis the failure is most likely to live on.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="when.html"><code>when … (transitions)</code></a><a href="each-cycle.html"><code>each cycle</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>

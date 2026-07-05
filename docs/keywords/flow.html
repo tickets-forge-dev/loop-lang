@@ -39,7 +39,8 @@
   <span class="tok-kw">run</span> <span class="tok-str">"a.loop"</span>
   <span class="tok-kw">then</span> <span class="tok-kw">run</span> <span class="tok-str">"b.loop"</span></code></pre>
 <h2>What it does</h2>
-<p>A pipeline lives in one file; a <b>flow</b> chains <b>separate <code class="inl">.loop</code> files</b>, run in order — so a big effort is many small reusable files. Fail-fast; a short text summary carries forward.</p>
+<p>A pipeline lives in one file; a <b>flow</b> chains <b>separate <code class="inl">.loop</code> files</b>, run in order — so a big effort becomes many small, reusable files instead of one monolith. Each step runs the whole file (its full plan→act→observe cycle), and its short <b>text summary</b> carries forward as context for the next step. The chain is <b>fail-fast</b>: a step that ends unsatisfied halts the rest.</p>
+<p>Reach for a flow when the stages are genuinely independent deliverables you'd want to run, resume, or reuse on their own — <code class="inl">build.loop</code>, <code class="inl">test.loop</code>, <code class="inl">deploy.loop</code> — rather than tightly-coupled stories that only make sense together (that's a <code class="inl">pipeline</code>). The unit of reuse is the file: the same <code class="inl">test.loop</code> can appear in several flows. Use <code class="inl">then run</code> for a step that should receive the previous step's summary automatically, or <code class="inl">with the result of &lt;name&gt;</code> to pull a specific named step's output instead of the auto-carried one. Attach <code class="inl">a human approves first</code> to any step that must not run unattended — a deploy, a migration — and the flow blocks there until approved. Because a flow is just an ordering of files, it stays flat and readable even as the overall effort grows.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">flow</span> <span class="tok-str">"ship"</span>:
   <span class="tok-kw">run</span> <span class="tok-str">"build.loop"</span>
@@ -55,6 +56,13 @@
   <g><text class="dg-el-p" x="616" y="24">👤 approves first</text><rect class="dg-box dg-gate dg-fg" x="526" y="34" width="180" height="62" rx="11"/><text class="dg-lbl" x="616" y="62">📄 deploy.loop</text><text class="dg-sub" x="616" y="80">all loops inside</text></g>
   <text class="dg-el" x="360" y="126">runs in order · <tspan fill="#ff86c2">✗ a file that isn't satisfied halts the rest</tspan></text>
 </svg><figcaption>A <b>flow</b> chains separate <b>.loop</b> files; after each, a short <b>text summary</b> carries into the next as context.</figcaption></figure>
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Using a flow where a pipeline belongs.</b> If the steps are tightly-coupled stories in one epic, they belong in a single <code class="inl">pipeline</code> as <code class="inl">stage</code>s. A flow is for separate, independently-runnable <code class="inl">.loop</code> files.</li>
+<li><b>Assuming files share state.</b> Only a short text <b>summary</b> crosses between steps — not the full transcript, working memory, or variables. If a later step needs a specific earlier output, name that step and use <code class="inl">with the result of &lt;name&gt;</code> rather than hoping it survived the auto-carry.</li>
+<li><b>Forgetting fail-fast.</b> A step that ends unsatisfied stops the whole chain; later steps never run. Put the cheap, likely-to-fail checks early so you don't pay for expensive steps before a gate that was going to block anyway.</li>
+<li><b>Wrong relative paths.</b> Each <code class="inl">run "&lt;file&gt;"</code> path is resolved relative to the flow file. A path that's right from your shell but wrong from the flow file's directory makes the step unrunnable.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="run.html"><code>run / then run</code></a><a href="for-each.html"><code>for each</code></a><a href="pipeline.html"><code>pipeline</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>

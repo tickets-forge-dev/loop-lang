@@ -38,7 +38,8 @@
 <pre class="syntax"><code><span class="tok-kw">pipeline</span> <span class="tok-str">"&lt;name&gt;"</span>:
   <span class="tok-kw">stage</span> &lt;name&gt;: …</code></pre>
 <h2>What it does</h2>
-<p>Runs <code class="inl">stage</code>s in order; a failing stage halts the rest. The natural mapping: an <b>epic → a pipeline</b>, each <b>story → a stage</b>.</p>
+<p>Sequences <code class="inl">stage</code>s and runs them in order — each stage runs only if the one before it passed, and a failing stage halts the rest (fail-fast). Every stage's body <em>is</em> a loop: it has its own <code class="inl">goal</code>, its own <code class="inl">done when</code>, and its own back-edge, so the pipeline is really a chain of self-correcting loops with a shared thread of progress. The natural mapping is the reason it exists: an <b>epic → a pipeline</b>, each <b>story → a stage</b>. When a job is too big to verify with a single check, you don't write one giant loop — you break it into ordered stories, each with a check it can pass on its own.</p>
+<p>Reach for a <code class="inl">pipeline</code> when the work has real ordering constraints: a security scan must pass before you build, the build must be green before a human approves the UI, the deploy runs last. Fail-fast keeps a broken early stage from wasting cycles on everything downstream, and per-stage human gates (<code class="inl">a human approves before …</code>) let you put a hard stop in front of the risky steps only. A <code class="inl">pipeline</code> needs at least one <code class="inl">stage</code>; the <code class="inl">pipeline</code> keyword sits at column 0 and each <code class="inl">stage</code> is indented under it with its own body indented again. For unordered work that can run at once, an inner <code class="inl">stages in parallel:</code> block runs its stages concurrently instead.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">pipeline</span> <span class="tok-str">"ship feature"</span>:
   <span class="tok-kw">stage</span> security:
@@ -57,6 +58,25 @@
   <g><text class="dg-el-p" x="617" y="28">👤 gate</text><rect class="dg-box dg-gate" x="542" y="40" width="150" height="58" rx="11"/><text class="dg-lbl" x="617" y="68">deploy</text><text class="dg-sub" x="617" y="85">health.sh ✓</text></g>
   <text class="dg-el" x="360" y="130">each stage runs only if the one before passed — <tspan fill="#ff86c2">✗ a failure halts the rest</tspan></text>
 </svg><figcaption>An <b>epic → a pipeline</b>, each <b>story → a stage</b>; stages run in order with their own checks and gates.</figcaption></figure>
+<h2>Example — a gated deploy at the end</h2>
+<pre><code><span class="tok-kw">pipeline</span> <span class="tok-str">"epic: checkout v2"</span>:
+
+  <span class="tok-kw">stage</span> <span class="tok-str">"story: cart totals"</span>:
+    <span class="tok-kw">goal</span>: cart shows correct totals with tax
+    <span class="tok-kw">look at</span>: src/cart/, src/tax/
+    <span class="tok-kw">done when</span> <span class="tok-str">"pnpm test cart"</span> <span class="tok-kw">passes</span>
+
+  <span class="tok-kw">stage</span> <span class="tok-str">"story: checkout submit"</span>:
+    a <span class="tok-human">human</span> approves before charging the card
+    <span class="tok-kw">goal</span>: order submits and payment is captured
+    <span class="tok-kw">done when</span> <span class="tok-str">"pnpm test checkout"</span> <span class="tok-kw">passes</span></code></pre><span class="cap">stories in order, a gate before the risky one</span>
+<h2>Common mistakes</h2>
+<ul>
+<li><b>A pipeline with no stages.</b> A <code class="inl">pipeline</code> needs at least one <code class="inl">stage</code> — the pipeline is just the ordering; the stages hold the goals and checks. An empty pipeline won't parse.</li>
+<li><b>A stage missing its own <code class="inl">done when</code>.</b> Each stage is a loop and needs a way to verify itself. A stage with a goal but no check can't confirm it passed, so fail-fast can't decide whether to proceed.</li>
+<li><b>Reaching for a pipeline when the steps are independent files.</b> If each step runs a whole separate <code class="inl">.loop</code> file, that's a <code class="inl">flow</code>, not a pipeline. Use a <code class="inl">pipeline</code> for stages inside one epic; use a <code class="inl">flow</code> to chain files.</li>
+<li><b>Indentation drift.</b> <code class="inl">pipeline</code> at column 0, each <code class="inl">stage</code> indented two spaces, the stage body indented again. Mixed depth is the usual parse failure — check with <code class="inl">loop-run show</code>.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="stage.html"><code>stage</code></a><a href="flow.html"><code>flow</code></a><a href="loop.html"><code>loop</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>

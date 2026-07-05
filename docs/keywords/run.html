@@ -40,6 +40,7 @@
 … with the result of &lt;step&gt;</code></pre>
 <h2>What it does</h2>
 <p>A <code class="inl">flow</code> step. <code class="inl">run "x.loop"</code> runs every definition in that file; <code class="inl">then run</code> chains the next and receives the previous step's text summary; <code class="inl">with the result of &lt;step&gt;</code> pulls the handoff from a named earlier step instead of the previous one.</p>
+<p>Where a <code class="inl">loop</code> self-corrects on one goal and a <code class="inl">pipeline</code> sequences stages inside a single file, a <code class="inl">flow</code> composes at the <em>file</em> level: each <code class="inl">run</code> executes a whole <code class="inl">.loop</code> — its full plan→act→observe cycle, its own <code class="inl">done when</code> — and passes a short text summary forward as context for the next step. Reach for it when a job spans units you already built and tested separately: a build loop, then a test loop, then a deploy loop. The chain is <b>fail-fast</b> — a step that ends unsatisfied halts the rest, so a broken build never reaches deploy. By default each step auto-carries the previous step's summary; <code class="inl">with the result of &lt;step&gt;</code> overrides that when a later step needs an <em>earlier</em> output instead (release notes that reference the build, not the test that ran after it). Paths are relative to the flow file. Add <code class="inl">a human approves first</code> under a step to gate it — the flow blocks until a person signs off before that file runs, which is how you put a hand on irreversible steps like a deploy.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">flow</span> <span class="tok-str">"release"</span>:
   <span class="tok-kw">run</span> <span class="tok-str">"build.loop"</span>
@@ -54,6 +55,13 @@
   <g><text class="dg-el-p" x="616" y="24">👤 approves first</text><rect class="dg-box dg-gate dg-fg" x="526" y="34" width="180" height="62" rx="11"/><text class="dg-lbl" x="616" y="62">📄 deploy.loop</text><text class="dg-sub" x="616" y="80">all loops inside</text></g>
   <text class="dg-el" x="360" y="126">runs in order · <tspan fill="#ff86c2">✗ a file that isn't satisfied halts the rest</tspan></text>
 </svg><figcaption>A <b>flow</b> chains separate <b>.loop</b> files; after each, a short <b>text summary</b> carries into the next as context.</figcaption></figure>
+<h2>Common mistakes</h2>
+<ul>
+  <li><b>Using <code class="inl">run</code> outside a <code class="inl">flow</code>.</b> <code class="inl">run</code> / <code class="inl">then run</code> are flow steps, not a way to invoke a loop from inside a <code class="inl">loop</code> or <code class="inl">stage</code>. To sequence stories in one file, use a <code class="inl">pipeline</code> with <code class="inl">stage</code>s; use a flow only to chain whole files.</li>
+  <li><b>Wrong relative path.</b> The quoted file resolves relative to the flow file, not your shell. A path that works from the terminal can still fail inside the flow — write it relative to where the <code class="inl">.loop</code> lives.</li>
+  <li><b>Assuming state carries, not just a summary.</b> Only a short text summary passes between steps — not the file tree diff or variables. If a later step needs a specific earlier output, name it with <code class="inl">with the result of &lt;step&gt;</code> rather than hoping it survived the auto-carry.</li>
+  <li><b>Forgetting fail-fast.</b> A step whose <code class="inl">done when</code> never goes green halts the entire flow. Make sure every chained file has a real, runnable check, or the chain stalls at the first weak link.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="flow.html"><code>flow</code></a><a href="for-each.html"><code>for each</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>

@@ -38,7 +38,8 @@
 <pre class="syntax"><code><span class="tok-kw">for each</span> &lt;var&gt; <span class="tok-kw">in</span> <span class="tok-str">"&lt;file&gt;"</span>:
   <span class="tok-kw">run</span> <span class="tok-str">"&lt;template.loop&gt;"</span></code></pre>
 <h2>What it does</h2>
-<p>Dynamic fan-out: read a plan file (discovered at planning time) and run a <b>template</b> loop once per item — each item's text becomes that run's context. If an item's checklist fails, the flow pauses and asks: continue or stop?</p>
+<p>Dynamic fan-out inside a <code class="inl">flow</code>: read a plan file and run a single <b>template</b> loop once per item — each item's text becomes that run's context (what to build). The source is a <code class="inl">.yaml</code> file (a list, or a single-key list like <code class="inl">items:</code>) or a <code class="inl">.md</code> file (which splits on each <code class="inl">## </code> section). If an item's own checklist fails, the flow pauses and asks: continue with the next item, or stop?</p>
+<p>Reach for <code class="inl">for each</code> when you have a backlog of same-shaped work — a dozen endpoints to scaffold, a list of stories to deliver, a set of files to migrate — where the <i>steps</i> are identical but the <i>subject</i> differs each time. Instead of writing one stage per item by hand, you write the template once and let a planning step discover the list at run time. That is the key difference from a fixed <code class="inl">pipeline</code>: the number and content of items are not known when you author the flow; they are read from the plan file when the flow runs, so the same flow adapts as the backlog grows or shrinks. It is method-neutral — the plan file can be any checklist, not only a BMAD backlog — and the per-item pause on failure keeps a single bad item from silently poisoning the whole batch.</p>
 <h2>Examples</h2>
 <pre><code><span class="tok-kw">flow</span> <span class="tok-str">"deliver"</span>:
   <span class="tok-kw">for each</span> item <span class="tok-kw">in</span> <span class="tok-str">"plan.yaml"</span>:
@@ -60,6 +61,13 @@ items:
   <rect class="dg-box dg-act dg-fa" x="460" y="156" width="210" height="46" rx="9"/><text class="dg-pill" x="565" y="184">▶ item-template.loop</text>
   <text class="dg-el" x="360" y="216">same template, once per item — <tspan fill="#ff86c2">if one fails, it pauses and asks: continue or stop?</tspan></text>
 </svg><figcaption><b>for each</b> is dynamic fan-out: a planning step discovers the items, then the same template runs once per item.</figcaption></figure>
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Using it outside a flow.</b> <code class="inl">for each</code> only lives inside a <code class="inl">flow</code>. It is not a general loop construct — a single self-correcting loop uses <code class="inl">loop</code>, and a fixed sequence uses <code class="inl">pipeline</code>.</li>
+<li><b>An unsupported source file.</b> The list must come from a <code class="inl">.yaml</code> file (a list or a single-key <code class="inl">items:</code> list) or a <code class="inl">.md</code> file split on <code class="inl">## </code> headings. Point it at anything else and there are no items to fan out over.</li>
+<li><b>A template with no per-item check.</b> The pause-on-failure only triggers if the template's own <code class="inl">done when</code> can fail. A template with no real check will "succeed" on every item, including the broken ones — give the template a verifiable predicate.</li>
+<li><b>Expecting items to share context.</b> Each item runs the template fresh with only that item's text as context. Items don't see each other's results; if item 3 depends on item 1's output, model that dependency explicitly rather than assuming order carries state.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="flow.html"><code>flow</code></a><a href="run.html"><code>run / then run</code></a><a href="pipeline.html"><code>pipeline</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>

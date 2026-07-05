@@ -37,10 +37,24 @@
 <h2>Syntax</h2>
 <pre class="syntax"><code><span class="tok-kw">look at</span>: &lt;files&gt;, and the last failure</code></pre>
 <h2>What it does</h2>
-<p>Points the agent at the context that matters before acting. Items are exact paths <em>or</em> plain-language descriptions it resolves to files. The phrase <code class="inl">and the last failure</code> feeds the previous failure's output back in.</p>
+<p>Points the agent at the context that matters before it plans or acts. Items are exact paths <em>or</em> plain-language descriptions the agent resolves to real files — <code class="inl">billing/form.tsx</code> is a path; <code class="inl">the settings API</code> is a description it looks up first. This is the scope line, and scope is what keeps a loop honest: without it an agent tends to write greenfield code or wander into files it shouldn't touch. With a tight <code class="inl">look at:</code> it follows the existing architecture and makes the smallest change that clears the <code class="inl">done when</code> check.</p>
+<p>Why it matters: the list you give here is also the list the agent <em>doesn't</em> read. Fewer, more relevant files mean a sharper plan, cheaper cycles, and less thrash. When a loop starts flailing, the first fix is almost always to <em>narrow</em> <code class="inl">look at:</code>, not widen it. The trailing phrase <code class="inl">and the last failure</code> is what closes the self-correcting circuit — it feeds the previous cycle's failing output back into the next plan, so <code class="inl">reflect</code> actually reaches the agent. Drop it and the loop reads the same files every cycle with no memory of what just broke.</p>
+<p><code class="inl">look at:</code> has friendly shorthands that parse identically — <code class="inl">in:</code>, <code class="inl">look in:</code>, <code class="inl">files:</code>, and <code class="inl">context:</code>. Use whichever reads best; they all desugar to the same scope line.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">look at</span>: billing/form.tsx, the settings API, and the last failure</code></pre><span class="cap">scoped context</span>
+<h2>Example — description plus the back-edge</h2>
+<pre><code><span class="tok-kw">loop</span> <span class="tok-str">"fix the cart total rounding"</span>:
+  <span class="tok-kw">goal</span>: cart totals round to two decimals everywhere
+  <span class="tok-kw">done when</span> <span class="tok-str">"pnpm test cart"</span> <span class="tok-kw">passes</span>
+  <span class="tok-kw">look at</span>: src/cart/, the tax helper, and the last failure
+  <span class="tok-kw">when</span> it fails: <span class="tok-kw">reflect</span>, <span class="tok-kw">then</span> <span class="tok-kw">plan</span> again</code></pre><span class="cap">path + description + reflect</span>
 
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Forgetting <code class="inl">and the last failure</code>.</b> Without it the diagnosis from <code class="inl">reflect</code> never reaches the next plan, so a self-correcting loop loses its memory and repeats the same broken attempt. Always end the list with it when the loop has a <code class="inl">when it fails</code> back-edge.</li>
+<li><b>Listing too many files.</b> A sprawling <code class="inl">look at:</code> dilutes the plan and burns tokens. When a loop thrashes, tighten scope to the few files that matter — the fix is to narrow, not widen.</li>
+<li><b>Treating it as an edit whitelist.</b> <code class="inl">look at:</code> is <em>read</em> scope, not a permission boundary. What the agent is allowed to change is governed by <code class="inl">allow … ask me before …</code>; use that for power, not this line.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="goal.html"><code>goal</code></a><a href="allow.html"><code>allow / ask me before</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>

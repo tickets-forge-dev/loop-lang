@@ -39,13 +39,25 @@
 a <span class="tok-human">human</span> reviews before stopping
 a <span class="tok-human">human</span> approves before &lt;X&gt;</code></pre>
 <h2>What it does</h2>
-<p>Five places a person enters the loop: approve the <b>plan</b> before any acting; <b>review</b> the result before the loop may stop; a hard <b>blocking gate</b> before a stage (deploys, provisioning); <code class="inl">when blocked: ask a human</code>; and the per-run <b>confirm</b> from the action policy (<code class="inl">ask me before …</code>).</p>
+<p>Human gates are where a person enters an otherwise self-driving loop. There are <b>five</b> of them, each at a different moment: approve the <b>plan</b> before any acting (<code class="inl">a human approves the plan first</code>); <b>review</b> the result before the loop may stop (<code class="inl">a human reviews before stopping</code>); a hard <b>blocking gate</b> before a specific action or stage such as a deploy or a card charge (<code class="inl">a human approves before &lt;X&gt;</code>); the escape hatch when the loop gets stuck (<code class="inl">when blocked: ask a human</code>); and the per-run <b>confirm</b> that comes from the action policy (<code class="inl">allow edits automatically, but ask me before …</code>).</p>
+<p>Reach for a gate wherever a mistake is expensive or irreversible — payments, migrations, deploys, provisioning, anything you cannot cheaply undo. A loop is fast precisely because it does not stop to ask; a gate deliberately trades that speed for a checkpoint, so spend gates where the blast radius justifies the pause and nowhere else. The plan gate catches a wrong approach before any tokens are spent acting on it; the review gate catches a green-but-wrong result before it ships; the blocking gate is the one that stops a genuinely dangerous single step. Gates compose with the automatic verification, not instead of it — <code class="inl">done when</code> still decides correctness, and the human judges the parts a predicate can't.</p>
 <h2>Example</h2>
 <pre><code>a <span class="tok-human">human</span> approves the <span class="tok-kw">plan</span> first        <span class="tok-com"># before any work</span>
 a <span class="tok-human">human</span> reviews before stopping        <span class="tok-com"># judge the result</span>
 a <span class="tok-human">human</span> approves before provisioning   <span class="tok-com"># blocking stage gate</span>
 <span class="tok-kw">when</span> <span class="tok-kw">blocked</span>: ask a <span class="tok-human">human</span>              <span class="tok-com"># unblock when stuck</span></code></pre><span class="cap">the gate forms</span>
-
+<h2>A gate on a risky stage</h2>
+<pre><code><span class="tok-kw">stage</span> <span class="tok-str">"story: checkout submit"</span>:
+  <span class="tok-kw">goal</span>: order submits and payment is captured
+  a <span class="tok-human">human</span> approves before charging the card   <span class="tok-com"># blocks until approved</span>
+  <span class="tok-kw">done when</span> <span class="tok-str">"pnpm test checkout"</span> passes</code></pre><span class="cap">a blocking gate before an irreversible action</span>
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Gating everything.</b> A gate on every cycle turns the loop back into manual work and defeats the point. Reserve gates for irreversible or high-cost actions; let the fast, checkable work run unattended.</li>
+<li><b>Confusing the gate with the check.</b> <code class="inl">a human reviews before stopping</code> judges the result, but it does not replace <code class="inl">done when</code> — the loop still needs a machine check to know it is even a candidate to stop. Keep both.</li>
+<li><b>A blocking gate with no async posture.</b> <code class="inl">a human approves before &lt;X&gt;</code> halts the run until someone answers. On an unattended or headless run that means it hangs — pair irreversible gates with <code class="inl">mode: orchestrator</code> (opens a PR) so the wait happens out of band.</li>
+<li><b>Relying on the goal instead of a gate.</b> Prose in the <code class="inl">goal</code> like "be careful with payments" is not enforced. Only an explicit gate or <code class="inl">ask me before …</code> actually blocks the agent.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="allow.html"><code>allow / ask me before</code></a><a href="when.html"><code>when … (transitions)</code></a><a href="stage.html"><code>stage</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>

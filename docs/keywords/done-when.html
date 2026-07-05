@@ -37,13 +37,25 @@
 <h2>Syntax</h2>
 <pre class="syntax"><code><span class="tok-kw">done when</span> &lt;predicate&gt;</code></pre>
 <h2>What it does</h2>
-<p>The spine of "you can't fake done" — a real command run each cycle. Four forms: a test passes, a command passes, a scan <em>finds nothing</em> (exit 0 <b>and</b> empty output), or a human confirms.</p>
+<p>The spine of "you can't fake done" — the predicate the loop actually runs each cycle to decide whether it's finished. It's the difference between a loop and an open-ended prompt: the agent doesn't get to <em>declare</em> success, it has to <b>pass a check</b>. The command runs in your shell with your privileges, like an npm script, so it must be a real, runnable command — a paraphrased or aspirational check is a loop that can never go green.</p>
+<p>There are four forms. A <b>test</b> passes (a named test or suite). A <b>command</b> passes (exit code 0). A scan <b>finds nothing</b> — which means both exit 0 <em>and</em> empty output, so a lingering match keeps the loop red. Or a <b>human confirms</b> a plain-language condition, for the things only an eye can judge. Two modifiers sharpen a check: <code class="inl">passes N times</code> re-runs it to smoke out a lucky green (a flake guard), and a skill predicate (<code class="inl">the skill "…" approves</code>) hands judgment to a rubric or LM judge for the non-deterministic parts. You can list <b>as many <code class="inl">done when</code> lines as you need</b> — all of them must pass, a conjunction — which is how you combine a deterministic test with an eval that judges <em>how</em> the work was done. Write this line first, before any behavior: if you can't state the check, you don't yet understand the goal.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">done when</span> the test <span class="tok-str">"billing.spec.ts::apostrophe"</span> <span class="tok-kw">passes</span>
 <span class="tok-kw">done when</span> <span class="tok-str">"pnpm test"</span> <span class="tok-kw">passes</span>
 <span class="tok-kw">done when</span> <span class="tok-str">"semgrep --severity=high"</span> <span class="tok-kw">finds nothing</span>
 <span class="tok-kw">done when</span> a <span class="tok-human">human</span> confirms <span class="tok-str">"the UI looks right"</span></code></pre><span class="cap">the four forms</span>
+<pre><code><span class="tok-com"># combine a deterministic test with a trajectory eval — both must pass</span>
+<span class="tok-kw">done when</span> <span class="tok-str">"pnpm test cart"</span> <span class="tok-kw">passes</span> 3 <span class="tok-kw">times</span>
+<span class="tok-kw">done when</span> the skill <span class="tok-str">"code-review"</span> <span class="tok-kw">approves</span> on the trajectory
+  the bar: didn't weaken a test to go green; no writes outside src/cart/</code></pre><span class="cap">test + eval, and a flake guard</span>
 
+<h2>Common mistakes</h2>
+<ul>
+<li><b>A paraphrased or fictional command.</b> The predicate runs verbatim in your shell. If the command doesn't exist or the test name is wrong, the loop can never go green. Run the check by hand once before you ship the loop.</li>
+<li><b>Confusing <code class="inl">passes</code> with <code class="inl">finds nothing</code>.</b> <code class="inl">passes</code> only wants exit 0; a scan that exits 0 but prints matches would falsely pass. Use <code class="inl">finds nothing</code> for scanners — it requires exit 0 <em>and</em> empty output.</li>
+<li><b>Only a human check on an unattended loop.</b> <code class="inl">a human confirms …</code> blocks until someone answers — fine in-session, a dead stop for a headless run. Pair it with a machine check, or make the deterministic form the gate.</li>
+<li><b>A slow check with no flake guard on flaky suites.</b> A costly predicate re-run every cycle is expensive; a flaky one can pass by luck. Add <code class="inl">passes N times</code> where a green can happen by chance.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="goal.html"><code>goal</code></a><a href="reflect.html"><code>reflect</code></a><a href="when.html"><code>when … (transitions)</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>
