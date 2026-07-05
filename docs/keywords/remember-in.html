@@ -38,6 +38,7 @@
 <pre class="syntax"><code><span class="tok-kw">remember in</span> <span class="tok-str">"&lt;file.md&gt;"</span></code></pre>
 <h2>What it does</h2>
 <p>Names a Markdown file the loop treats as its memory. On start it reads the file and feeds those lessons into the first plan; on stop it appends a dated entry recording how the run went. Across runs, the loop learns from its own history instead of starting cold each time.</p>
+<p>A loop forgets everything between runs. <code class="inl">reflect</code> gives it memory <em>within</em> a run — a failure feeds the next plan — but that context evaporates when the run ends. <code class="inl">remember in</code> is the across-run counterpart: it persists the hard-won lessons (which fix worked, which dead end to avoid, which flaky test needs a retry) to a file that survives, so the next invocation begins where the last one left off. Reach for it on loops you run repeatedly — a nightly audit, a recurring flaky-suite chase, a migration you resume over several sessions — where the same mistakes would otherwise be rediscovered each time. Because the memory is plain Markdown, it is human-readable and human-editable: you can prune stale notes, correct a wrong lesson, or seed the file with guidance before the first run. It pairs well with an <code class="inl">after N tries</code> guard — when a loop thrashes and stops, the memory file is exactly where the next run reads why, turning a dead end into a starting advantage instead of a repeated failure.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">loop</span> <span class="tok-str">"keep the flaky e2e suite green"</span>:
   <span class="tok-kw">goal</span>: the end-to-end suite passes three times in a row
@@ -45,6 +46,14 @@
   <span class="tok-kw">done when</span> <span class="tok-str">"pnpm test:e2e --repeat 3"</span> passes
   <span class="tok-kw">each cycle</span>: plan, then act, then observe
   <span class="tok-kw">when</span> it fails: reflect, then plan again</code></pre><span class="cap">a loop that carries lessons between runs</span>
+
+<h2>Common mistakes</h2>
+<ul>
+  <li><b>Confusing it with <code class="inl">reflect</code>.</b> <code class="inl">reflect</code> is within-run memory (a failure feeds the next plan in the same run); <code class="inl">remember in</code> is across-run memory (lessons persist to a file between runs). You usually want both — reflect to recover this run, remember to improve the next one.</li>
+  <li><b>Expecting memory on a one-shot loop.</b> The value only compounds when the loop runs more than once. On a task you run a single time, the file is written but never read back — skip it and save the noise.</li>
+  <li><b>Letting the file rot.</b> The memory is appended to on every stop, so it grows. A bloated file full of stale or contradictory notes can mislead the first plan. Prune it periodically — it is plain Markdown you own.</li>
+  <li><b>Wrong path or extension.</b> Point at a real <code class="inl">.md</code> file relative to the loop; a mistyped path means lessons silently never load and never save.</li>
+</ul>
 
 <h2>Related</h2>
 <div class="related"><a href="reflect.html"><code>reflect</code></a><a href="use-skills.html"><code>use skills</code></a><a href="goal.html"><code>goal</code></a></div>

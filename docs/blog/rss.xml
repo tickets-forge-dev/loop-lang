@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>LoopFlow blog</title>
+  <link>https://loopflow.live/blog/</link>
+  <description>Guides on self-correcting AI coding loops, AI agents, and loop engineering.</description>
+  <item>
+    <title>What is an AI coding loop?</title>
+    <link>https://loopflow.live/blog/what-is-an-ai-coding-loop.html</link>
+    <guid>https://loopflow.live/blog/what-is-an-ai-coding-loop.html</guid>
+    <description>An AI coding loop is a self-correcting agent workflow that plans, acts, and verifies against a real check until it passes.</description>
+  </item>
+  <item>
+    <title>How to make Claude Code self-correct</title>
+    <link>https://loopflow.live/blog/make-claude-code-self-correct.html</link>
+    <guid>https://loopflow.live/blog/make-claude-code-self-correct.html</guid>
+    <description>Make Claude Code self-correct and retry until tests pass with a plain-English .loop file.</description>
+  </item>
+  <item>
+    <title>One-shot prompts vs self-correcting loops</title>
+    <link>https://loopflow.live/blog/one-shot-prompts-vs-self-correcting-loops.html</link>
+    <guid>https://loopflow.live/blog/one-shot-prompts-vs-self-correcting-loops.html</guid>
+    <description>Why a one-shot prompt stops whether or not it worked, and what a self-correcting loop adds.</description>
+  </item>
+  <item>
+    <title>I Was the For-Loop</title>
+    <link>https://loopflow.live/blog/i-was-the-for-loop.html</link>
+    <guid>https://loopflow.live/blog/i-was-the-for-loop.html</guid>
+    <description>A personal essay on what changed when AI started writing the code: the five decisions behind every task.</description>
+  </item>
+</channel></rss>

@@ -37,10 +37,22 @@
 <h2>Syntax</h2>
 <pre class="syntax"><code><span class="tok-kw">also</span>: &lt;pass&gt;, &lt;pass&gt;</code></pre>
 <h2>What it does</h2>
-<p>Lightweight passes that run <b>only after the goal is met</b>, in order — and are skipped if the loop failed. Use it for chores (polish, security, docs). If a pass needs its own pass/fail check, promote it to a real stage instead.</p>
+<p>Lists <b>finishing passes</b> that run once, in order, <b>only after the goal is met</b> — and are skipped entirely if the loop failed. Think of them as the chores you want done on a green result but don't want cluttering the core cycle: polish the code, run a security scan, update the docs, tidy imports. They run <em>after</em> the <code class="inl">done when</code> check has already passed, so they can't be what makes the loop go green — the goal is the goal, and <code class="inl">also</code> is the after-work.</p>
+<p>Reach for it when a task has a hard, verifiable core plus a few nice-to-haves that don't each deserve their own pass/fail gate. Keeping them out of <code class="inl">done when</code> matters: if you fold "and the docs are updated" into the predicate, a docs miss keeps the whole loop red and burns retries on the wrong thing. As an <code class="inl">also</code> pass it runs best-effort on success instead. The flip side is the rule of thumb: <b>if a pass needs its own verification</b> — its own test or scan that must pass — it isn't a finishing pass, it's a real <code class="inl">stage</code>. Promote it so it gets a proper <code class="inl">done when</code> and back-edge. Use <code class="inl">also</code> only for work that's fine to run once, unchecked, at the end.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">also</span>: polish the code, <span class="tok-kw">run</span> a security check, update the docs</code></pre><span class="cap">finishing passes</span>
+<pre><code><span class="tok-kw">loop</span> <span class="tok-str">"add the CSV export endpoint"</span>:
+  <span class="tok-kw">goal</span>: GET /reports.csv streams the report as CSV
+  <span class="tok-kw">done when</span> <span class="tok-str">"pnpm test reports"</span> <span class="tok-kw">passes</span>
+  <span class="tok-kw">each cycle</span>: <span class="tok-kw">plan</span>, <span class="tok-kw">then</span> <span class="tok-kw">act</span>, <span class="tok-kw">then</span> <span class="tok-kw">observe</span>
+  <span class="tok-kw">also</span>: update the API docs, add a changelog entry</code></pre><span class="cap">chores that run once, on success</span>
 
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Putting verifiable work in <code class="inl">also</code>.</b> A finishing pass runs once and isn't checked. If the pass must be proven correct, it belongs in <code class="inl">done when</code> or its own <code class="inl">stage</code> — not here.</li>
+<li><b>Expecting it to run on failure.</b> <code class="inl">also</code> passes are skipped when the loop never met its goal. Don't stash cleanup you need on <em>every</em> exit here — use a <code class="inl">hooks: on stop</code> line for that.</li>
+<li><b>Overloading it with core work.</b> "also: build the feature" isn't a finishing pass — the feature is the goal. Keep <code class="inl">also</code> for genuine after-work (polish, docs, scans), and let the goal carry the real deliverable.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="each-cycle.html"><code>each cycle</code></a><a href="done-when.html"><code>done when</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<link rel="icon" type="image/svg+xml" href="/gyro-icon.svg"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>One-Shot Prompts vs Self-Correcting Loops | LoopFlow</title>
+<meta name="description" content="Why a one-shot prompt stops whether or not it worked, and what a self-correcting AI coding agent adds: a verifiable done-when, reflect on failure, and gates."/>
+<link rel="canonical" href="https://loopflow.live/blog/one-shot-prompts-vs-self-correcting-loops.html"/>
+<meta property="og:type" content="article"/>
+<meta property="og:title" content="One-Shot Prompts vs Self-Correcting Loops | LoopFlow"/>
+<meta property="og:description" content="Why a one-shot prompt stops whether or not it worked, and what a self-correcting AI coding agent adds: a verifiable done-when, reflect on failure, and gates."/>
+<meta property="og:url" content="https://loopflow.live/blog/one-shot-prompts-vs-self-correcting-loops.html"/>
+<meta property="og:image" content="https://loopflow.live/assets/og-card.png"/>
+<meta property="og:site_name" content="LoopFlow"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="One-Shot Prompts vs Self-Correcting Loops | LoopFlow"/>
+<meta name="twitter:description" content="Why a one-shot prompt stops whether or not it worked, and what a self-correcting AI coding agent adds: a verifiable done-when, reflect on failure, and gates."/>
+<meta name="twitter:image" content="https://loopflow.live/assets/og-card.png"/>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"One-shot prompts vs self-correcting loops","description":"Why a one-shot prompt stops whether or not it worked, and what a self-correcting AI coding agent adds: a verifiable done-when, reflect on failure, and gates.","url":"https://loopflow.live/blog/one-shot-prompts-vs-self-correcting-loops.html","image":"https://loopflow.live/assets/og-card.png","author":{"@type":"Person","name":"Idan Ayalon"},"publisher":{"@type":"Organization","name":"LoopFlow","logo":{"@type":"ImageObject","url":"https://loopflow.live/gyro-icon.svg"}},"mainEntityOfPage":"https://loopflow.live/blog/one-shot-prompts-vs-self-correcting-loops.html"}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<link rel="alternate" type="application/rss+xml" title="LoopFlow blog" href="/blog/rss.xml"/>
+<link rel="stylesheet" href="../keywords/style.css"/>
+<script defer data-domain="loopflow.live" src="https://plausible.io/js/script.js"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"LoopFlow","item":"https://loopflow.live/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://loopflow.live/blog/"},{"@type":"ListItem","position":3,"name":"One-shot prompts vs self-correcting loops","item":"https://loopflow.live/blog/one-shot-prompts-vs-self-correcting-loops.html"}]}</script>
+</head><body>
+<div class="topbar">
+  <div class="brand"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="LoopFlow"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span>LoopFlow</div>
+  <a class="nav" href="../index.html">Tutorial</a>
+  <a class="nav" href="../workshop.html">Workshop</a>
+  <a class="nav" href="../keywords/index.html">Keywords</a>
+  <a class="nav here" href="index.html">Blog</a>
+  <a class="nav lab" href="../game.html">🎮 LoopFlow Lab</a>
+</div>
+<main>
+<div class="crumb"><a href="index.html">Blog</a> / One-shot prompts vs loops</div>
+<h1>One-shot prompts vs self-correcting loops</h1>
+<div class="lede">A one-shot prompt asks an AI coding agent for an answer and trusts the reply; a self-correcting loop verifies, retries on red, and stops only on proof.</div>
+<h2>Two ways to point an AI coding agent at a task</h2>
+<p>A <strong>one-shot prompt</strong> is the default: you describe the change, the AI coding agent edits some files, replies <em>"Done"</em>, and the turn ends. A <strong>self-correcting loop</strong> is the other shape: you describe the change <em>and</em> a machine-checkable definition of finished, and the agent plans, acts, checks its own work, and keeps going until the check is green — or stops and warns you it's stuck.</p>
+<p>The difference isn't the model or the prompt quality. It's the control structure wrapped around the model. One fires once and trusts the reply. The other verifies, reflects on failure, and only stops on proof. This post walks the trade-off and shows both — because a loop isn't always the right call.</p>
+
+<h2>Where one-shot prompts break down</h2>
+<p>A one-shot prompt has one structural flaw, and everything else follows from it: <strong>there is no verification step the agent must pass.</strong> The agent decides when it's done, and it announces done whether or not the work is done.</p>
+<ul>
+  <li><strong>"Done" is a claim, not a result.</strong> The agent says the test passes. Did you run it? A one-shot prompt stops when the model stops typing, not when the suite goes green.</li>
+  <li><strong>Failure is your job to catch.</strong> You notice the regression, re-read the diff, re-type the prompt, and hope the second try lands. The retry loop exists — it's just running in your head and your keyboard.</li>
+  <li><strong>Nothing bounds the actions.</strong> On the way to "done" the agent might edit files you didn't mean to touch, weaken a test to make it pass, or run <code class="inl">git push</code>. A prompt can ask it to be careful; it can't enforce it.</li>
+  <li><strong>It doesn't compound.</strong> The next person re-types a slightly different paragraph and gets slightly different behavior. There's no artifact to review, diff, or re-run.</li>
+</ul>
+<p>None of this means the model is bad. It means an unverified single shot is the wrong container for work where "done" actually has to be true.</p>
+
+<h2>What a self-correcting loop adds</h2>
+<p>A <code class="inl">.loop</code> file adds exactly the four things a one-shot prompt is missing — a checkable finish line, a failure back-edge, gates on risk, and a floor so it can't spin forever.</p>
+<ul>
+  <li><strong>A verifiable finish line.</strong> <a href="../keywords/done-when.html">done when</a> names a real command — a test, a scanner, a script. At the observe step the <em>runtime</em> (deterministic code, not the model) spawns that command as an OS process and reads the exit code. Exit 0 = pass. The model does the work; the OS grades it. You can't fake an exit code.</li>
+  <li><strong>Self-correction on failure.</strong> When the check fails, <a href="../keywords/reflect.html">reflect</a> reads the failure output, writes a short diagnosis, and feeds it into the next plan. That back-edge is what makes it self-correcting instead of an agent that retries blindly.</li>
+  <li><strong><a href="../keywords/human-gates.html">Human gates</a> on the risky steps.</strong> <code class="inl">ask me before …</code> and <code class="inl">a human approves before …</code> put a person in front of migrations, deploys, anything irreversible — and by default a loop works on a branch and <strong>never pushes to <code class="inl">main</code> or <code class="inl">master</code></strong>.</li>
+  <li><strong>A thrash guard.</strong> <code class="inl">after N tries: stop and warn</code> is the floor. An unfixable goal stops burning tokens and tells you what got stuck, instead of looping forever.</li>
+</ul>
+
+<h2>Side by side: the same task, both ways</h2>
+<p>The one-shot prompt:</p>
+<p><em>"Fix the failing checkout tax test in <code class="inl">src/checkout</code> and make sure nothing else breaks."</em> The agent edits, replies <em>"Done — fixed the rounding."</em> Did <code class="inl">checkout.spec.ts::tax</code> pass? The whole suite? You re-run it yourself. Failed? Re-prompt. And it may have pushed on the way.</p>
+<p>The same task as a self-correcting loop:</p>
+<pre><code class="loop">loop "fix the checkout tax test":
+  goal: the checkout tax test passes with no regressions
+  done when the test "checkout.spec.ts::tax" passes
+
+  look at: the checkout code, and the last failure
+  allow edits automatically, but ask me before pushes
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 6 tries: stop and warn "tax fix thrashing"</code></pre>
+<p>It runs the test every cycle. Fails, reflects on why, fixes again. Stops <em>only</em> when the test is green — or warns after six. Works on a branch, never touches <code class="inl">main</code>. The same file runs tomorrow, and a teammate can read exactly what "done" meant.</p>
+<p>You can stack the finish line for work where one green isn't enough. Multiple <code class="inl">done when</code> lines are a conjunction — <em>all</em> must pass:</p>
+<pre><code class="loop">loop "harden the auth middleware":
+  goal: sessions expire correctly and no high-severity findings remain
+  done when "pnpm test src/auth" passes
+  done when "semgrep --severity=high" finds nothing
+
+  look at: the auth middleware, and the last failure
+  allow edits automatically, but ask me before touching migrations
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on which check broke, then plan again
+  when blocked: ask a human
+  after 8 tries: stop and warn "auth hardening stuck"</code></pre>
+<p>A one-shot prompt can <em>describe</em> both conditions. Only the loop <em>enforces</em> them, cycle after cycle, and self-corrects toward both.</p>
+
+<h2>When a one-shot prompt is still the right call</h2>
+<p>Loops cost more — every cycle re-plans and re-runs the check, and that's tokens and wall-clock. Don't wrap ceremony around work that doesn't need it. A one-shot prompt wins when any of these hold:</p>
+<ul>
+  <li><strong>The task is one-off.</strong> Rename a variable, tweak copy, answer a question about the codebase. Nothing repeats, so there's nothing to reuse.</li>
+  <li><strong>"Done" isn't checkable.</strong> If you can't write the finish line as a test, a command, or an explicit human review, a loop has nothing to verify against — it degrades to a one-shot with extra steps.</li>
+  <li><strong>The iterations aren't worth it.</strong> A trivial edit you can eyeball in a diff doesn't earn a plan-act-observe cycle.</li>
+</ul>
+<p>The rule of thumb is the four-condition gate: does the task <strong>repeat</strong>, is "done" <strong>checkable</strong>, are the <strong>iterations affordable</strong>, and can the loop <strong>verify itself</strong>? All four hold → reach for a loop. Any one fails → just prompt, and move on.</p>
+
+<h2>The takeaway</h2>
+<p>A one-shot prompt asks the AI coding agent for an <em>answer</em>. A self-correcting loop asks for a <em>result</em> and won't stop until a real check agrees. Use the prompt for the trivial and the one-off. Reach for the loop the moment "done" has to be provably true, the agent should retry on its own, and a human needs to gate the dangerous step. Same model — a container that verifies instead of hoping.</p>
+<p>Try both shapes side by side in the <a href="../playground.html">playground</a>, or learn the whole language from the first line in <a href="../index.html">the tutorial</a>.</p>
+<footer>LoopFlow · <a href="../index.html">the tutorial</a> · <a href="index.html">more posts</a> · <a href="https://github.com/tickets-forge-dev/loop-lang">GitHub</a>. Every example here is a real, runnable <code class="inl">.loop</code>.</footer>
+</main></body></html>

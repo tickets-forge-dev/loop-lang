@@ -37,9 +37,15 @@
 <h2>Syntax</h2>
 <pre class="syntax"><code><span class="tok-kw">after</span> N <span class="tok-kw">tries</span>: <span class="tok-kw">stop</span> and <span class="tok-kw">warn</span> <span class="tok-str">"&lt;message&gt;"</span></code></pre>
 <h2>What it does</h2>
-<p>The <b>thrash guard</b>. Because <b>attempts</b> outranks <b>fail</b>, it always wins once the threshold is crossed — so a self-correcting loop warns and stops instead of grinding to the absolute hard cap of 25. Put one on every loop that reflects.</p>
+<p>The <b>thrash guard</b> — the floor that keeps a self-correcting loop from grinding forever. A loop with a <code class="inl">reflect</code> back-edge will retry on every failure; without a ceiling it would loop until it hits the engine's absolute hard cap of 25 attempts, burning tokens on a problem it may never solve unaided. <code class="inl">after N tries</code> sets your own, lower limit: once the loop has made <b>N</b> full attempts without meeting the goal, it stops and surfaces the message so a human knows exactly which loop got stuck and why.</p>
+<p>Reach for it on <b>any loop that reflects</b>. Because <b>attempts</b> is checked before <b>fail</b> in the transition order (see <em>How it runs</em>), the guard always wins once the threshold is crossed — the loop can't sneak in one more reflect-and-retry past the limit. The right <b>N</b> is a budget decision: a cheap, fast <code class="inl">done when</code> check can afford 8–10 tries; an expensive one should stop at 3–4. The warning message is your handoff note — write it for the human who reads it, naming the likely cause so they can pick up where the loop left off.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">after</span> 6 <span class="tok-kw">tries</span>: <span class="tok-kw">stop</span> and <span class="tok-kw">warn</span> <span class="tok-str">"thrashing — needs a human look"</span></code></pre><span class="cap">the thrash guard</span>
+<pre><code><span class="tok-kw">loop</span> <span class="tok-str">"fix the flaky auth test"</span>:
+  <span class="tok-kw">goal</span>: the login suite is green and stays green
+  <span class="tok-kw">done when</span> <span class="tok-str">"pnpm test auth"</span> <span class="tok-kw">passes</span>
+  <span class="tok-kw">when it fails</span>: <span class="tok-kw">reflect</span> on which assertion broke, then plan again
+  <span class="tok-kw">after</span> 4 <span class="tok-kw">tries</span>: <span class="tok-kw">stop</span> and <span class="tok-kw">warn</span> <span class="tok-str">"auth test still red — likely a race in the token refresh"</span></code></pre><span class="cap">the last line of the loop is its hard stop</span>
 <h2>How it runs</h2>
 <figure class="fig"><svg viewBox="0 0 680 206" role="img" aria-label="transition precedence">
   <text class="dg-cap" x="340" y="14">AFTER EACH OBSERVE — FIRST MATCH WINS</text>
@@ -53,6 +59,13 @@
   <text class="dg-num" x="24" y="177">4</text><rect class="dg-box dg-plan" x="44" y="154" width="252" height="34" rx="8"/><text class="dg-pillm" x="170" y="175">it fails?</text>
   <line class="dg-edge" x1="298" y1="171" x2="356" y2="171" marker-end="url(#dgA)"/><rect class="dg-box dg-plan dg-fp" x="360" y="154" width="300" height="34" rx="8"/><text class="dg-pill" x="510" y="175">reflect, then plan again</text>
 </svg><figcaption>The order is the engine's, not yours: <b>attempts</b> is checked before <b>fail</b>, so the thrash guard always wins once you hit the limit.</figcaption></figure>
+<h2>Common mistakes</h2>
+<ul>
+<li><b>A reflect back-edge with no guard.</b> A loop that says <code class="inl">when it fails: reflect</code> but has no <code class="inl">after N tries</code> line will run to the hard cap of 25 before it stops. Never emit a back-edge without a try ceiling — it should be the last line of the loop.</li>
+<li><b>Setting <code class="inl">N</code> without pricing the cycle.</b> Each try re-runs plan, act, and the <code class="inl">done when</code> check. A slow or costly check with a high <b>N</b> is a big bill for no result. Match the ceiling to the cost: expensive check → low <b>N</b>.</li>
+<li><b>An empty or generic message.</b> <code class="inl">stop and warn "failed"</code> tells the human nothing. Name the loop's likely blocker so they can resume from the diagnosis, not from scratch.</li>
+<li><b>Confusing tries with the flake guard.</b> <code class="inl">after N tries</code> caps <em>attempts</em>; <code class="inl">passes N times</code> in a predicate re-runs the <em>same check</em> to catch a lucky green. They solve different problems — you often want both.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="when.html"><code>when … (transitions)</code></a><a href="reflect.html"><code>reflect</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>

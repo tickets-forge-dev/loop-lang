@@ -4,7 +4,7 @@
 
 <h1 align="center">LoopFlow</h1>
 
-<p align="center"><b>An open, natural-language DSL for loop engineering.</b><br/>Describe a staged, self-correcting, human-gated agent workflow in plain English, press ▶, and it runs on Claude Code.</p>
+<p align="center"><b>An open, natural-language DSL for self-correcting AI coding loops.</b><br/>Describe what an AI coding agent should build and how to verify it in plain English, press ▶, and it loops until the check passes — a self-correcting alternative to one-shot prompts, on Claude Code, Cursor, or Copilot.</p>
 
 <p align="center"><i>Stop babysitting the agent. Write the goal once — the loop plans, acts, reflects on red,<br/>and stops only when the check is green, at the gates you set.</i></p>
 

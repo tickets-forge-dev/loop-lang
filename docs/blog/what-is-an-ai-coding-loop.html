@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<link rel="icon" type="image/svg+xml" href="/gyro-icon.svg"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>What Is an AI Coding Loop? A LoopFlow Explainer</title>
+<meta name="description" content="An AI coding loop is a self-correcting agent workflow that plans, acts, and verifies against a real check until it passes. How they work, with runnable examples."/>
+<link rel="canonical" href="https://loopflow.live/blog/what-is-an-ai-coding-loop.html"/>
+<meta property="og:type" content="article"/>
+<meta property="og:title" content="What Is an AI Coding Loop? A LoopFlow Explainer"/>
+<meta property="og:description" content="An AI coding loop is a self-correcting agent workflow that plans, acts, and verifies against a real check until it passes. How they work, with runnable examples."/>
+<meta property="og:url" content="https://loopflow.live/blog/what-is-an-ai-coding-loop.html"/>
+<meta property="og:image" content="https://loopflow.live/assets/og-card.png"/>
+<meta property="og:site_name" content="LoopFlow"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="What Is an AI Coding Loop? A LoopFlow Explainer"/>
+<meta name="twitter:description" content="An AI coding loop is a self-correcting agent workflow that plans, acts, and verifies against a real check until it passes. How they work, with runnable examples."/>
+<meta name="twitter:image" content="https://loopflow.live/assets/og-card.png"/>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"What is an AI coding loop?","description":"An AI coding loop is a self-correcting agent workflow that plans, acts, and verifies against a real check until it passes. How they work, with runnable examples.","url":"https://loopflow.live/blog/what-is-an-ai-coding-loop.html","image":"https://loopflow.live/assets/og-card.png","author":{"@type":"Person","name":"Idan Ayalon"},"publisher":{"@type":"Organization","name":"LoopFlow","logo":{"@type":"ImageObject","url":"https://loopflow.live/gyro-icon.svg"}},"mainEntityOfPage":"https://loopflow.live/blog/what-is-an-ai-coding-loop.html"}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<link rel="alternate" type="application/rss+xml" title="LoopFlow blog" href="/blog/rss.xml"/>
+<link rel="stylesheet" href="../keywords/style.css"/>
+<script defer data-domain="loopflow.live" src="https://plausible.io/js/script.js"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"LoopFlow","item":"https://loopflow.live/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://loopflow.live/blog/"},{"@type":"ListItem","position":3,"name":"What is an AI coding loop?","item":"https://loopflow.live/blog/what-is-an-ai-coding-loop.html"}]}</script>
+</head><body>
+<div class="topbar">
+  <div class="brand"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="LoopFlow"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span>LoopFlow</div>
+  <a class="nav" href="../index.html">Tutorial</a>
+  <a class="nav" href="../workshop.html">Workshop</a>
+  <a class="nav" href="../keywords/index.html">Keywords</a>
+  <a class="nav here" href="index.html">Blog</a>
+  <a class="nav lab" href="../game.html">🎮 LoopFlow Lab</a>
+</div>
+<main>
+<div class="crumb"><a href="index.html">Blog</a> / What is an AI coding loop?</div>
+<h1>What is an AI coding loop?</h1>
+<div class="lede">A self-correcting AI agent that plans, acts, and re-runs a real verification check until the proof is green — not a one-shot prompt you have to babysit.</div>
+<p class="lede">An <strong>AI coding loop</strong> is a workflow in which an AI agent repeatedly plans a change, makes it, and runs a real verification check — feeding each failure back into the next attempt — until the check passes or a retry ceiling stops it. It replaces the fire-once prompt with a self-correcting cycle that stops on <em>proof</em>, not on the model's say-so.</p>
+
+<p>Put another way: a one-shot prompt asks for an answer and trusts the reply. An AI coding loop asks for a <em>result</em> and won't stop until a command your machine ran agrees the result is there. The loop is the control structure; the model is just the worker inside it.</p>
+
+<h2>The anatomy of an AI coding loop</h2>
+
+<p>Every self-correcting AI agent loop, whatever the tooling, is built from the same five parts. In LoopFlow — a small natural-language DSL for writing these loops as <code class="inl">.loop</code> files — each maps to one line:</p>
+
+<ul>
+  <li><strong>A goal</strong> — what "done" means, in plain language. The <a href="../keywords/goal.html">goal</a> is the objective the agent is working toward.</li>
+  <li><strong>Context</strong> — the files and prior failure the agent may read before it acts. Scoping this keeps the agent in your module instead of wandering the whole repo.</li>
+  <li><strong>Actions</strong> — what the agent may do on its own, and what needs a human. Risky, irreversible work (migrations, deploys, pushes) gets gated.</li>
+  <li><strong>Verification</strong> — the check that decides pass or fail. In LoopFlow this is <a href="../keywords/done-when.html">done when</a>, and it runs a real command.</li>
+  <li><strong>Stopping</strong> — when to quit: the goal is met, or the loop has thrashed past a try ceiling.</li>
+</ul>
+
+<p>The engine that ties them together is a repeated cycle: <code class="inl">plan</code> (decide the smallest change), <code class="inl">act</code> (make it), <code class="inl">observe</code> (run the check). On a red check the loop <em>reflects</em> — it reads the failure output, writes a short diagnosis, and hands that to the next plan. That back-edge is what makes the agent <strong>self-correcting</strong> rather than blindly retrying.</p>
+
+<h2>Why a loop beats a one-shot prompt</h2>
+
+<p>A single prompt fires once and stops when the model stops typing. You are the verification step: you re-run the test, notice it failed, and re-prompt — every time. The failure mode is silent. The model replies "Done — fixed the rounding," and you find out later that the test never went green.</p>
+
+<p>An AI coding loop closes that gap on three fronts:</p>
+
+<ol>
+  <li><strong>"Done" is provable.</strong> The verdict never comes from the model. At the observe step, deterministic runtime code spawns your check as a real OS process and reads the exit code. Exit 0 = pass; anything else = fail. The agent does the work; the operating system grades it.</li>
+  <li><strong>Failure is fuel, not a dead end.</strong> A red check triggers a reflect-and-replan instead of a stop. The loop learns from each miss automatically.</li>
+  <li><strong>Risk is gated, scope is bounded.</strong> The agent works on a branch, never pushes to <code class="inl">main</code>/<code class="inl">master</code>, and pauses at the gates you set.</li>
+</ol>
+
+<h2>A concrete .loop, walked through</h2>
+
+<p>Here is a complete AI coding loop for a failing test. Every line is one of the five parts above:</p>
+
+<pre><code class="loop">loop "fix the checkout tax test":
+  goal: the checkout tax test passes with no regressions
+  done when the test "checkout.spec.ts::tax" passes
+
+  look at: the checkout code, and the last failure
+  allow edits automatically, but ask me before pushes
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 6 tries: stop and warn "tax fix thrashing"</code></pre>
+
+<p>Reading it top to bottom — the finish line first, the safety net last:</p>
+
+<ul>
+  <li><code class="inl">goal</code> and <code class="inl">done when</code> are the <strong>contract</strong>. The check is written before any behavior — if you can't state the check, you don't yet know what you're building.</li>
+  <li><code class="inl">look at</code> and <code class="inl">allow … ask me before …</code> are the <strong>boundaries</strong>: what the agent may read, and what it may do alone. Ending <code class="inl">look at</code> with <code class="inl">and the last failure</code> is what feeds the reflect diagnosis into the next plan.</li>
+  <li><code class="inl">each cycle</code> is the <strong>engine</strong> — the repeated plan → act → observe unit.</li>
+  <li><code class="inl">when it fails</code> and <code class="inl">after 6 tries</code> are the <strong>safety net</strong>: recovery, then a hard floor so the loop can never spin forever. (LoopFlow also enforces an absolute cap of 25 cycles regardless.)</li>
+</ul>
+
+<p>Run it and the loop runs the test every cycle. Red? It reflects on <em>why</em>, edits, and re-checks. It stops only when <code class="inl">checkout.spec.ts::tax</code> is green — or warns after six attempts. The same file works tomorrow, and a teammate can read exactly what "done" meant.</p>
+
+<h3>Verification is the whole trick</h3>
+
+<p>The check is the loop's definition of reality, so it has to be real. LoopFlow supports several predicate forms, and you can list as many as you need — <em>all</em> must pass:</p>
+
+<pre><code class="loop">loop "harden the auth module":
+  goal: auth is covered and free of high-severity findings
+  done when "pnpm test src/auth" passes            # a shell command, exit 0
+  done when "semgrep --severity=high" finds nothing # exit 0 AND empty output
+  done when the skill "code-review" approves         # an LM-judge eval
+
+  look at: src/auth, and the last failure
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 8 tries: stop and warn "auth hardening stuck"</code></pre>
+
+<p>The command runs in your shell with your privileges — treat a <code class="inl">.loop</code> from an untrusted source as you would their shell scripts. A test runner that exits 0 on failure will make the loop lie to you, so write the check like you mean it.</p>
+
+<h2>Where AI coding loops scale</h2>
+
+<p>One loop fixes one thing. Real work is a sequence of them, and LoopFlow composes loops two ways:</p>
+
+<ul>
+  <li>A <a href="../keywords/pipeline.html">pipeline</a> is an epic broken into stages — each <code class="inl">stage</code> is itself a loop with its own goal and check, and stages run in order; a failing stage halts the rest. You can gate a stage on a human (<code class="inl">a human approves before charging the card</code>) for the risky steps.</li>
+  <li>A <code class="inl">flow</code> chains whole <code class="inl">.loop</code> files, passing each step's text result forward as context for the next — build, then test, then deploy behind an approval.</li>
+</ul>
+
+<p>Because each stage carries its own verification, a multi-step AI agent workflow degrades safely: the pipeline can only advance past a stage whose check actually went green.</p>
+
+<h2>How to run one</h2>
+
+<p>With LoopFlow installed (<code class="inl">npx @loop-lang/loop init</code>), there are two surfaces:</p>
+
+<ul>
+  <li><strong>In a Claude Code chat</strong> via the <code class="inl">/loopflow</code> skill — describe the work and it authors the <code class="inl">.loop</code>, then <code class="inl">/loopflow run &lt;file&gt;.loop</code> runs it natively in the session. You watch every plan → act → observe → reflect step and answer human gates inline.</li>
+  <li><strong>Headless</strong> via the CLI — <code class="inl">loop-run run &lt;file&gt;.loop</code> to execute, or <code class="inl">loop-run show &lt;file&gt;.loop</code> to print the shape and catch a missing check or thrash guard before you run it.</li>
+</ul>
+
+<p>The default installed into <code class="inl">CLAUDE.md</code> means you rarely type the slash: ask for something repeatable and verifiable and the agent reaches for a loop on its own; ask a one-off question and it just answers.</p>
+
+<h2>The takeaway</h2>
+
+<p>An AI coding loop is the difference between an agent that <em>claims</em> it finished and one that keeps working until the world agrees it did. Give it a goal, scope its context, gate the risky actions, hand it a check it can't fake, and cap the retries — and you get a self-correcting AI agent you can leave running, review in a PR, and re-run tomorrow.</p>
+
+<p><strong>Try it:</strong> write a <code class="inl">.loop</code> and watch its shape in the <a href="../playground.html">playground</a>, or learn the whole language line by line in <a href="../index.html">the tutorial</a>.</p>
+<footer>LoopFlow · <a href="../index.html">the tutorial</a> · <a href="index.html">more posts</a> · <a href="https://github.com/tickets-forge-dev/loop-lang">GitHub</a>. Every example here is a real, runnable <code class="inl">.loop</code>.</footer>
+</main></body></html>

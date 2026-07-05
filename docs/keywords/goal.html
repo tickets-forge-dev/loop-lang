@@ -37,10 +37,21 @@
 <h2>Syntax</h2>
 <pre class="syntax"><code><span class="tok-kw">goal</span>: &lt;text&gt;</code></pre>
 <h2>What it does</h2>
-<p>The objective, stated plainly. Required in every loop. It frames the work; <code class="inl">done when</code> is what actually decides success.</p>
+<p>The objective, stated plainly — one line of natural language that names the outcome the loop is chasing. It is <b>required in every loop</b>: a <code class="inl">loop</code> without a <code class="inl">goal</code> does not parse, and each <code class="inl">stage</code> of a <code class="inl">pipeline</code> carries its own. The goal frames the work — it is what the planner reads first and what every cycle steers toward — but it does <b>not</b> decide success. That job belongs to <code class="inl">done when</code>, the machine-checkable predicate underneath it.</p>
+<p>Reach for a sharp goal because it is the loop's compass, not its finish line. Write it as an outcome ("settings save when the name has an apostrophe"), not a task list ("edit the form and the API"), so the agent is free to find the smallest correct change instead of following your guessed steps. The authoring order puts <code class="inl">goal</code> first and <code class="inl">done when</code> immediately under it for a reason: if you cannot phrase a check for the goal, the goal is not yet understood — that is the signal to sharpen it before writing another line. A goal broad enough to need three tests is really three stages; a goal you cannot verify at all is a prompt, not a loop.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">goal</span>: settings save <span class="tok-kw">when</span> the company name has an apostrophe</code></pre><span class="cap">a goal line</span>
-
+<h2>Paired with its check</h2>
+<pre><code><span class="tok-kw">loop</span> <span class="tok-str">"fix billing apostrophe bug"</span>:
+  <span class="tok-kw">goal</span>: settings save <span class="tok-kw">when</span> the company name has an apostrophe
+  <span class="tok-kw">done when</span> the test <span class="tok-str">"billing.spec.ts::apostrophe"</span> passes</code></pre><span class="cap">goal on top, the check right under it</span>
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Writing a task, not an outcome.</b> "Refactor the settings form" tells the agent what to touch, not what "done" looks like — it will thrash. State the result you want and let the loop find the change.</li>
+<li><b>A goal you can't check.</b> If no <code class="inl">done when</code> predicate can express the goal, it is too vague or too big. Sharpen it, or split it into stages that each have a check — a goal without a verifiable check is a normal prompt, not a loop.</li>
+<li><b>Cramming an epic into one goal line.</b> A goal that needs several unrelated tests to confirm is really a <code class="inl">pipeline</code> of stages. Keep one goal to one checkable outcome.</li>
+<li><b>Leaning on the goal to gate risk.</b> The goal frames intent; it does not stop the agent from doing something dangerous. Put risky work behind <code class="inl">ask me before …</code> or a human gate, not in prose the planner may reinterpret.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="done-when.html"><code>done when</code></a><a href="look-at.html"><code>look at</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>

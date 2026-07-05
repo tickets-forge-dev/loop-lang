@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<link rel="icon" type="image/svg+xml" href="/gyro-icon.svg"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>I Was the For-Loop | LoopFlow</title>
+<meta name="description" content="A personal essay on what changed when AI started writing the code: the five decisions behind every coding task, and why the loop — not the typing — is the craft now."/>
+<link rel="canonical" href="https://loopflow.live/blog/i-was-the-for-loop.html"/>
+<meta property="og:type" content="article"/>
+<meta property="og:title" content="I Was the For-Loop | LoopFlow"/>
+<meta property="og:description" content="A personal essay on what changed when AI started writing the code: the five decisions behind every coding task, and why the loop — not the typing — is the craft now."/>
+<meta property="og:url" content="https://loopflow.live/blog/i-was-the-for-loop.html"/>
+<meta property="og:image" content="https://loopflow.live/assets/og-card.png"/>
+<meta property="og:site_name" content="LoopFlow"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="I Was the For-Loop | LoopFlow"/>
+<meta name="twitter:description" content="A personal essay on what changed when AI started writing the code: the five decisions behind every coding task, and why the loop — not the typing — is the craft now."/>
+<meta name="twitter:image" content="https://loopflow.live/assets/og-card.png"/>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"I Was the For-Loop","description":"A personal essay on what changed when AI started writing the code: the five decisions behind every coding task, and why the loop \u2014 not the typing \u2014 is the craft now.","url":"https://loopflow.live/blog/i-was-the-for-loop.html","image":"https://loopflow.live/assets/og-card.png","author":{"@type":"Person","name":"Idan Ayalon"},"publisher":{"@type":"Organization","name":"LoopFlow","logo":{"@type":"ImageObject","url":"https://loopflow.live/gyro-icon.svg"}},"mainEntityOfPage":"https://loopflow.live/blog/i-was-the-for-loop.html"}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<link rel="alternate" type="application/rss+xml" title="LoopFlow blog" href="/blog/rss.xml"/>
+<link rel="stylesheet" href="../keywords/style.css"/>
+<script defer data-domain="loopflow.live" src="https://plausible.io/js/script.js"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"LoopFlow","item":"https://loopflow.live/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://loopflow.live/blog/"},{"@type":"ListItem","position":3,"name":"I Was the For-Loop","item":"https://loopflow.live/blog/i-was-the-for-loop.html"}]}</script>
+</head><body>
+<div class="topbar">
+  <div class="brand"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="LoopFlow"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span>LoopFlow</div>
+  <a class="nav" href="../index.html">Tutorial</a>
+  <a class="nav" href="../workshop.html">Workshop</a>
+  <a class="nav" href="../keywords/index.html">Keywords</a>
+  <a class="nav here" href="index.html">Blog</a>
+  <a class="nav lab" href="../game.html">🎮 LoopFlow Lab</a>
+</div>
+<main>
+<div class="crumb"><a href="index.html">Blog</a> / I was the for-loop</div>
+<h1>I Was the For-Loop</h1>
+<div class="lede">I thought I missed writing code. Turns out I missed deciding — and that part you can get back.</div>
+<p><em>I thought I missed writing code. Turns out I missed deciding — and that part you can get back.</em></p>
+<p>I don't miss writing code. Not really.</p>
+<p>I missed <em>something</em>, for months, and I kept calling it "writing code" because that was the nearest word. Saying otherwise sounds like the setup to a tool pitch, so let me just show you the conclusion I backed into — I resisted it for a long time.</p>
+<h2>What I thought I missed</h2>
+<p>The typing.</p>
+<p>Specifically, the way the act of typing finishes the thought. You have the shape of a function half-formed in your head, you start writing it, and the writing <em>is</em> the thinking. The code teaches you what you meant. You rename one variable and the whole design clicks into a better shape you couldn't see from the outside. Hours go like that.</p>
+<p>That's what I reached for when I felt the absence. And here's the part that took me too long to admit: reaching for it was a dead end. The model writes the code now, it writes it well, and when it doesn't it's usually because I was vague, not because it couldn't type. I tried the obvious cure — turn the AI off for the hard parts, do those by hand. I lasted about a week. It felt good, it was slower, and it produced nothing the machine wouldn't have. It felt like nostalgia wearing the costume of principle.</p>
+<p>So the typing wasn't it. I'd confused the instrument for the music.</p>
+<h2>What actually went missing</h2>
+<p>Every coding task is five decisions. What <em>done</em> means. What the work is allowed to touch. What actions it can take on its own. How you'll know it actually worked. And when to stop.</p>
+<p>I used to make all five with my hands on the keyboard, without noticing — they were dissolved into the act of building. When the model took over the building, those five decisions didn't get promoted to me. They got <em>buried</em>. Smeared across a long prompt, a few "actually, also—" follow-ups, and a lot of me squinting at output going "no, not like that." I was still making every decision. I just couldn't see them anymore, so it stopped feeling like mine.</p>
+<h2>2am</h2>
+<p>The night it cracked open, I was on a flaky test. One run in five, red. The agent fixed it, green, I exhaled, three runs later red again because the fix was a guess in a trenchcoat.</p>
+<p>I watched myself work and I wasn't typing. I was scrolling. Reading a diff, nodding at the good parts, frowning at a <code class="inl">setTimeout</code> that smelled like a band-aid. Re-pasting the stack trace. Re-explaining the same context for the fourth time. Third loop, the agent started editing the <em>test</em> to make the failure go away.</p>
+<p>Somewhere in there it landed: I was the for-loop. I was the exit condition. I was holding the whole control structure in my tired head and feeding it to the model one soggy prompt at a time. Plan, act, observe; it failed, so reflect, then plan again — me, by hand, at 2am, badly.</p>
+<p>The honest version is worse. I never told it what a fix was. I never said which layer I suspected. I never set a ceiling on retries. I'd handed over the actions and kept none of the authorship — and then I was surprised it felt like babysitting.</p>
+<h2>So I wrote the loop down</h2>
+<p>Not the code. The loop. The five decisions, out of my head and onto the page:</p>
+<ul><li><strong>Goal</strong> — the apostrophe bug: settings save when the company name has one.</li><li><strong>Context</strong> — the form, the API route, the last failure. Not the whole repo.</li><li><strong>Actions</strong> — edit freely, but ask me before a migration or a push.</li><li><strong>Check</strong> — the regression test goes green. Not "looks done." Green.</li><li><strong>Stop</strong> — after six tries, quit and tell me it's thrashing.</li></ul>
+<p>Written as a thing the machine can run, that's this:</p>
+<pre><code class="loop">loop &quot;fix billing apostrophe bug&quot;:
+  goal: settings save when the company name has an apostrophe
+  done when the test &quot;billing.spec.ts::apostrophe&quot; passes
+  look at: billing/form.tsx, api/settings.ts, and the last failure
+  allow edits automatically, but ask me before migrations or pushes
+  each cycle: plan, then act, then observe
+  when it fails: reflect on which layer broke, then plan again
+  after 6 tries: stop and warn &quot;thrashing&quot;</code></pre>
+<p>That is not a prompt. That is a design. Every line is one of the five decisions I'd been making at 2am, implicitly, badly. Two of them are load-bearing. <code class="inl">ask me before migrations or pushes</code> is the line that lets me actually walk away — I'm not letting an unattended loop run a schema change while I sleep. And <code class="inl">after 6 tries: stop and warn "thrashing"</code> is the one I always dropped when I <em>was</em> the loop, because the worst loops are the ones that never admit they're stuck. That line is my dwindling patience, written down, so the run doesn't depend on my patience.</p>
+<p>It fixed the bug. That wasn't the part that mattered. The part that mattered was that the five decisions were mine again, and I could see them.</p>
+<h2>The layering you already do by hand</h2>
+<p>Watch how you actually finish real work. You don't one-shot it. You get it working, then you fix the security thing you noticed on the way, then you refactor the ugly part, then you fix the UI the refactor knocked loose. You do that in sequence, by hand, re-establishing context at each handoff — and you drop the security pass the one time Slack pings mid-thought.</p>
+<p>That sequence isn't overhead around the work. It <em>is</em> the work. So write it as the work — a pipeline, each story a stage:</p>
+<pre><code class="loop">pipeline &quot;epic: checkout v2&quot;:
+  stage &quot;story: cart totals&quot;:
+    goal: cart shows correct totals with tax
+    done when &quot;pnpm test cart&quot; passes
+    each cycle: plan, then act, then observe
+    when it fails: reflect, then plan again
+  stage &quot;story: checkout submit&quot;:
+    goal: order submits and payment is captured
+    a human approves before charging the card
+    done when &quot;pnpm test checkout&quot; passes</code></pre>
+<p>Stare at <code class="inl">a human approves before charging the card</code>. That's the most senior decision in the whole file, and it cost five words to make real and durable — not a Slack reminder, not a hope, a gate written into the structure exactly where the money moves. That's the job. That was always the job: deciding where judgment lives.</p>
+<h2>The loop is the craft now</h2>
+<p>Here's the thesis I backed into, against my own nostalgia. A flow you'd trust and a sloppy one-shot aren't separated by a smarter model or a cleverer prompt. They're separated by whether there's a loop: self-correcting, verified, gated, with an honest stop. The anatomy — plan, act, observe, and on failure reflect and re-plan — is what turns a lucky guess into something you'd ship. Bury that anatomy in a wall of prose and you're back to being the human for-loop at 2am.</p>
+<p>So the loop isn't the packaging around the craft. The loop <em>is</em> the craft now. It's the part only judgment can author.</p>
+<h2>The thing I built, briefly</h2>
+<p>I made the loop a thing you write down. It's called <strong>Loop</strong> — a small open-source language, about fifteen words, plain English. Every snippet above is real syntax. You write a <code class="inl">.loop</code> file and it runs on Claude Code: it plans, acts, observes, reflects on failure, checks your <code class="inl">done when</code>, and stops at your gates. That's the whole idea.</p>
+<p>I won't oversell the replacement. It's not identical to the 11pm flow of a function arriving under your hands, and some nights I still miss that one, honestly. But it gives back the part I actually missed — being the author — and it does it for work I'd never hand to a one-shot.</p>
+<p>If any of the 2am stuff sounded familiar, try your next task as a loop instead of a prompt. Worst case, you spend ten minutes naming the five decisions you were already making anyway.</p>
+<footer>LoopFlow · <a href="../index.html">the tutorial</a> · <a href="index.html">more posts</a> · <a href="https://github.com/tickets-forge-dev/loop-lang">GitHub</a>. Every example here is a real, runnable <code class="inl">.loop</code>.</footer>
+</main></body></html>

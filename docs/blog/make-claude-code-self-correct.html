@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<link rel="icon" type="image/svg+xml" href="/gyro-icon.svg"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>How to Make Claude Code Self-Correct | LoopFlow</title>
+<meta name="description" content="Make Claude Code self-correct and retry until tests pass. A .loop file adds a real done-when check, a reflect back-edge, and a try ceiling — plan, act, observe."/>
+<link rel="canonical" href="https://loopflow.live/blog/make-claude-code-self-correct.html"/>
+<meta property="og:type" content="article"/>
+<meta property="og:title" content="How to Make Claude Code Self-Correct | LoopFlow"/>
+<meta property="og:description" content="Make Claude Code self-correct and retry until tests pass. A .loop file adds a real done-when check, a reflect back-edge, and a try ceiling — plan, act, observe."/>
+<meta property="og:url" content="https://loopflow.live/blog/make-claude-code-self-correct.html"/>
+<meta property="og:image" content="https://loopflow.live/assets/og-card.png"/>
+<meta property="og:site_name" content="LoopFlow"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="How to Make Claude Code Self-Correct | LoopFlow"/>
+<meta name="twitter:description" content="Make Claude Code self-correct and retry until tests pass. A .loop file adds a real done-when check, a reflect back-edge, and a try ceiling — plan, act, observe."/>
+<meta name="twitter:image" content="https://loopflow.live/assets/og-card.png"/>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"How to make Claude Code self-correct","description":"Make Claude Code self-correct and retry until tests pass. A .loop file adds a real done-when check, a reflect back-edge, and a try ceiling \u2014 plan, act, observe.","url":"https://loopflow.live/blog/make-claude-code-self-correct.html","image":"https://loopflow.live/assets/og-card.png","author":{"@type":"Person","name":"Idan Ayalon"},"publisher":{"@type":"Organization","name":"LoopFlow","logo":{"@type":"ImageObject","url":"https://loopflow.live/gyro-icon.svg"}},"mainEntityOfPage":"https://loopflow.live/blog/make-claude-code-self-correct.html"}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<link rel="alternate" type="application/rss+xml" title="LoopFlow blog" href="/blog/rss.xml"/>
+<link rel="stylesheet" href="../keywords/style.css"/>
+<script defer data-domain="loopflow.live" src="https://plausible.io/js/script.js"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"LoopFlow","item":"https://loopflow.live/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://loopflow.live/blog/"},{"@type":"ListItem","position":3,"name":"How to make Claude Code self-correct","item":"https://loopflow.live/blog/make-claude-code-self-correct.html"}]}</script>
+</head><body>
+<div class="topbar">
+  <div class="brand"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="LoopFlow"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span>LoopFlow</div>
+  <a class="nav" href="../index.html">Tutorial</a>
+  <a class="nav" href="../workshop.html">Workshop</a>
+  <a class="nav" href="../keywords/index.html">Keywords</a>
+  <a class="nav here" href="index.html">Blog</a>
+  <a class="nav lab" href="../game.html">🎮 LoopFlow Lab</a>
+</div>
+<main>
+<div class="crumb"><a href="index.html">Blog</a> / Make Claude Code self-correct</div>
+<h1>How to make Claude Code self-correct</h1>
+<div class="lede">Claude Code does one pass and stops; a .loop gives it a verifiable finish line and a reflect back-edge so it retries until the tests actually pass.</div>
+<p class="lede">Claude Code does one pass and stops. To make it <strong>self-correct</strong> — retry until the tests actually pass — you need a verifiable finish line and a back-edge that feeds each failure into the next attempt. That is exactly what a <code class="inl">.loop</code> file is.</p>
+
+<h2>The problem: agents do one pass and stop</h2>
+<p>Ask Claude Code to "fix the failing checkout test" and it edits some code, runs the suite once (maybe), and replies <em>"Done — fixed the rounding."</em> Sometimes it's right. Often the test is still red, or a different test broke, or it never ran the suite at all. "Done" is whatever the model <em>said</em>, not a command that <em>passed</em>.</p>
+<p>The fix isn't a better prompt. A prompt fires once and trusts the model's word. What you want is a control loop: the agent acts, a <strong>real</strong> check grades the result, and on red the agent tries again — with the failure in hand — until the check is green or a ceiling stops it. That control loop is the artifact you edit, not the prose.</p>
+
+<h2>What "self-correcting" actually means</h2>
+<p>A self-correcting run is four repeating steps wrapped around a verdict the model can't author:</p>
+<ul>
+  <li><strong>plan</strong> — read the scoped context, decide the smallest change toward the goal.</li>
+  <li><strong>act</strong> — make the change.</li>
+  <li><strong>observe</strong> — run the <a href="../keywords/done-when.html">done when</a> check and read pass/fail.</li>
+  <li><strong>reflect</strong> — on red, diagnose <em>why</em> it failed and feed that into the next plan.</li>
+</ul>
+<p>The load-bearing part is <code class="inl">observe</code>. At that step the <strong>runtime</strong> — plain deterministic code, not the LLM — spawns your check as a real OS process and reads the exit code from the operating system. Exit 0 = pass; anything else = fail. The model does the work; the OS grades it. That's why "done" can't be faked: the verdict never comes out of the model's mouth.</p>
+<p>The other load-bearing part is <a href="../keywords/reflect.html">reflect</a>, the back-edge. Without it, a retry is just the same blind attempt again. With it, cycle two reads what broke in cycle one. That is the difference between a loop that thrashes and one that converges.</p>
+
+<h2>A concrete walkthrough</h2>
+<p>Say the checkout tax test is red. Here is the whole self-correcting loop — the finish line at the top, the safety net at the bottom:</p>
+<pre><code class="loop">loop "fix the checkout tax test":
+  goal: the checkout tax test passes with no regressions
+  done when the test "checkout.spec.ts::tax" passes
+
+  look at: src/checkout, and the last failure
+  allow edits automatically, but ask me before pushes
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on which layer broke, then plan again
+  after 6 tries: stop and warn "tax fix thrashing"</code></pre>
+<p>Every cycle runs the named test. Red → <code class="inl">reflect</code> writes a one-line diagnosis (<em>"rounding happens before the discount, not after"</em>) → that becomes context for the next <code class="inl">plan</code>. The loop stops only when the process your machine ran returns 0. It works on a branch and, with no <code class="inl">git:</code> block, <strong>never pushes to <code class="inl">main</code></strong>.</p>
+<p>Two lines earn their keep. <code class="inl">look at:</code> ends with <code class="inl">and the last failure</code> — reflect's diagnosis only reaches the next plan if you pass it forward. And <a href="../keywords/after-n-tries.html">after 6 tries</a> is the floor: a back-edge with no ceiling is a token bonfire. Never write one without the other.</p>
+<p>The check doesn't have to be a test. Any command that exits non-zero on failure works, and you can list several — <strong>all</strong> must pass:</p>
+<pre><code class="loop">loop "harden the auth middleware":
+  goal: rate limiting works and no high-severity findings remain
+  done when "pnpm test src/auth" passes
+  done when "semgrep --severity=high" finds nothing
+
+  look at: src/auth, and the last failure
+  each cycle: plan, then act, then observe
+  when it fails: reflect, then plan again
+  after 8 tries: stop and warn "auth loop stuck"</code></pre>
+<p><code class="inl">finds nothing</code> means "this scanner must report zero" — exit 0 <em>and</em> empty output. Stacking a test with a scan is how you make one loop prove both "it works" and "it's clean."</p>
+
+<h2>How to run it</h2>
+<p>Install once, then two ways to drive it:</p>
+<pre class="sh"><code>npx @loop-lang/loop init      # writes the /loopflow skill + AGENTS.md into your repo</code></pre>
+<ul>
+  <li><strong>In a Claude Code chat</strong> — <code class="inl">/loopflow run fix-tax.loop</code>. You watch every plan → act → observe → reflect step and answer human gates inline. With <code class="inl">init</code>, Claude also reaches for a <code class="inl">.loop</code> on its own when work is repeatable and verifiable — you often don't type the slash at all.</li>
+  <li><strong>Headless</strong> — <code class="inl">loop-run run fix-tax.loop</code> in a terminal or CI. Print the shape first with <code class="inl">loop-run show fix-tax.loop</code>; a missing done-when or thrash guard is obvious in the ASCII.</li>
+</ul>
+<p>A <code class="inl">.loop</code> is plain text, so the same file works in <strong>Cursor</strong> or <strong>Copilot</strong> — point the agent at <code class="inl">AGENTS.md</code> and it reads the goal, the check, and the stopping rules the same way Claude Code does.</p>
+
+<h2>Common pitfalls</h2>
+<ul>
+  <li><strong>No real check.</strong> A loop with no <code class="inl">done when</code> has nothing to self-correct against — it just runs to the cap. Write the check <em>before</em> the behavior; if you can't, you don't understand the goal yet.</li>
+  <li><strong>A test runner that exits 0 on failure.</strong> The check runs with your privileges in your shell. If it lies about success, the loop lies to you. Run the command by hand once before trusting it.</li>
+  <li><strong>Dropping the failure.</strong> Forget <code class="inl">and the last failure</code> and every cycle re-plans blind. That's a retry, not self-correction.</li>
+  <li><strong>A back-edge with no ceiling.</strong> <code class="inl">reflect, then plan again</code> without <code class="inl">after N tries</code> can burn tokens on an unfixable goal. The engine caps every loop at 25 cycles regardless, but set your own floor with a message that tells future-you what got stuck.</li>
+  <li><strong>Unbounded scope.</strong> <code class="inl">look at: the whole repo</code> makes the agent wander and rewrite working code. Name the three files that matter.</li>
+</ul>
+
+<h2>Wrap-up</h2>
+<p>Making Claude Code self-correct isn't a trick — it's structure. A goal, a check the OS grades, a reflect back-edge, and a try ceiling turn one-shot prompting into a loop that retries until the tests pass and stops when they do. Write it once, re-run it forever, review it in a PR.</p>
+<p>Try it now in the <a href="../playground.html">playground</a>, or learn the whole language line by line in <a href="../index.html">the tutorial</a>.</p>
+<footer>LoopFlow · <a href="../index.html">the tutorial</a> · <a href="index.html">more posts</a> · <a href="https://github.com/tickets-forge-dev/loop-lang">GitHub</a>. Every example here is a real, runnable <code class="inl">.loop</code>.</footer>
+</main></body></html>

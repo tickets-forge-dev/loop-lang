@@ -1,0 +1,12 @@
+{
+  "name": "LoopFlow",
+  "short_name": "LoopFlow",
+  "description": "An open DSL for self-correcting AI coding loops — describe a checked, human-gated AI coding workflow in plain English and run it until the check is green.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0d12",
+  "theme_color": "#0b0d12",
+  "icons": [
+    { "src": "/gyro-icon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" }
+  ]
+}

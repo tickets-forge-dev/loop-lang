@@ -37,11 +37,28 @@
 <h2>Syntax</h2>
 <pre class="syntax"><code><span class="tok-kw">notify</span>: &lt;destination&gt;</code></pre>
 <h2>What it does</h2>
-<p>Notification destination on completion (e.g. <code class="inl">slack</code>) — the config tier's "tell someone when it's done". Deferred past v1 for execution; parses today.</p>
+<p>Declares where to send word when a run finishes — the config-tier line that answers "tell someone when it's done". It names a destination such as <code class="inl">slack</code>, so an unattended loop can hand its result off to a human channel instead of leaving the outcome buried in a log. It pairs naturally with <code class="inl">schedule:</code> and <code class="inl">runner:</code>: a loop you kicked off yourself you'll watch in-session, but a nightly or headless run is exactly the case where you want a ping on completion rather than checking back manually.</p>
+<p>Why it lives at the config tier: notification is a property of <em>how the file is operated</em>, not of any single goal, so you set it once for the whole file alongside the other operational lines (<code class="inl">schedule:</code>, <code class="inl">runner:</code>, <code class="inl">target:</code>, <code class="inl">runs as:</code>). It is a delivery target only — it decides <em>where</em> the completion message goes, not <em>whether</em> the loop stopped or what "done" means. The verdict itself is still owned by <code class="inl">done when</code> and the human gates.</p>
+<p>Status: <code class="inl">notify:</code> is <b>deferred past v1 for execution</b> — it parses today and is accepted by the grammar, so you can author it now and it won't break a run, but the delivery is not wired up yet. Treat it as a forward-looking declaration of intent rather than a guaranteed page.</p>
 <h2>Example</h2>
 <pre><code><span class="tok-kw">schedule</span>: nightly
 <span class="tok-kw">notify</span>: slack</code></pre><span class="cap">ping on finish</span>
+<h2>Example — on an unattended run</h2>
+<pre><code><span class="tok-kw">schedule</span>: nightly
+<span class="tok-kw">runner</span>: claude-code
+<span class="tok-kw">notify</span>: slack
+<span class="tok-kw">runs as</span>: nightly-bot
 
+<span class="tok-kw">loop</span> <span class="tok-str">"refresh the changelog"</span>:
+  <span class="tok-kw">goal</span>: CHANGELOG.md covers everything merged since the last tag
+  <span class="tok-kw">done when</span> <span class="tok-str">"scripts/changelog-check.sh"</span> <span class="tok-kw">passes</span></code></pre><span class="cap">headless run, result pinged to a channel</span>
+
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Expecting a message today.</b> <code class="inl">notify:</code> is deferred past v1 — it parses but does not yet deliver. Don't build a workflow that depends on the ping arriving; it's an intent declaration for now.</li>
+<li><b>Putting it inside a loop body.</b> <code class="inl">notify:</code> is a config-tier line — it belongs at the top of the file with <code class="inl">schedule:</code> and <code class="inl">runner:</code>, before any <code class="inl">loop</code> or <code class="inl">pipeline</code>, not indented under a goal.</li>
+<li><b>Treating it as a stop condition.</b> Notification is delivery, not verification. Whether the loop is done is decided by <code class="inl">done when</code> and any human gate; <code class="inl">notify:</code> only says where to send the news.</li>
+</ul>
 <h2>Related</h2>
 <div class="related"><a href="schedule.html"><code>schedule</code></a><a href="target.html"><code>target</code></a></div>
 <footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>
