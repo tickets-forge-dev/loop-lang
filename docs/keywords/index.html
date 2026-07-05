@@ -1,9 +1,22 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"/><link rel="icon" type="image/svg+xml" href="/gyro-icon.svg"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Keywords — LoopFlow reference</title><meta name="description" content="Every LoopFlow keyword: syntax, what it does, examples, and diagrams."/>
+<link rel="canonical" href="https://loopflow.live/keywords/index.html"/>
+<meta property="og:type" content="article"/>
+<meta property="og:title" content="Keywords — LoopFlow reference"/>
+<meta property="og:description" content="Every LoopFlow keyword: syntax, what it does, examples, and diagrams."/>
+<meta property="og:url" content="https://loopflow.live/keywords/index.html"/>
+<meta property="og:image" content="https://loopflow.live/assets/og-card.png"/>
+<meta property="og:site_name" content="LoopFlow"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="Keywords — LoopFlow reference"/>
+<meta name="twitter:description" content="Every LoopFlow keyword: syntax, what it does, examples, and diagrams."/>
+<meta name="twitter:image" content="https://loopflow.live/assets/og-card.png"/>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"LoopFlow","item":"https://loopflow.live/"},{"@type":"ListItem","position":2,"name":"Keywords","item":"https://loopflow.live/keywords/"},{"@type":"ListItem","position":3,"name":"Keywords","item":"https://loopflow.live/keywords/index.html"}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="style.css"/></head><body>
+<link rel="stylesheet" href="style.css"/><script defer data-domain="loopflow.live" src="https://plausible.io/js/script.js"></script>
+</head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <marker id="dgA" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#5b6678"/></marker>
   <marker id="dgAr" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ffb45a"/></marker>
@@ -12,16 +25,16 @@
 </defs></svg>
 <div class="topbar">
   <div class="brand"><span class="logo"><svg class="lpmark" viewBox="0 0 32 32" fill="none" aria-label="LoopFlow"><circle cx="16" cy="16" r="11" stroke="#34e0c4" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="11" ry="4.4" stroke="#ffb45a" stroke-width="1.8" opacity=".85" transform="rotate(-28 16 16)"/><circle cx="16" cy="16" r="2.4" fill="#34e0c4"/></svg></span>LoopFlow</div>
-  <a class="nav" href="../tutorial.html">Tutorial</a>
+  <a class="nav" href="../index.html">Tutorial</a>
   <a class="nav" href="../workshop.html">Workshop</a>
   <a class="nav here" href="index.html">Keywords</a>
   <a class="nav lab" href="../game.html">🎮 LoopFlow Lab</a>
 </div>
 <main>
-<div class="crumb"><a href="../tutorial.html">LoopFlow</a> / Keywords</div>
+<div class="crumb"><a href="../index.html">LoopFlow</a> / Keywords</div>
 <h1>Keywords</h1>
 <div class="lede">Every construct in the LoopFlow language — one page each, with syntax, what it does, examples, and a diagram where it helps.</div>
-<p class="sub">Learning the language top-to-bottom? Read the <a href="../tutorial.html">tutorial</a>. This is the by-keyword reference.</p>
+<p class="sub">Learning the language top-to-bottom? Read the <a href="../index.html">tutorial</a>. This is the by-keyword reference.</p>
 <div class="tierhdr">Core syntax — the five decisions<span class="sub">The engine. Objective, context, actions, verification, stopping — plus the cycle that drives them, and where a human steps in.</span></div>
 <div class="grouphdr">The five decisions</div>
 <div class="kwgrid"><a class="kwcard" href="goal.html"><span class="kw">goal</span><span class="one">Objective — what "done" means, in plain language.</span></a><a class="kwcard" href="look-at.html"><span class="kw">look at</span><span class="one">Context — scope what the agent reads first.</span></a><a class="kwcard" href="allow.html"><span class="kw">allow / ask me before</span><span class="one">Actions — auto vs confirm.</span></a><a class="kwcard" href="done-when.html"><span class="kw">done when</span><span class="one">Verification — how a loop proves itself.</span></a><a class="kwcard" href="when.html"><span class="kw">when … (transitions)</span><span class="one">Stopping — rules evaluated after each observe.</span></a><a class="kwcard" href="after-n-tries.html"><span class="kw">after N tries (thrash guard)</span><span class="one">Stopping — stop &amp; warn if it gets stuck.</span></a></div>
@@ -37,5 +50,5 @@
 <div class="kwgrid"><a class="kwcard" href="use-skills.html"><span class="kw">use skills:</span><span class="one">Named skills the loop may invoke.</span></a><a class="kwcard" href="remember-in.html"><span class="kw">remember in</span><span class="one">Cross-run memory across runs.</span></a><a class="kwcard" href="also.html"><span class="kw">also</span><span class="one">Finishing passes after the goal is met.</span></a><a class="kwcard" href="plan-from.html"><span class="kw">plan from</span><span class="one">Read the plan from a file you control.</span></a></div>
 <div class="grouphdr">Ops & reuse</div>
 <div class="kwgrid"><a class="kwcard" href="git.html"><span class="kw">git:</span><span class="one">Branch / commit / push strategy.</span></a><a class="kwcard" href="models.html"><span class="kw">models:</span><span class="one">Model tiering by phase.</span></a><a class="kwcard" href="use-method.html"><span class="kw">use the &lt;X&gt; method</span><span class="one">Import a reusable preset.</span></a><a class="kwcard" href="schedule.html"><span class="kw">schedule</span><span class="one">When to run.</span></a><a class="kwcard" href="target.html"><span class="kw">target</span><span class="one">Where the runner operates.</span></a><a class="kwcard" href="notify.html"><span class="kw">notify</span><span class="one">Where to send completion.</span></a></div>
-<footer>LoopFlow · the keyword reference. New here? Start with the <a href="../tutorial.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>
+<footer>LoopFlow · the keyword reference. New here? Start with the <a href="../index.html">tutorial</a> or learn by playing <a href="../game.html">LoopFlow Lab</a>.</footer>
 </main></body></html>

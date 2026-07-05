@@ -1,0 +1,37 @@
+# LoopFlow
+
+> LoopFlow is an open, natural-language DSL for **loop engineering**: you describe a
+> self-correcting, human-gated AI coding workflow in plain English — its goal, the context
+> it may read, the actions it may take, how it verifies itself (`done when`), and where a
+> human steps in — then run it until the check is green. A `.loop` file turns "babysitting
+> the agent" into a scoped, verifiable, repeatable loop.
+
+Use LoopFlow when a coding task is **repeatable and verifiable**: a bug fixed by a failing
+test, a refactor gated by a check, an epic broken into stories, a migration with a
+verification step. A loop plans, acts, observes its own `done when` check, reflects on
+failure, and stops only when the goal is met or a thrash guard fires.
+
+Key concepts (each has a reference page under /keywords/):
+- goal — what "done" means, in plain language
+- done when — the predicate the loop uses to verify itself (a test, a command, a review skill)
+- look at — the context the loop reads before acting
+- each cycle — the repeated plan → act → observe steps
+- reflect — turning a failure into context for the next plan (the back-edge)
+- after N tries — the thrash guard that stops a stuck loop
+- pipeline / stage — an epic as a sequence of gated stages
+- flow / for each — chaining whole .loop files, or running a template per plan item
+- human gates — where a person approves the plan, a stage, or the stop
+
+## Docs
+- [Tutorial (home)](https://loopflow.live/): what LoopFlow is and why loops beat one-shot prompts
+- [Playground](https://loopflow.live/playground.html): type a .loop, see its shape live in-browser
+- [Workshop](https://loopflow.live/workshop.html): build a loop step by step
+- [LoopFlow Lab](https://loopflow.live/game.html): learn loop engineering by playing
+- [Keyword reference](https://loopflow.live/keywords/): every word in the DSL, one page each
+
+## Run it
+- In Claude Code: the `/loopflow` skill authors and runs `.loop` files in-session.
+- Headless: `loop-run run <file>.loop`.
+
+## Source
+- GitHub: https://github.com/tickets-forge-dev/loop-lang (grammar in AGENTS.md, manual in docs/MANUAL.md)

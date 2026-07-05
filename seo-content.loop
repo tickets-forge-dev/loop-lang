@@ -1,0 +1,33 @@
+# seo-content.loop — turn the thin keyword reference pages into real, rankable docs.
+# The biggest SEO lever left: search engines rank depth, and every keyword page is
+# currently a stub (median ~150 words, no "common mistakes" section, one example).
+# The loop expands them until the content-depth checker passes AND a human signs off
+# on quality — the checker stops it going green while thin; the human stops it padding.
+
+loop "seo: expand keyword reference pages":
+  # ── Contract ──────────────────────────────────────────────────────────────────
+  goal: every keyword page under docs/keywords/ is a substantial, genuinely useful
+        reference — a clear explanation of what the keyword does AND why it matters,
+        at least two worked examples, a "Common mistakes" section, and related links —
+        accurate to the real grammar, never padded filler.
+
+  done when "python3 docs/tools/check_content.py" passes
+
+  # ── Boundaries ────────────────────────────────────────────────────────────────
+  look at: docs/keywords/, docs/keywords/style.css, and the last failure
+  knowledge: AGENTS.md, docs/MANUAL.md          # the grammar — read-only source of truth; never edit
+  examples: templates/, examples/                # real .loop patterns to draw accurate examples from
+
+  allow edits automatically, but ask me before changing page structure or navigation
+  use skills: seo-audit                          # keep title/description/OG correct as bodies grow
+
+  # ── Engine ────────────────────────────────────────────────────────────────────
+  each cycle: plan, then act, then observe       # each pass: expand the thinnest pages, re-check
+
+  remember in "docs/keywords-content.memory.md"
+
+  # ── Safety net ────────────────────────────────────────────────────────────────
+  when it fails:  reflect on which pages and which checks still fail, then plan again
+  when blocked:   ask a human
+  a human reviews before stopping                # quality gate — no word-count padding
+  after 10 tries: stop and warn "content still thin — expand the worst pages by hand"
