@@ -3,9 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <link rel="icon" type="image/svg+xml" href="/gyro-icon.svg" />
+<link rel="manifest" href="/site.webmanifest" />
+<meta name="theme-color" content="#0b0d12" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>LoopFlow — the tutorial</title>
-<meta name="description" content="LoopFlow is an open, natural-language DSL for loop engineering: describe a self-correcting, human-gated coding workflow in plain English and run it until the check is green." />
+<title>LoopFlow — self-correcting AI coding loops in plain English</title>
+<meta name="description" content="LoopFlow is an open DSL for self-correcting AI coding loops: say what an AI agent should build and how to verify it in plain English, and it loops until the check is green." />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="LoopFlow — stop babysitting the agent" />
 <meta property="og:description" content="Write the goal once — the loop plans, acts, reflects on red, and stops only when the check is green. An open, natural-language DSL for AI coding workflows." />
@@ -261,7 +263,7 @@ footer{color:var(--muted); font-size:12px; border-top:1px solid var(--line); mar
 <header class="hero">
   <h1>Stop babysitting the agent.</h1>
   <div class="lede">Write the goal <em>once</em> — the loop plans, acts, reflects on red, and stops only when the check is green, at the gates you set.</div>
-  <p class="sub">LoopFlow is a small natural-language DSL for <strong>loop engineering</strong>. A <code class="inl">.loop</code> file describes a self-correcting, human-gated coding workflow — its objective, the context it may read, the actions it may take, how it verifies itself, and when it stops. This page teaches the whole language from the first line to full A-to-Z pipelines, every section grounded in a real example you can run.</p>
+  <p class="sub">LoopFlow is a small natural-language DSL for <strong>loop engineering</strong> — a way to run AI coding agents in a checked, self-correcting loop instead of one-shot prompts. A <code class="inl">.loop</code> file describes a self-correcting, human-gated AI coding workflow — its objective, the context it may read, the actions it may take, how it verifies itself, and when it stops. This page teaches the whole language from the first line to full A-to-Z pipelines, every section grounded in a real example you can run.</p>
 
   <div class="heroduo">
     <div class="pane good">
@@ -1122,6 +1124,30 @@ loop "run the agent-written migration":
     </div>
   </div>
 </section>
+
+<section id="faq" style="margin-top:34px">
+  <h2>FAQ — AI coding loops, explained</h2>
+  <h3>What is an AI coding loop?</h3>
+  <p class="sub">An AI coding loop is a workflow where an AI coding agent repeatedly plans a change, makes it, and checks its own work against a real test or command — retrying and reflecting on each failure until the check passes, instead of stopping after a single attempt. LoopFlow lets you describe one in plain English in a <code class="inl">.loop</code> file and run it.</p>
+  <h3>How do I make an AI coding agent self-correct?</h3>
+  <p class="sub">Give the agent a clear goal and a verifiable definition of done — a test, a shell command, or a review — then have it reflect on every failure and try again, with a thrash guard so it can't loop forever. In LoopFlow those are the <code class="inl">goal:</code>, <code class="inl">done when</code>, <code class="inl">reflect</code>, and <code class="inl">after N tries</code> lines.</p>
+  <h3>What is loop engineering?</h3>
+  <p class="sub">Loop engineering is designing the loop an AI agent runs in — its goal, the context it may read, the actions it may take, how it verifies itself, and where a human approves — rather than writing one-shot prompts and hoping. A <code class="inl">.loop</code> file <em>is</em> that design, written in plain English.</p>
+  <h3>How is LoopFlow different from just prompting an AI agent?</h3>
+  <p class="sub">A one-shot prompt runs once and stops whether or not it worked. A LoopFlow loop keeps going until a real check passes, reflects on failures to improve the next attempt, gates risky steps for a human, and stops on a thrash guard — so "done" is verified, not assumed.</p>
+  <h3>What tools does LoopFlow work with?</h3>
+  <p class="sub">It runs in Claude Code via the <code class="inl">/loopflow</code> skill, or headless with <code class="inl">loop-run</code>. A <code class="inl">.loop</code> file is plain text, so it works with Claude, Cursor, and Copilot — the loop is the artifact, not the tool.</p>
+</section>
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"What is an AI coding loop?","acceptedAnswer":{"@type":"Answer","text":"An AI coding loop is a workflow where an AI coding agent repeatedly plans a change, makes it, and checks its own work against a real test or command — retrying and reflecting on each failure until the check passes, instead of stopping after a single attempt. LoopFlow lets you describe one in plain English in a .loop file and run it."}},
+{"@type":"Question","name":"How do I make an AI coding agent self-correct?","acceptedAnswer":{"@type":"Answer","text":"Give the agent a clear goal and a verifiable definition of done — a test, a shell command, or a review — then have it reflect on every failure and try again, with a thrash guard so it can't loop forever. In LoopFlow those are the goal, done when, reflect, and after N tries lines."}},
+{"@type":"Question","name":"What is loop engineering?","acceptedAnswer":{"@type":"Answer","text":"Loop engineering is designing the loop an AI agent runs in — its goal, the context it may read, the actions it may take, how it verifies itself, and where a human approves — rather than writing one-shot prompts. A .loop file is that design, written in plain English."}},
+{"@type":"Question","name":"How is LoopFlow different from just prompting an AI agent?","acceptedAnswer":{"@type":"Answer","text":"A one-shot prompt runs once and stops whether or not it worked. A LoopFlow loop keeps going until a real check passes, reflects on failures to improve the next attempt, gates risky steps for a human, and stops on a thrash guard — so done is verified, not assumed."}},
+{"@type":"Question","name":"What tools does LoopFlow work with?","acceptedAnswer":{"@type":"Answer","text":"It runs in Claude Code via the /loopflow skill, or headless with loop-run. A .loop file is plain text, so it works with Claude, Cursor, and Copilot — the loop is the artifact, not the tool."}}
+]}
+</script>
 
 <footer>
   LoopFlow · loop engineering · Apache-2.0 · <a href="https://github.com/tickets-forge-dev/loop-lang">GitHub</a>. The full reference lives in <code class="inl">AGENTS.md</code> and <code class="inl">docs/MANUAL.md</code>; the IR contract is <code class="inl">spec/loop-spec.schema.json</code>. Every example on this page is a real, runnable <code class="inl">.loop</code> — most ship verbatim under <code class="inl">examples/</code>.

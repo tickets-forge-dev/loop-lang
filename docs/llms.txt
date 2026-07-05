@@ -29,6 +29,28 @@ Key concepts (each has a reference page under /keywords/):
 - [LoopFlow Lab](https://loopflow.live/game.html): learn loop engineering by playing
 - [Keyword reference](https://loopflow.live/keywords/): every word in the DSL, one page each
 
+## Also known as
+LoopFlow is a way to build **AI coding loops** / **AI agent loops** — a **self-correcting
+AI agent** that keeps working until a check passes. If you are looking for how to make an
+AI coding agent self-correct, retry on failure, or stop only when tests are green, that is
+what a LoopFlow `.loop` file describes. The practice is called **loop engineering**.
+
+## FAQ
+Q: What is an AI coding loop?
+A: A workflow where an AI coding agent repeatedly plans, makes a change, and checks its own
+work against a real test or command — reflecting on each failure and retrying until the
+check passes, instead of stopping after one attempt. LoopFlow describes one in plain English.
+
+Q: How do I make an AI coding agent self-correct?
+A: Give it a goal and a verifiable "done" check (a test, command, or review), reflect on each
+failure, and add a thrash guard so it can't loop forever. In LoopFlow: `goal:`, `done when`,
+`reflect`, and `after N tries`.
+
+Q: How is LoopFlow different from a one-shot prompt?
+A: A one-shot prompt runs once and stops whether or not it worked. A LoopFlow loop runs until
+a real check passes, reflects on failures, gates risky steps for a human, and stops on a
+thrash guard — so "done" is verified, not assumed.
+
 ## Run it
 - In Claude Code: the `/loopflow` skill authors and runs `.loop` files in-session.
 - Headless: `loop-run run <file>.loop`.
