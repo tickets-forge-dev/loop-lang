@@ -1,0 +1,17 @@
+# The repository cleanup loop — no abandoned branches, stale worktrees, or zombie PRs.
+# concept via Matthew Berman — https://signals.forwardfuture.com/loop-library/loops/repository-cleanup-loop/
+# An audit script defines "clean" (merged branches deleted, worktrees pruned, PRs
+# labeled or closed, no unmerged work older than the threshold); the loop works the
+# list until the audit finds nothing. Deletions are gated — recovery is expensive.
+
+loop "repository cleanup":
+  goal: the repo audit reports zero stale branches, worktrees, or unresolved PRs
+  done when "node scripts/repo-audit.mjs --stale-days 30" finds nothing   # TODO: your audit; prints one line per problem
+
+  look at: the audit output, branch/PR history for anything it flags, and the last failure
+  allow edits automatically, but ask me before deleting any branch with unmerged commits
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the oldest item the audit still flags, then plan again
+  when blocked: ask a human
+  after 6 tries: stop and warn "cleanup stuck — remaining items need an owner's decision"

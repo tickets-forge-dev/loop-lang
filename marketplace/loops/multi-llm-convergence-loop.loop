@@ -1,0 +1,17 @@
+# The multi-LLM convergence loop — ship the version independent judges agree on.
+# concept via Donn Felker (@donnfelker) — https://signals.forwardfuture.com/loop-library/loops/multi-llm-convergence-loop/
+# For consequential artifacts (a spec, a migration plan, a public document): iterate
+# until a panel of independent judges converges. Majority-of-3 is the convergence
+# test; the bar makes the judges argue about substance rather than style.
+
+loop "multi-LLM convergence":
+  goal: the artifact reaches a version independent reviewers agree is sound
+  done when the skill "artifact-review" approves on the output by 3 judges
+    the bar: internally consistent; no factual errors a reviewer can name; every objection from prior rounds addressed or rebutted in the text
+
+  look at: the artifact, the requirements it must satisfy, objections from earlier rounds, and the last failure
+  allow edits automatically
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the objection the dissenting judge raised, then plan again
+  after 6 tries: stop and warn "no convergence — the disagreement is substantive and needs a human call"

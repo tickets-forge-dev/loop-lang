@@ -1,0 +1,17 @@
+# The dependency triage loop — the Dependabot queue to zero, each PR proven first.
+# concept via Damian Galarza (@dgalarza) — https://signals.forwardfuture.com/loop-library/loops/dependency-triage-loop/
+# Every open dependency PR gets a decision backed by a green run: merge it, or close
+# it with a reason. The checker fails while any PR sits undecided. Majors are gated —
+# breaking-change review is human work.
+
+loop "dependency triage":
+  goal: zero open dependency PRs — each merged after a green run or closed with a written reason
+  done when "node scripts/dep-queue-check.mjs" passes   # TODO: lists open dep PRs; fails unless queue is empty
+
+  look at: each dependency PR's changelog and diff, the CI run for its branch, and the last failure
+  allow edits automatically, but ask me before merging any major-version bump
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the PR that failed its run or resists a decision, then plan again
+  when blocked: ask a human
+  after 6 tries: stop and warn "dep triage stuck — remaining PRs conflict with each other"

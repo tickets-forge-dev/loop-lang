@@ -1,0 +1,20 @@
+# The devil's-advocate loop — a design must survive three independent skeptics.
+# concept via an anonymous contributor — https://signals.forwardfuture.com/loop-library/loops/devils-advocate-design-loop/
+# LoopFlow's judge panel is this concept as a primitive: `approves by 3 judges`
+# collects three independent verdicts and takes the majority, so one generous
+# reviewer can't wave a weak design through. The bar tells the skeptics what
+# survival means.
+
+loop "devil's advocate":
+  goal: the design document withstands adversarial review — risks named, alternatives compared, failure modes addressed
+  done when the skill "design-skeptic" approves on the output by 3 judges
+    the bar: every major risk has a mitigation or an explicit acceptance; at least two alternatives compared honestly; no unexamined single point of failure
+
+  look at: the design document, the constraints it must satisfy, prior art it cites, and the last failure
+  allow edits automatically
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on the strongest objection the panel raised, then plan again
+  after 5 tries: stop and warn "design can't convince the panel — the objections may be right"
+
+  a human reviews before stopping

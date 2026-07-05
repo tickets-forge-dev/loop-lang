@@ -1,0 +1,18 @@
+# The research-to-artifact loop — research that must end as a decision-ready artifact.
+# concept via Hiten Shah (@hnshah) — https://signals.forwardfuture.com/loop-library/loops/research-to-artifact-loop/
+# Research without a deliverable sprawls. Fix the artifact's shape up front (brief,
+# spec, recommendation — with required sections); a validator checks the shape and
+# the citations, a judge checks it would actually support the decision.
+
+loop "research to artifact":
+  goal: the research lands as a complete artifact — required sections filled, every claim sourced, decision-ready
+  done when "node scripts/validate-artifact.mjs docs/brief.md" passes   # TODO: your artifact + required-sections/citations validator
+  done when the skill "artifact-review" approves on the output
+    the bar: answers the motivating question directly; recommendation follows from the cited evidence; open questions listed rather than hidden
+
+  look at: the motivating question, the source notes, the artifact template, and the last failure
+  allow edits automatically
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on which section is weakest against the bar, then plan again
+  after 6 tries: stop and warn "artifact not converging — the question may need narrowing"

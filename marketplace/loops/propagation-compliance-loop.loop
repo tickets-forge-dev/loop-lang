@@ -1,0 +1,17 @@
+# The propagation compliance loop — change a value once, prove it changed everywhere.
+# concept via @iamTristan — https://signals.forwardfuture.com/loop-library/loops/propagation-compliance-loop/
+# For version numbers, renamed features, changed counts, updated copy — anything that
+# lives in several files. `finds nothing` is the perfect predicate: the loop stops
+# only when no trace of the old value survives anywhere.
+
+loop "propagation compliance":
+  goal: the old value appears nowhere in the repo and every surface carries the new one
+  done when "grep -rn 'OLD_VALUE' --exclude-dir=node_modules --exclude-dir=.git ." finds nothing   # TODO: the value being retired
+  done when "npm test" passes                                                                      # replacements must not break anything
+
+  look at: every file the initial grep flags, and the last failure
+  allow edits automatically
+
+  each cycle: act, then observe
+  when it fails: reflect on which surfaces still carry the old value, then plan again
+  after 4 tries: stop and warn "propagation stuck — some occurrences may be intentional history"

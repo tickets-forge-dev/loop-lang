@@ -1,0 +1,16 @@
+# The post-release baseline — freeze the numbers the next regression will be measured against.
+# concept via Matthew Berman — https://signals.forwardfuture.com/loop-library/loops/post-release-baseline-loop/
+# Run immediately after a release: capture performance, bundle sizes, error rates,
+# and coverage into a versioned baseline artifact. A validator proves the snapshot
+# is complete and tied to the release SHA — future loops diff against it.
+
+loop "post-release baseline":
+  goal: a complete, versioned baseline artifact exists for this release — perf, sizes, error rate, coverage — tied to the release SHA
+  done when "node scripts/capture-baseline.mjs && node scripts/validate-baseline.mjs" passes   # TODO: capture + completeness check
+
+  look at: the release tag and SHA, the previous baseline for shape, the metric sources, and the last failure
+  allow edits automatically
+
+  each cycle: act, then observe
+  when it fails: reflect on which metric failed to capture, then plan again
+  after 4 tries: stop and warn "baseline incomplete — a metric source is unavailable"

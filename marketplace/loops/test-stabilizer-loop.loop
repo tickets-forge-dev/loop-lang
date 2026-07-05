@@ -1,0 +1,17 @@
+# The test stabilizer — flaky tests fixed at the cause, proven by repetition.
+# concept via hungtv27 (@hungtv27) — https://signals.forwardfuture.com/loop-library/loops/test-stabilizer-loop/
+# The flake guard IS the verification: one green run proves nothing about a flaky
+# suite, so the loop must produce five consecutive green runs. Weakening or skipping
+# a test to "stabilize" it is gated.
+
+loop "test stabilizer":
+  goal: the suite passes reliably — flakes fixed at their root cause, not silenced
+  done when "npm test" passes 5 times
+
+  look at: the flakiest tests from recent CI history, their shared fixtures and timing assumptions, and the last failure
+  allow edits automatically, but ask me before skipping, deleting, or loosening any test
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on whether the failure is the same flake or a new one, then plan again
+  when blocked: ask a human
+  after 8 tries: stop and warn "stabilizer stuck — the remaining flake may be infrastructure"

@@ -1,0 +1,16 @@
+# The nightly changelog sweep — release notes that never drift from what actually merged.
+# concept via Matthew Berman — https://signals.forwardfuture.com/loop-library/loops/nightly-changelog-sweep/
+# A checker diffs merged PRs since the last entry against the changelog: every
+# user-facing change accounted for, in the changelog's voice, nothing invented.
+# Run it nightly (schedule:) or before each release.
+
+loop "nightly changelog sweep":
+  goal: the changelog accounts for every user-facing change merged since its last entry, in the product's voice
+  done when "node scripts/check-changelog.mjs" passes   # TODO: merged-PRs-since-last-entry vs changelog diff; fails on any gap
+
+  look at: CHANGELOG.md, the merged PRs since the last entry with their labels, and the last failure
+  allow edits automatically, but ask me before rewriting entries older than the current release
+
+  each cycle: act, then observe
+  when it fails: reflect on which merged change the checker found unaccounted, then plan again
+  after 4 tries: stop and warn "changelog sweep stuck — a merged PR may need a human summary"

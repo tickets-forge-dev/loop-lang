@@ -1,0 +1,32 @@
+name: Marketplace
+
+# Validates every marketplace submission with the real parser: the bar is
+# parse + a machine-checkable done-when + a thrash guard + attribution
+# (market/validate-marketplace.mjs). A PR that fails here never reaches review.
+on:
+  pull_request:
+    paths:
+      - "marketplace/**"
+      - "market/**"
+  push:
+    branches: [master]
+    paths:
+      - "marketplace/**"
+      - "market/**"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build -w @loop-lang/parser   # the validator imports the real parser
+      - run: node market/validate-marketplace.mjs
+      - run: node market/build-catalog.mjs        # the catalog must still build from the tree
+      - run: node market/check-site.mjs

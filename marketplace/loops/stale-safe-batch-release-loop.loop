@@ -1,0 +1,17 @@
+# The stale-safe batch release — merge a queue of ready branches without a stale one slipping through.
+# concept via Matthew Berman — https://signals.forwardfuture.com/loop-library/loops/stale-safe-batch-release-loop/
+# The classic batch-release failure: branch B was green against main-as-of-Tuesday.
+# The checker demands every queued branch be rebased on CURRENT main and green after
+# the rebase. Merges themselves stay human-gated.
+
+loop "stale-safe batch release":
+  goal: every branch in the release queue is rebased on current main and green, with none merged stale
+  done when "node scripts/release-queue-check.mjs" passes   # TODO: per queued branch — up to date with main AND CI green post-rebase
+
+  look at: the release queue, each branch's diff against main, CI status per branch, and the last failure
+  allow edits automatically, but ask me before merging anything and before force-pushing a rebase
+
+  each cycle: plan, then act, then observe
+  when it fails: reflect on which branch went stale or red after rebase, then plan again
+  when blocked: ask a human
+  after 6 tries: stop and warn "release queue unstable — branches keep invalidating each other"
