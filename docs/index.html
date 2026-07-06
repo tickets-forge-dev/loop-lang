@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <link rel="icon" type="image/svg+xml" href="/gyro-icon.svg" />
 <link rel="manifest" href="/site.webmanifest" />
-<meta name="theme-color" content="#fbfbfd" />
+<meta name="theme-color" content="#111827" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>LoopFlow — self-correcting workflows for AI coding agents</title>
 <meta name="description" content="LoopFlow turns repeated AI coding work — PR review, tests, API checks, curl validation, human gates — into plain-English loops that run until verified." />
@@ -19,31 +19,35 @@
 <meta name="twitter:title" content="LoopFlow — self-correcting workflows for AI coding agents" />
 <meta name="twitter:description" content="Plain-English loops that make AI agents plan, act, check, reflect, and stop only when verified." />
 <meta name="twitter:image" content="https://loopflow.live/assets/og-card.png" />
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebSite","name":"LoopFlow","url":"https://loopflow.live/","description":"A plain-English language for self-correcting, human-gated AI coding workflows."}
-</script>
 <style>
-:root{--bg:#fbfbfd;--panel:#fff;--ink:#111827;--muted:#5f6673;--line:#e5e7eb;--blue:#0071e3;--code:#0f172a;--mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;--ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);line-height:1.58;-webkit-font-smoothing:antialiased}a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}.wrap{max-width:920px;margin:0 auto;padding:0 24px}.top{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:28px 0}.brand{display:flex;align-items:center;gap:10px;color:var(--ink);font-size:24px;font-weight:800;letter-spacing:-.03em}.mark{width:30px;height:30px}.nav{display:flex;gap:18px;flex-wrap:wrap}.nav a{color:var(--muted);font-size:14px;font-weight:650}.hero{padding:82px 0 74px}.pill{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:8px 14px;color:var(--ink);font-size:14px}.new{background:var(--ink);color:white;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:800}h1{font-size:82px;line-height:.98;letter-spacing:-.07em;margin:28px 0 18px;max-width:900px}h2{font-size:38px;line-height:1.13;letter-spacing:-.045em;margin:0 0 12px}h3{font-size:20px;letter-spacing:-.025em;margin:28px 0 6px}.lede{font-size:26px;line-height:1.33;letter-spacing:-.025em;color:#273142;max-width:790px;margin:0}.sub,p,li{color:#344054}.sub{font-size:17px;max-width:760px;margin:18px 0 0}.actions{display:flex;gap:14px;flex-wrap:wrap;margin:34px 0 0}.btn{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:15px 24px;font-weight:800;border:1px solid var(--line);background:var(--panel);color:var(--ink);box-shadow:0 1px 0 rgba(0,0,0,.03)}.btn:hover{text-decoration:none;transform:translateY(-1px)}.btn.primary{background:var(--blue);border-color:var(--blue);color:white}.btn.primary:hover{color:white}section{border-top:1px solid var(--line);padding:48px 0}.tight{padding-top:34px}.flow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:22px 0}.node{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:10px 14px;font-weight:800}.arrow{color:#8b93a1;font-weight:800}.snippet{position:relative;margin:16px 0 18px}.snippet pre{margin:0;padding-right:92px}.copy{position:absolute;top:10px;right:10px;border:1px solid var(--line);background:white;border-radius:10px;padding:6px 10px;font-weight:750;font-size:12px;color:var(--ink);cursor:pointer}.copy:hover{background:#f9fafb}pre{background:#f5f5f7;border:1px solid var(--line);border-radius:22px;padding:20px;overflow:auto;font-size:14px;line-height:1.6}pre.dark{background:var(--code);border-color:var(--code);color:white;box-shadow:0 18px 55px rgba(15,23,42,.16)}pre code{font-family:var(--mono);white-space:pre;color:inherit}code.inl{font-family:var(--mono);font-size:.9em;background:#f3f4f6;border:1px solid var(--line);border-radius:8px;padding:1px 6px;color:var(--ink)}ul{padding-left:23px}.examples{display:grid;grid-template-columns:1fr 1fr;gap:4px 32px}.docs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:20px}.doc{display:block;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:17px;color:var(--ink)}.doc:hover{text-decoration:none;border-color:#c9d1dc}.doc b{display:block}.doc span{display:block;color:var(--muted);font-size:14px;margin-top:4px}.tok-kw{color:#60a5fa;font-weight:700}.tok-human{color:#f0abfc;font-weight:700}.tok-str{color:#86efac}.tok-com{color:#a7b0c0;font-style:italic}.tok-num{color:#fbbf24}footer{border-top:1px solid var(--line);padding:34px 0 54px;color:var(--muted);font-size:14px}@media(max-width:760px){h1{font-size:50px}.hero{padding:52px 0}.lede{font-size:21px}.examples,.docs{grid-template-columns:1fr}.btn{width:100%}.top{align-items:flex-start}.nav{justify-content:flex-end}}
+:root{--bg:#111821;--bg2:#0e141c;--panel:#1d2630;--panel2:#202a35;--line:#3a4654;--ink:#e8edf3;--muted:#a7b0bd;--soft:#6f7b88;--blue:#65b7ff;--accent:#8cd2ff;--green:#7ee787;--mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;--serif:Georgia,"Times New Roman",serif;--ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);line-height:1.58;-webkit-font-smoothing:antialiased;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:20px 20px}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}.wrap{max-width:1180px;margin:0 auto;padding:0 32px}.top{margin:20px 0 0;border:1px solid var(--line);height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;background:rgba(18,26,36,.72);backdrop-filter:blur(10px)}.brand{display:flex;align-items:center;gap:12px;color:var(--ink);font-weight:800;font-size:24px;letter-spacing:.08em;text-transform:uppercase}.mark{width:32px;height:32px}.nav{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:28px}.nav a{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}.nav a:first-child{color:var(--ink);border-bottom:1px solid var(--accent);padding-bottom:5px}.hero{min-height:610px;text-align:center;padding:64px 0 48px}.hero-mark{width:76px;height:76px;margin:0 auto 34px;display:block}.kicker{font-family:var(--serif);font-style:italic;font-size:42px;line-height:1.12;letter-spacing:-.035em;margin:0 auto 26px;max-width:760px;color:#f3f6fa}.kicker em{color:var(--accent);font-style:italic}.lede{font-family:var(--serif);font-size:24px;line-height:1.38;color:#e5eaf1;margin:0 auto;max-width:720px}.sub{font-size:16px;color:var(--muted);margin:18px auto 0;max-width:720px}.actions{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin:30px 0}.btn{border:1px solid var(--line);background:rgba(29,38,48,.86);color:var(--ink);border-radius:2px;padding:12px 22px;font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}.btn:hover{text-decoration:none;background:#263241}.btn.primary{border-color:var(--accent);color:#dff2ff}.install{max-width:830px;margin:28px auto 0;border:1px solid var(--line);border-radius:4px;background:rgba(29,38,48,.94);text-align:left;overflow:hidden}.tabs{display:flex;border-bottom:1px solid var(--line);background:#222c37}.tab{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);padding:13px 24px;border-right:1px solid var(--line)}.tab.active{color:var(--ink);border-bottom:2px solid var(--accent)}.snippet{position:relative}.snippet pre{margin:0;padding:34px 130px 34px 28px;background:transparent;border:0;border-radius:0;color:#d5dbe3;font-size:15px}.copy{position:absolute;right:28px;top:28px;border:1px solid var(--line);background:#202a35;color:#d9e7f7;border-radius:0;padding:10px 16px;font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer}.copy:hover{background:#293544}.terminal{max-width:900px;margin:48px auto 0;text-align:left;border:1px solid #244156;background:#102332;box-shadow:0 18px 70px rgba(0,0,0,.25)}.terminal-title{background:#263747;color:#cbd5e1;font-family:var(--mono);font-size:13px;letter-spacing:.18em;text-transform:uppercase;padding:12px 16px;border-left:3px solid var(--accent)}.terminal-body{height:150px;padding:18px 22px;color:#dbe7f3;font-family:var(--mono);letter-spacing:.08em}section{padding:66px 0;border-top:1px solid rgba(255,255,255,.12)}section.light{background:#f8fafc;color:#111827;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);padding-left:calc(50vw - 590px);padding-right:calc(50vw - 590px)}section.light p,section.light li{color:#344054}h2{font-size:38px;line-height:1.13;letter-spacing:-.045em;margin:0 0 14px}h3{font-size:20px;letter-spacing:-.02em;margin:24px 0 6px}p,li{color:#cbd5e1}.flow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:22px 0}.node{background:#18222d;border:1px solid var(--line);border-radius:999px;padding:10px 14px;font-weight:800}.arrow{color:var(--soft);font-weight:800}.examples{display:grid;grid-template-columns:1fr 1fr;gap:6px 34px}.docs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:20px}.doc{display:block;background:white;border:1px solid #d9dee7;border-radius:14px;padding:17px;color:#111827}.doc:hover{text-decoration:none;border-color:#b7c0cc}.doc b{display:block}.doc span{display:block;color:#667085;font-size:14px;margin-top:4px}pre{font-family:var(--mono);overflow:auto}pre.code{background:#0f172a;border:1px solid #334155;border-radius:4px;color:#e2e8f0;padding:20px;font-size:14px;line-height:1.65}code.inl{font-family:var(--mono);font-size:.9em;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:1px 6px;color:inherit}.light code.inl{background:#eef2f7;border-color:#d9dee7}.tok-kw{color:#60a5fa;font-weight:700}.tok-human{color:#f0abfc;font-weight:700}.tok-str{color:#86efac}.tok-com{color:#a7b0c0;font-style:italic}.tok-num{color:#fbbf24}footer{border-top:1px solid rgba(255,255,255,.12);padding:34px 0 54px;color:var(--muted);font-size:14px}@media(max-width:800px){.wrap{padding:0 18px}.top{height:auto;padding:18px;align-items:flex-start}.nav{position:static;transform:none;justify-content:flex-end;flex-wrap:wrap;gap:12px}.brand span{display:none}.hero{padding-top:48px}.kicker{font-size:34px}.lede{font-size:21px}.install,.terminal{max-width:100%}.snippet pre{padding-right:28px;padding-top:76px}.copy{left:28px;right:auto}.examples,.docs{grid-template-columns:1fr}section.light{padding-left:18px;padding-right:18px}.terminal-body{height:auto;min-height:120px}}
 </style>
 <script defer data-domain="loopflow.live" src="https://plausible.io/js/script.js"></script>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
-    <a class="brand" href="/"><svg class="mark" viewBox="0 0 24 24" fill="none" aria-label="LoopFlow"><circle cx="12" cy="12" r="8.5" stroke="#0071e3" stroke-width="3.4" stroke-linecap="round" stroke-dasharray="42.2 11.2"/></svg>LoopFlow</a>
-    <nav class="nav" aria-label="Main"><a href="docs.html">Docs</a><a href="playground.html">Playground</a><a href="market/">Market</a><a href="https://github.com/tickets-forge-dev/loop-lang">GitHub</a></nav>
+    <a class="brand" href="/"><svg class="mark" viewBox="0 0 24 24" fill="none" aria-label="LoopFlow"><circle cx="12" cy="12" r="8.5" stroke="#65b7ff" stroke-width="3.4" stroke-linecap="round" stroke-dasharray="42.2 11.2"/></svg><span>LoopFlow</span></a>
+    <nav class="nav" aria-label="Main"><a href="/">Home</a><a href="docs.html">Docs</a><a href="market/">Market</a><a href="playground.html">Playground</a><a href="https://github.com/tickets-forge-dev/loop-lang">GitHub</a></nav>
   </header>
 
   <main>
     <section class="hero" style="border-top:0">
-      <a class="pill" href="market/"><span class="new">NEW</span> Loop market: verified workflows →</a>
-      <h1>Self-correcting workflows for AI coding agents.</h1>
-      <p class="lede">Stop re-prompting the same agent. Write the loop once: goal, context, checks, gates, and a retry limit.</p>
-      <p class="sub">LoopFlow turns the review → fix → test → retry cycle you already do by hand into a plain-English file you can run, review, and reuse.</p>
+      <svg class="hero-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="#f8fafc" stroke-width="3.4" stroke-linecap="round" stroke-dasharray="42.2 11.2"/></svg>
+      <h1 class="kicker">There are many coding agents<br/>but this loop is <em>yours</em></h1>
+      <p class="lede">LoopFlow is a plain-English workflow layer for AI coding agents.</p>
+      <p class="sub">Adapt the agent to your review, test, API-check, and human-gate process — not the other way around.</p>
       <div class="actions"><a class="btn primary" href="#try">Try it</a><a class="btn" href="docs.html">Read the docs</a></div>
+      <div id="try" class="install">
+        <div class="tabs"><div class="tab active">Claude Code</div><div class="tab">CLI</div><div class="tab">Docs</div></div>
+        <div class="snippet"><button class="copy" type="button" data-copy="/loopflow example
+/loopflow run fix-checkout.loop">[ Copy ]</button><pre><code>/loopflow example
+/loopflow run fix-checkout.loop</code></pre></div>
+      </div>
+      <div class="terminal"><div class="terminal-title">LoopFlow · make it verified</div><div class="terminal-body">$ scroll to continue<span style="color:#65b7ff"> ●</span></div></div>
     </section>
 
-    <section id="what" class="tight">
+    <section id="what">
       <h2>What is a loop?</h2>
       <p>A loop is the thing you already do around an AI agent: ask it to change something, check the result, give it the failure, and repeat until the work is actually done.</p>
       <div class="flow"><span class="node">plan</span><span class="arrow">→</span><span class="node">act</span><span class="arrow">→</span><span class="node">observe</span><span class="arrow">→</span><span class="node">reflect</span><span class="arrow">↺</span></div>
@@ -53,7 +57,7 @@
     <section id="why">
       <h2>Why LoopFlow?</h2>
       <p>The first prompt is not the problem. The problem is everything after it: checking, reviewing, copying failures back into chat, asking for one more fix, and hoping the agent actually ran the command.</p>
-      <p>LoopFlow makes those repeated steps explicit. A <code class="inl">.loop</code> file says what the agent may edit, what it must check, when it should reflect, and when it must stop.</p>
+      <p>A <code class="inl">.loop</code> file says what the agent may edit, what it must check, when it should reflect, and when it must stop.</p>
     </section>
 
     <section id="examples">
@@ -66,22 +70,9 @@
       </div>
     </section>
 
-    <section id="try">
-      <h2>Try it</h2>
-      <p>In Claude Code, copy-paste this:</p>
-      <div class="snippet"><button class="copy" type="button" data-copy="/loopflow example
-/loopflow run fix-checkout.loop">Copy</button><pre><code class="sh">/loopflow example
-/loopflow run fix-checkout.loop</code></pre></div>
-      <p>Or install the CLI:</p>
-      <pre><code class="sh">npm i -g @loop-lang/loop @loop-lang/runtime
-loop init
-loop-run show fix-checkout.loop
-loop-run run fix-checkout.loop</code></pre>
-    </section>
-
     <section id="example-loop">
       <h2>A loop is just a file.</h2>
-      <pre class="dark"><code class="loop">loop "fix checkout tax":
+      <pre class="code"><code class="loop">loop "fix checkout tax":
   goal: checkout shows the right tax
   done when "pnpm test checkout" passes
 
@@ -96,7 +87,7 @@ loop-run run fix-checkout.loop</code></pre>
     <section id="skills">
       <h2>Skills can be automatic or fixed.</h2>
       <p>Tell the loop how much freedom it has to use reusable capabilities.</p>
-      <pre><code class="loop">skills: auto                         # discover/add useful skills with minimum friction
+      <pre class="code"><code class="loop">skills: auto                         # discover/add useful skills with minimum friction
 skills: ask                          # recommend additions, ask before adding
 skills: fixed, seo-audit             # use only these explicit baseline skills
 skills: none                         # use no skills</code></pre>
@@ -107,12 +98,12 @@ skills: none                         # use no skills</code></pre>
       <p>No fake done. No hidden checklist. No unbounded agent. LoopFlow is a visible control structure around the tools you already trust: tests, scanners, curl scripts, code review, and human gates.</p>
     </section>
 
-    <section id="docs">
-      <h2>Go deeper</h2>
-      <p>This page is the landing page. The docs have the full language.</p>
+    <section class="light" id="docs">
+      <h2>Documentation that leads somewhere.</h2>
+      <p>This page is the landing page. The full docs have the language, syntax, examples, and runner details.</p>
       <div class="docs">
+        <a class="doc" href="docs.html"><b>Full docs</b><span>The original tutorial and language walkthrough.</span></a>
         <a class="doc" href="keywords/index.html"><b>Keyword reference</b><span>Every keyword with syntax and examples.</span></a>
-        <a class="doc" href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md"><b>Full manual</b><span>Runner commands, predicates, git, config, and troubleshooting.</span></a>
         <a class="doc" href="playground.html"><b>Playground</b><span>Try LoopFlow syntax in the browser.</span></a>
         <a class="doc" href="market/"><b>Loop market</b><span>Reusable verified workflows.</span></a>
       </div>
@@ -121,18 +112,13 @@ skills: none                         # use no skills</code></pre>
 
   <footer>LoopFlow · Apache-2.0 · <a href="https://github.com/tickets-forge-dev/loop-lang">GitHub</a> · <a href="docs.html">Docs</a></footer>
 </div>
-
 <script>
 (function(){
-  var HUMAN=["ask me before"];
+  document.querySelectorAll('.copy').forEach(function(btn){btn.addEventListener('click',function(){var text=btn.getAttribute('data-copy')||'';navigator.clipboard.writeText(text).then(function(){var old=btn.textContent;btn.textContent='[ Copied ]';setTimeout(function(){btn.textContent=old;},1200);});});});
   var KW=["then plan again","the last failure","each cycle","done when","look at","skills","passes","allow","after","tries","warn","when","goal","loop","plan","act","observe","reflect"];
-  function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
-  function span(c,t){return '<span class="'+c+'">'+t+'</span>';}
-  function isW(ch){return /[A-Za-z0-9_-]/.test(ch||"");}
-  var T=[];HUMAN.forEach(function(w){T.push({word:w.toLowerCase(),cls:"tok-human"});});KW.forEach(function(w){T.push({word:w.toLowerCase(),cls:"tok-kw"});});T.sort(function(a,b){return b.word.length-a.word.length;});
-  function hlLine(line){var out="",i=0,n=line.length;while(i<n){var c=line.charAt(i);if(c==="#"){out+=span("tok-com",esc(line.slice(i)));break;}if(c==='"'){var e=line.indexOf('"',i+1),end=e<0?n:e+1;out+=span("tok-str",esc(line.slice(i,end)));i=end;continue;}var prev=i>0?line.charAt(i-1):" ",m=null,cls=null;if(!isW(prev)){var low=line.toLowerCase();for(var k=0;k<T.length;k++){var w=T[k].word;if(low.substr(i,w.length)===w&&!isW(line.charAt(i+w.length))){m=line.substr(i,w.length);cls=T[k].cls;break;}}}if(m){out+=span(cls,esc(m));i+=m.length;continue;}if(!isW(prev)&&c>="0"&&c<="9"){var nm=/^[0-9]+/.exec(line.slice(i))[0];out+=span("tok-num",nm);i+=nm.length;continue;}out+=esc(c);i++;}return out;}
-  document.querySelectorAll("pre code.loop").forEach(function(el){el.innerHTML=el.textContent.split("\n").map(hlLine).join("\n");});
-  document.querySelectorAll(".copy").forEach(function(btn){btn.addEventListener("click",function(){var text=btn.getAttribute("data-copy")||"";navigator.clipboard.writeText(text).then(function(){var old=btn.textContent;btn.textContent="Copied";setTimeout(function(){btn.textContent=old;},1200);});});});
+  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}function span(c,t){return '<span class="'+c+'">'+t+'</span>';}function isW(ch){return /[A-Za-z0-9_-]/.test(ch||'');}
+  function hlLine(line){var out='',i=0,n=line.length;while(i<n){var c=line.charAt(i);if(c==='#'){out+=span('tok-com',esc(line.slice(i)));break;}if(c==='"'){var e=line.indexOf('"',i+1),end=e<0?n:e+1;out+=span('tok-str',esc(line.slice(i,end)));i=end;continue;}var prev=i>0?line.charAt(i-1):' ',m=null;if(!isW(prev)){var low=line.toLowerCase();for(var k=0;k<KW.length;k++){var w=KW[k];if(low.substr(i,w.length)===w&&!isW(line.charAt(i+w.length))){m=line.substr(i,w.length);break;}}}if(m){out+=span('tok-kw',esc(m));i+=m.length;continue;}if(!isW(prev)&&c>='0'&&c<='9'){var nm=/^[0-9]+/.exec(line.slice(i))[0];out+=span('tok-num',nm);i+=nm.length;continue;}out+=esc(c);i++;}return out;}
+  document.querySelectorAll('pre code.loop').forEach(function(el){el.innerHTML=el.textContent.split('\n').map(hlLine).join('\n');});
 })();
 </script>
 </body>
