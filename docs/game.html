@@ -34,6 +34,10 @@ body{
   margin:0; color:var(--ink); font-family:var(--ui); -webkit-font-smoothing:antialiased; line-height:1.6;
   background:var(--bg);
 }
+*{scrollbar-width:thin;scrollbar-color:rgba(110,110,115,.28) transparent}
+*::-webkit-scrollbar{width:6px;height:6px}
+*::-webkit-scrollbar-thumb{background:rgba(110,110,115,.28);border-radius:999px;border:1.5px solid transparent;background-clip:padding-box}
+*::-webkit-scrollbar-track{background:transparent}
 /* orbital atmosphere: drifting glows + faint concentric rings, behind everything */
 body::before{content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
   background:

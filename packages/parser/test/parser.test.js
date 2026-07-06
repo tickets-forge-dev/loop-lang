@@ -165,6 +165,13 @@ test("models: parses tiers + auto-assign on config", () => {
   assert.deepEqual(f.config.models, { tiers: { fast: "haiku", strong: "opus" } });
 });
 
+test("loop.config live flag parses as project config", () => {
+  const f = parse(`live=false\neach cycle: act, then observe\n`);
+  assert.equal(f.config.live, false);
+  assert.deepEqual(f.config.cycle, ["act", "observe"]);
+  assert.equal(parse(`live=true\n`).config.live, true);
+});
+
 test("models: per-phase override + all shorthand on a loop", () => {
   const f = parse(`loop "x":\n  goal: g\n  done when "true" passes\n  models: act fast, plan strong\n`);
   assert.deepEqual(f.definitions[0].models, { phases: { act: "fast", plan: "strong" } });
@@ -436,54 +443,6 @@ test("knowledge/examples/tools: context + MCP keywords", () => {
   assert.deepEqual(loop.context.knowledge, ["docs/api.md", "the architecture diagram"]);
   assert.deepEqual(loop.context.examples, ["routes/payments.ts"]);
   assert.deepEqual(loop.tools, ["github"]);
-});
-
-// ---- ctx skill source ----
-
-test("ctx: config-tier 'recommend skills with ctx' sets config.skillSource", () => {
-  const file = parse(read("ctx_skills.loop"));
-  assert.deepEqual(file.config.skillSource, { provider: "ctx" });
-});
-
-test("ctx: 'use skills recommended by ctx for ...' + 'top up skills from ctx'", () => {
-  const loop = parse(read("ctx_skills.loop")).definitions[0];
-  assert.equal(loop.name, "harden the stripe webhook handler");
-  assert.deepEqual(loop.skillDiscovery, {
-    provider: "ctx",
-    intent: "stripe webhook idempotency and signature verification",
-  });
-  assert.equal(loop.skillTopUp, true);
-});
-
-test("ctx: bare 'use skills recommended by ctx' carries no intent", () => {
-  const loop = parse('loop "x":\n  goal: g\n  use skills recommended by ctx\n  done when "t" passes').definitions[0];
-  assert.deepEqual(loop.skillDiscovery, { provider: "ctx" });
-  assert.equal(loop.skillTopUp, undefined);
-});
-
-test("ctx: discovery coexists with a hand-named 'use skills:' line", () => {
-  const loop = parse('loop "x":\n  goal: g\n  use skills: a, b\n  use skills recommended by ctx\n  done when "t" passes').definitions[0];
-  assert.deepEqual(loop.skills, ["a", "b"]);
-  assert.deepEqual(loop.skillDiscovery, { provider: "ctx" });
-});
-
-test("ctx: config-tier 'grant ctx:' parses the capability groups", () => {
-  const file = parse('grant ctx: skills, agents, mcps, harnesses\nloop "x":\n  goal: g\n  use skills recommended by ctx\n  done when "t" passes');
-  assert.deepEqual(file.config.ctxGrants, ["skills", "agents", "mcps", "harnesses"]);
-});
-
-test("ctx: 'grant ctx:' dedups + normalizes singular/'and', rejects unknown groups", () => {
-  const file = parse('grant ctx: skill, mcp and harness and harness\nloop "x":\n  goal: g\n  done when "t" passes');
-  assert.deepEqual(file.config.ctxGrants, ["skills", "mcps", "harnesses"]);
-  assert.throws(
-    () => parse('grant ctx: bogus\nloop "x":\n  goal: g\n  done when "t" passes'),
-    /unknown ctx capability group/,
-  );
-});
-
-test("ctx: 'ctx may use my own model' parses provider + model", () => {
-  const file = parse('ctx may use my own model "ollama/llama3.1"\nloop "x":\n  goal: g\n  done when "t" passes');
-  assert.deepEqual(file.config.ownModel, { provider: "ollama", model: "ollama/llama3.1" });
 });
 
 test("parallel stages: 'stages in parallel:' assigns a shared group id", () => {

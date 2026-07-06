@@ -12,7 +12,6 @@ import { CliHumanIO } from "./human.js";
 import { ClaudeCodeRunner } from "./runners/claudeCode.js";
 import { IpcHumanIO } from "./ipc.js";
 import { ShellGitIO } from "./runners/shellGit.js";
-import { ownModelBinaryWarning } from "./ownModel.js";
 import { eventSinkFromEnv } from "./eventSink.js";
 import { buildResumePlan } from "./resume.js";
 import type { LoopEvent } from "./types.js";
@@ -87,8 +86,6 @@ function render(e: LoopEvent): string {
       return `→ for each ${e.var} → ${e.satisfied ? "satisfied" : "FAILED"}`;
     case "git":
       return `  ⎇ git ${e.action}: ${e.detail}`;
-    case "ctx":
-      return `    ⊕ ctx ${e.action}${e.ok === false ? " (skipped)" : ""}: ${e.skills.length ? e.skills.join(", ") : e.detail ?? "no change"}`;
     default:
       return "";
   }
@@ -126,18 +123,6 @@ function findProjectConfig(startDir: string): { path: string; config: Config } |
 /** File config wins over project defaults (lowest tier). Shallow per key — a `git:`/`models:` block in the file replaces the project's. */
 function withProjectDefaults(fileConfig: Config | null, project: Config): Config {
   return { ...project, ...(fileConfig ?? {}) };
-}
-
-/** True when a file opts into ctx skill provisioning (config tier or any loop / pipeline stage). */
-function fileUsesCtx(file: LoopFile): boolean {
-  if (file.config?.skillSource?.provider === "ctx") return true;
-  const usesCtx = (l: { skillDiscovery?: { provider?: string }; skillTopUp?: boolean }) =>
-    l?.skillDiscovery?.provider === "ctx" || l?.skillTopUp === true;
-  for (const def of file.definitions) {
-    if (def.kind === "loop" && usesCtx(def)) return true;
-    if (def.kind === "pipeline" && def.stages.some((s) => usesCtx(s.loop))) return true;
-  }
-  return false;
 }
 
 /**
@@ -320,24 +305,6 @@ async function main() {
 
   const git = new ShellGitIO();
 
-  // Attach the ctx skill recommender only when the file opts in (`recommend skills with ctx`
-  // or a `use skills recommended by ctx` loop). The dynamic import keeps the MCP SDK off the
-  // path for every other run; a missing SDK / server degrades to a warning and no ctx.
-  let ctx: import("./types.js").CtxAdapter | undefined;
-  if (fileUsesCtx(file)) {
-    try {
-      const { McpCtxAdapter } = await import("./ctx.js");
-      ctx = new McpCtxAdapter();
-    } catch (err) {
-      console.error(`⚠ ctx skill source requested but the MCP client could not load: ${String((err as Error)?.message ?? err)}`);
-    }
-    // A declared own-model (`ctx may use my own model …`) only unlocks ctx harness recommendations;
-    // it never makes the loop run on that model. Warn if its local binary is missing so the author
-    // isn't surprised that running a recommended harness later would fail.
-    const ownModelWarning = ownModelBinaryWarning(file.config?.ownModel);
-    if (ownModelWarning) console.error(ownModelWarning);
-  }
-
   // Telemetry: stream every event to the control-plane collector (LOOP_EVENTS_URL) and/or append
   // it to a local NDJSON log (LOOP_LOG_FILE). Best-effort and off by default — no env, no sink,
   // behaves exactly as before.
@@ -370,9 +337,6 @@ async function main() {
       verifier: new ShellVerifier(),
       human: ipc,
       git,
-      ctx,
-      ctxGrants: file.config?.ctxGrants,
-      ownModel: file.config?.ownModel,
       baseDir: target,
       loadFile,
       readText,
@@ -397,9 +361,6 @@ async function main() {
     verifier: new ShellVerifier(),
     human: new CliHumanIO(),
     git,
-    ctx,
-    ctxGrants: file.config?.ctxGrants,
-    ownModel: file.config?.ownModel,
     baseDir: target,
     loadFile,
     readText,

@@ -6,6 +6,13 @@ Versions track the `@loop-lang/loop` installer package.
 
 ## [Unreleased]
 
+### Removed
+- **External skill-recommender integration** — the external skill-source clauses have been
+  removed from the grammar, runtime, and docs. The plain `use skills: <a>, <b>` clause and
+  named-skill verifiers (`done when the skill "…" approves`) are unaffected — list resolved
+  skill names directly. The removed lines no longer parse; delete them from any existing
+  `.loop` files.
+
 ## [0.7.1] — 2026-07-02
 
 > `@loop-lang/loop` 0.7.1 · `@loop-lang/{parser,runtime,stdlib,viz}` 0.4.1 · `loopflow` (vscode) 0.5.4
@@ -28,11 +35,6 @@ Versions track the `@loop-lang/loop` installer package.
 > `@loop-lang/loop` 0.7.0 · `@loop-lang/{parser,runtime,stdlib,viz}` 0.4.0 · `loopflow` (vscode) 0.5.0
 
 ### Added
-- **ctx as a skill source** — `recommend skills with ctx` / `use skills recommended by ctx`
-  / `top up skills from ctx`: a loop equips itself via the ctx MCP server before the first
-  plan and re-equips after a failed cycle reflects. Capability grants
-  (`grant ctx: skills, agents, mcps, harnesses`, fail-closed) and own-model gating
-  (`ctx may use my own model "…"`, dry-run-only harness recommendations).
 - **Verification reliability** — the flake guard (`done when "…" passes 3 times`: every
   run must pass, first failure short-circuits) and judge panels
   (`the skill "…" approves by 3 judges`: majority of independent verdicts, early-exit
@@ -56,8 +58,8 @@ Versions track the `@loop-lang/loop` installer package.
 ### Changed
 - **New logo** — the gap ring (one ring, one gap: the loop still iterating), with a
   solid-tile variant as the favicon / app icon across the site and README.
-- `loopflow` (vscode) 0.5.0 — bundles the 0.4.0 parser (judge panels, flake guard, ctx
-  lines all recognized); output panel renders `⏩ resumed` events.
+- `loopflow` (vscode) 0.5.0 — bundles the 0.4.0 parser (judge panels, flake guard all
+  recognized); output panel renders `⏩ resumed` events.
 
 ## [0.6.0] — 2026-06-29
 

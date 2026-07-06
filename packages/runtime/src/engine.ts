@@ -29,24 +29,24 @@ async function gitCommit(opts: RunOptions, message: string): Promise<void> {
  */
 function pickTransition(
   transitions: Transition[] | undefined,
-  ctx: { blocked: boolean; attempts: number; passed: boolean; goalMet: boolean }
+  state: { blocked: boolean; attempts: number; passed: boolean; goalMet: boolean }
 ): Transition | null {
   if (!transitions || transitions.length === 0) return null;
   const byOn = (on: Transition["on"]) => transitions.filter((t) => t.on === on);
 
-  if (ctx.blocked) {
+  if (state.blocked) {
     const t = byOn("blocked")[0];
     if (t) return t;
   }
   for (const t of byOn("attempts")) {
-    if (typeof t.threshold === "number" && ctx.attempts > t.threshold) return t;
+    if (typeof t.threshold === "number" && state.attempts > t.threshold) return t;
   }
-  if (ctx.passed) {
+  if (state.passed) {
     for (const t of byOn("pass")) {
-      if (!t.requireGoalMet || ctx.goalMet) return t;
+      if (!t.requireGoalMet || state.goalMet) return t;
     }
   }
-  if (!ctx.passed) {
+  if (!state.passed) {
     const t = byOn("fail")[0];
     if (t) return t;
   }
@@ -69,17 +69,8 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
   const autoClasses = loop.policy?.auto ?? [];
   const confirmClasses = loop.policy?.confirm ?? [];
 
-  // The loop's working skill set. Starts from the hand-named `use skills:` list; ctx discovery
-  // and run-time top-ups extend it in place, so plan/act always see the current set.
+  // The loop's working skill set — the hand-named `use skills:` list.
   const skills: string[] = [...(loop.skills ?? [])];
-  const mergeSkills = (names: string[] | undefined): string[] => {
-    const added: string[] = [];
-    for (const raw of names ?? []) {
-      const name = raw.trim();
-      if (name && !skills.includes(name)) { skills.push(name); added.push(name); }
-    }
-    return added;
-  };
 
   let reflection: string | null = null;
   let lastPlan = "";
@@ -130,37 +121,6 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
 
   // "a human approves the plan first" — gate at the very start.
   let humanPlanApproved = false;
-
-  // ctx skill discovery: when the loop opts in (`use skills recommended by ctx`) and a ctx
-  // adapter is attached, resolve a bundle for the goal once and merge the names in before the
-  // first plan. Degrade quietly if ctx isn't attached or the call fails — the loop still runs
-  // with whatever skills it already names.
-  if (loop.skillDiscovery?.provider === "ctx") {
-    if (opts.ctx) {
-      try {
-        const res = await opts.ctx.provision({
-          goal: loop.goal,
-          intent: loop.skillDiscovery.intent,
-          baseDir: opts.baseDir,
-          permissions: opts.ctxGrants,
-          ownModel: opts.ownModel,
-        });
-        // Skills/agents merge into the working set; mcps/harnesses are recommend-only and only
-        // surfaced on the event (a host registers MCPs / a human runs the dry-run harness install).
-        emit(opts, {
-          type: "ctx", action: "provision", skills: mergeSkills(res.useSkills), ok: true,
-          mcps: res.capabilities?.mcps,
-          harnesses: res.capabilities?.harnesses,
-          harnessInstall: res.harnessInstall ?? undefined,
-          warnings: res.warnings,
-        });
-      } catch (err) {
-        emit(opts, { type: "ctx", action: "provision", skills: [], ok: false, detail: String((err as Error)?.message ?? err) });
-      }
-    } else {
-      emit(opts, { type: "ctx", action: "provision", skills: [], ok: false, detail: "no ctx adapter attached" });
-    }
-  }
 
   // A `plan from "<file>"` loop loads its plan even when the author omits `plan`
   // from the cycle (the plan comes from the file, the cycle just executes it).
@@ -338,8 +298,6 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
 
     const goalMet = loop.doneWhen?.length ? passed : false;
 
-    // Captured before applyActions runs reflect — lets the ctx top-up below detect a fresh reflection.
-    const reflectionBefore: string | null = reflection;
     const t = pickTransition(loop.transitions, { blocked, attempts, passed: observed && passed, goalMet });
 
     if (t) {
@@ -358,30 +316,6 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
         // so record memory here rather than in finish().
         await writeMemory(stop.satisfied, stop.reason);
         return stop;
-      }
-      // ctx run-time top-up: a fresh reflection means the last cycle missed — ask ctx for more
-      // skills for the next plan. Excludes already-loaded skills; degrades quietly on any error.
-      if (loop.skillTopUp && opts.ctx && reflection && reflection !== reflectionBefore) {
-        try {
-          const res = await opts.ctx.topup({
-            goal: loop.goal, reflection, loaded: skills, baseDir: opts.baseDir,
-            permissions: opts.ctxGrants,
-            ownModel: opts.ownModel,
-          });
-          const added = mergeSkills(res.useSkills);
-          const mcps = res.capabilities?.mcps;
-          const harnesses = res.capabilities?.harnesses;
-          if (added.length || mcps?.length || harnesses?.length) {
-            emit(opts, {
-              type: "ctx", action: "topup", skills: added, ok: true,
-              mcps, harnesses,
-              harnessInstall: res.harnessInstall ?? undefined,
-              warnings: res.warnings,
-            });
-          }
-        } catch (err) {
-          emit(opts, { type: "ctx", action: "topup", skills: [], ok: false, detail: String((err as Error)?.message ?? err) });
-        }
       }
       continue; // re-enter the cycle (the back-edge)
     }
@@ -411,7 +345,7 @@ async function applyActions(
   actions: Action[],
   loop: Loop,
   opts: RunOptions,
-  ctx: { goalMet: boolean; output: string; trajectory?: string; setReflection: (r: string) => void }
+  state: { goalMet: boolean; output: string; trajectory?: string; setReflection: (r: string) => void }
 ): Promise<LoopOutcome | null> {
   for (const a of actions) {
     switch (a.action) {
@@ -421,11 +355,11 @@ async function applyActions(
           const ok = await opts.human.review(loop.goal);
           if (!ok) return null; // veto the stop; keep looping
         }
-        const satisfied = ctx.goalMet || !a.warn;
-        const reason: StopReason = a.warn ? "thrash" : ctx.goalMet ? "done" : "human-approved";
+        const satisfied = state.goalMet || !a.warn;
+        const reason: StopReason = a.warn ? "thrash" : state.goalMet ? "done" : "human-approved";
         emit(opts, { type: "stop", reason, ...(a.warn ? { warn: a.warn } : {}) });
         emit(opts, { type: "loop-end", name: loop.name, satisfied });
-        return { satisfied, reason, attempts: -1, summary: ctx.output };
+        return { satisfied, reason, attempts: -1, summary: state.output };
       }
       case "reflect": {
         const rEff = resolveModels(opts.modelPolicy, loop.models);
@@ -433,13 +367,13 @@ async function applyActions(
         const text = await opts.runner.reflect({
           goal: loop.goal,
           focus: a.focus,
-          output: ctx.output,
-          trajectory: ctx.trajectory,
+          output: state.output,
+          trajectory: state.trajectory,
           baseDir: opts.baseDir,
           model: modelForPhase(rEff, "reflect", opts.cliModel),
         });
         emit(opts, { type: "reflect", focus: a.focus, text });
-        ctx.setReflection(text);
+        state.setReflection(text);
         break;
       }
       case "plan":
@@ -715,14 +649,14 @@ export async function run(file: LoopFile, opts: RunOptions): Promise<LoopOutcome
     if (policy.isolation !== "in-place") {
       const firstName = file.definitions[0] && ("name" in file.definitions[0] ? (file.definitions[0] as any).name : null);
       const name = `loop/${slug(firstName)}`;
-      const ctx = await opts.git!.start({ isolation: policy.isolation, branch: policy.branch, name, baseDir: opts.baseDir });
-      branch = ctx.branch;
-      o = { ...o, baseDir: ctx.dir, gitBranch: branch };
+      const started = await opts.git!.start({ isolation: policy.isolation, branch: policy.branch, name, baseDir: opts.baseDir });
+      branch = started.branch;
+      o = { ...o, baseDir: started.dir, gitBranch: branch };
       emit(o, { type: "git", action: policy.isolation === "worktree" ? "worktree" : "branch", detail: branch });
     } else {
-      const ctx = await opts.git!.start({ isolation: "in-place", branch: policy.branch, name: "loop", baseDir: opts.baseDir });
-      branch = ctx.branch;
-      o = { ...o, baseDir: ctx.dir, gitBranch: branch };
+      const started = await opts.git!.start({ isolation: "in-place", branch: policy.branch, name: "loop", baseDir: opts.baseDir });
+      branch = started.branch;
+      o = { ...o, baseDir: started.dir, gitBranch: branch };
     }
     if (policy.push && isProtected(branch)) {
       throw new Error(`git: refusing to push to "${branch}" — add 'work on a branch' (never push to a protected branch)`);

@@ -15,3 +15,4 @@ packages/cli/.claude/
 
 # Synced from the repo template library at build (single source of truth: /templates)
 packages/vscode/templates/
+.env*

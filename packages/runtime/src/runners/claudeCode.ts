@@ -55,16 +55,16 @@ export function claudeArgs(o: { stream: boolean; baseDir: string; model?: string
  * Build the plan-step prompt. Pure + exported so it can be tested without spawning.
  */
 export function buildPlanPrompt(input: PlanInput): string {
-  const ctx: string[] = [];
-  if (input.files.length) ctx.push(`Relevant context (each item is a file or a description of one — locate the actual file(s) first): ${input.files.join(", ")}.`);
-  if (input.includeLastFailure) ctx.push("Account for the most recent failure.");
-  if (input.skills?.length) ctx.push(`You may use these skills to do the work: ${input.skills.join(", ")}.`);
-  if (input.memory) ctx.push(`Lessons from past runs (do not repeat these mistakes):\n${input.memory}`);
-  if (input.reflection) ctx.push(`From the last attempt: ${input.reflection}`);
-  if (input.upstream) ctx.push(`From the previous step in the flow:\n${input.upstream}`);
+  const parts: string[] = [];
+  if (input.files.length) parts.push(`Relevant context (each item is a file or a description of one — locate the actual file(s) first): ${input.files.join(", ")}.`);
+  if (input.includeLastFailure) parts.push("Account for the most recent failure.");
+  if (input.skills?.length) parts.push(`You may use these skills to do the work: ${input.skills.join(", ")}.`);
+  if (input.memory) parts.push(`Lessons from past runs (do not repeat these mistakes):\n${input.memory}`);
+  if (input.reflection) parts.push(`From the last attempt: ${input.reflection}`);
+  if (input.upstream) parts.push(`From the previous step in the flow:\n${input.upstream}`);
   return [
     `Goal: ${input.goal}.`,
-    ...ctx,
+    ...parts,
     "Produce a concise, concrete step-by-step plan to achieve the goal. Do not edit files yet.",
   ].join("\n");
 }

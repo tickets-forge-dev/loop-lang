@@ -1,6 +1,5 @@
 export * from "./types.js";
 export { run, runDefinition } from "./engine.js";
-export { ownModelBinaryWarning, commandOnPath } from "./ownModel.js";
 export { buildResumePlan, scopeResume } from "./resume.js";
 export { buildRedactor, redactEvent } from "./redact.js";
 export { eventSinkFromEnv, makeFileEventSink, makeHttpEventSink, combineSinks, redactingSink } from "./eventSink.js";

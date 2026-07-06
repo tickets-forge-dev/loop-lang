@@ -144,10 +144,10 @@ const TEMPLATES: Suggestion[] = [
     insert: 'use the ${1:audit} method\nschedule: ${2:nightly}\ntarget: ${3:./src}\nnotify: ${4:slack}\n$0' },
 ];
 
-export function completionsFor(ctx: Context): Suggestion[] {
-  if (ctx === "top") return [...TEMPLATES, ...TOP];
-  if (ctx === "pipeline") return PIPELINE;
-  if (ctx === "stage-body") return [...LOOP_BODY, STAGE_EXTRA];
+export function completionsFor(context: Context): Suggestion[] {
+  if (context === "top") return [...TEMPLATES, ...TOP];
+  if (context === "pipeline") return PIPELINE;
+  if (context === "stage-body") return [...LOOP_BODY, STAGE_EXTRA];
   return LOOP_BODY;
 }
 

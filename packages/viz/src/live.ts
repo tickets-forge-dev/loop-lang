@@ -13,6 +13,8 @@ const LIVE_CSS = `
 *{box-sizing:border-box;}
 html,body{margin:0;height:100%;}
 body{display:grid;grid-template-columns:minmax(0,1fr) 290px;grid-template-rows:auto 1fr;height:100vh;overflow:hidden;background:var(--bg);color:var(--ink);font-family:${SANS};-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-size:14px;}
+*{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent;}
+*::-webkit-scrollbar{width:6px;height:6px;}*::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:999px;border:1.5px solid transparent;background-clip:padding-box;}*::-webkit-scrollbar-track{background:transparent;}
 header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel);}
 .wordmark{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600;letter-spacing:-.01em;}
 .wordmark::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--fwd);box-shadow:0 0 0 3px rgba(94,106,210,.16);}
@@ -89,7 +91,6 @@ main{overflow-y:auto;padding:0;}
 #log{list-style:none;margin:0;padding:0;font-family:${MONO};font-size:11px;}
 #log li{padding:2.5px 0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em;}
 #log li.enter{color:var(--ink);}#log li.fail{color:var(--fail);}#log li.human{color:var(--gate);}#log li.done{color:var(--stop);}
-::-webkit-scrollbar{width:9px;height:9px;}::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;}::-webkit-scrollbar-track{background:transparent;}
 `;
 
 // Page script: builds the route from SPEC, then mutates it from the live event stream.
