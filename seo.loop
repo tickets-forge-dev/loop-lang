@@ -19,7 +19,7 @@ loop "seo: loopflow.live docs":
            docs/workshop.html, docs/keywords/, and the last failure
   allow edits automatically, but ask me before changing visible page copy or headings
 
-  use skills: seo-audit
+  skills: fixed, seo-audit
   remember in "docs/seo.memory.md"
 
   # ── Engine: the repeated cycle ────────────────────────────────────────────────

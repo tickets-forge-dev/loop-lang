@@ -68,9 +68,9 @@ look at: <files>, and the last failure   context the agent reads before acting
 allow edits automatically, but ask me before <classes>   action policy
 each cycle: plan, then act, then observe   the repeated steps (any subset, in order)
 also: <pass>, <pass>      extra finishing passes run after the goal is met
-use skills: <a>, <b>      named skills the loop may invoke during plan/act
-use skills recommended by ctx        let ctx pick + install the skills for the goal (needs the ctx MCP server); add `for "<intent>"` to override the query
-top up skills from ctx               run-time: pull more skills from ctx when a cycle fails and reflects (pairs with the line above)
+skills: auto | ask | fixed, <a>, <b> | none   unified skill policy: auto-add, ask-to-add, fixed explicit skills, or no skills
+use skills recommended by ctx        legacy external recommender hook; add `for "<intent>"` to override the query
+top up skills from ctx               legacy run-time top-up hook when a cycle fails and reflects
 remember in "<file.md>"   cross-run memory: read lessons on start, append an outcome on stop
 reflect                   turn a failure into context for the next plan (the back-edge)
 
@@ -144,21 +144,34 @@ A trajectory eval is what catches the failures a green test can't — e.g. an ag
 pass by weakening it. Pair a test with an eval when "done" means both "it works" and "it was built
 the right way."
 
-### `use skills` — coordinate proven skills
+### `skills` — coordinate or auto-discover skills
 
-Instead of one giant prompt, a loop can name skills it may call while planning and acting:
+Instead of one giant prompt, a loop declares skill behavior through one `skills:` line:
 
 ```loop
 loop "decide whether to cancel the morning run":
   goal: a clear go / no-go call the runner trusts
-  use skills: check-weather, analyze-workout
+  skills: fixed, check-weather, analyze-workout
   done when the skill "workout-review" approves
 ```
 
-This is **skill-driven development**: build and battle-test each skill on its own first,
-then have the loop coordinate them. Don't invent a loop around skills that don't exist yet —
-prove the skill manually, then wire it in (as an execution skill via `use skills:`, or as a
-verifier via `done when the skill "…" approves`). See `examples/skills_memory.loop`.
+Modes:
+
+```loop
+skills: auto                         # add useful skills with minimum friction
+skills: ask                          # recommend additions, ask before adding
+skills: fixed, check-weather         # use only explicit baseline skills
+skills: none                         # no skills
+skills: auto, seo-audit              # baseline + auto-add more if useful
+```
+
+This is **skill-driven development**: build and battle-test known skills when you name them,
+or let `auto` perform an early capability check before implementation. `auto` may use installed
+skills, trusted installable skills, or temporary generated skills, and should only interrupt for
+risk boundaries such as untrusted sources, broad capabilities, or permanent generated skills.
+Legacy `use skills: a, b` remains compatible and means `skills: fixed, a, b`; don't mix both in
+one loop. A review skill can still verify the result via `done when the skill "…" approves`.
+See `examples/skills_memory.loop`.
 
 ### Skill source: ctx — let a recommender pick + install the skills
 

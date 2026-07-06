@@ -19,7 +19,7 @@ loop "seo: expand keyword reference pages":
   examples: templates/, examples/                # real .loop patterns to draw accurate examples from
 
   allow edits automatically, but ask me before changing page structure or navigation
-  use skills: seo-audit                          # keep title/description/OG correct as bodies grow
+  skills: fixed, seo-audit                       # keep title/description/OG correct as bodies grow
 
   # ── Engine ────────────────────────────────────────────────────────────────────
   each cycle: plan, then act, then observe       # each pass: expand the thinnest pages, re-check

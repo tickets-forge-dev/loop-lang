@@ -93,11 +93,21 @@ Taught with a worked example in the [tutorial](https://loopflow.live/#evals); fu
 
 ## Skills and memory
 
-A loop can coordinate proven skills (`use skills: check-weather, analyze-workout`), let a review skill be the verdict (`done when the skill "workout-review" approves`), and keep cross-run memory in a markdown file (`remember in "morning-run.memory.md"`). With [ctx](https://github.com/stevesolun/ctx) attached as the skill source, `use skills recommended by ctx` provisions the right bundle before the first plan — opt-in, fail-closed, inert without ctx. Details: [manual](docs/MANUAL.md#skill-source-ctx), [integration guide](docs/ctx-integration-guide.md), [`examples/skills_memory.loop`](examples/skills_memory.loop), [`examples/ctx_capabilities.loop`](examples/ctx_capabilities.loop).
+A loop can use skills through one `skills:` keyword:
+
+```loop
+skills: auto                         # discover/add useful skills with minimum friction
+skills: ask                          # recommend additions, ask before adding
+skills: fixed, seo-audit             # use only these explicit skills
+skills: none                         # use no skills
+skills: auto, seo-audit              # start with seo-audit, auto-add more if useful
+```
+
+`auto` runs an early capability check before implementation. It may use installed skills, trusted installable skills, or temporary generated skills, and it logs what it added. It only interrupts for risky actions such as untrusted sources, broad capabilities, or permanent generated skills. Existing `use skills:` loops still work, but `skills:` is preferred. A review skill can still be the verdict (`done when the skill "workout-review" approves`), and cross-run memory still lives in markdown (`remember in "morning-run.memory.md"`). Details: [manual](docs/MANUAL.md#inside-a-loop--stage-body), [`examples/skills_memory.loop`](examples/skills_memory.loop).
 
 ## The vocabulary — learn it once
 
-`pipeline` · `stage` · `loop` · `flow` · `for each … in …` · `run … then …` · `each cycle` · `goal` · `done when` · `look at` · `allow…/ask me before…` · `also` · `use skills` · `remember in` · `when…` · `reflect` · `a human…` · `stop` · `use` · `schedule` · `git`
+`pipeline` · `stage` · `loop` · `flow` · `for each … in …` · `run … then …` · `each cycle` · `goal` · `done when` · `look at` · `allow…/ask me before…` · `also` · `skills` · `remember in` · `when…` · `reflect` · `a human…` · `stop` · `use` · `schedule` · `git`
 
 Power comes from **composition**, not keyword count. Each word is documented at [loopflow.live/keywords](https://loopflow.live/keywords/index.html); the authoritative grammar is [AGENTS.md](AGENTS.md).
 
