@@ -149,6 +149,18 @@
         }
       }
     },
+    "skillPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["auto", "ask", "fixed", "none"] },
+        "use": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
     "pipeline": {
       "type": "object",
       "additionalProperties": false,
@@ -263,6 +275,7 @@
           "description": "Extra finishing passes run in order after the goal is met (e.g. \"polish\", \"run a security check\", \"update the docs\"). Lightweight agent passes; promote to a stage when one needs its own verification.",
           "items": { "type": "string" }
         },
+        "skillPolicy": { "$ref": "#/$defs/skillPolicy" },
         "skills": {
           "type": "array",
           "description": "Named execution skills the loop may invoke during plan/act (e.g. [\"check-weather\", \"analyze-workout\"]). The runner surfaces them as available capabilities to coordinate, instead of one mega-prompt.",
