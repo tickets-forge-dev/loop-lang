@@ -75,6 +75,7 @@ footer{border-top:1px solid var(--line);padding-top:20px;margin-top:34px;color:v
     <li><a href="#templates">Templates</a></li>
     <li><a href="#running">Run a loop</a></li>
     <li><a href="#evals">Tests + evals</a></li>
+    <li><a href="#skills">Skills</a></li>
     <li><a href="#config">Project defaults</a></li>
     <li><a href="#workflows">Examples</a></li>
     <li class="grp">More</li>
@@ -207,7 +208,7 @@ a human approves before deploy</code></pre>
 </div></details></section>
 
 <section id="beyond"><details><summary><h2>The syntax map</h2><span class="chev">+</span></summary><div class="content">
-  <table><tr><th>Line</th><th>Meaning</th></tr><tr><td><code>goal:</code></td><td>What success means</td></tr><tr><td><code>done when</code></td><td>The check</td></tr><tr><td><code>look at:</code></td><td>Files and context</td></tr><tr><td><code>allow...</code></td><td>Permission policy</td></tr><tr><td><code>each cycle:</code></td><td>Steps to repeat</td></tr><tr><td><code>when it fails:</code></td><td>Back-edge</td></tr><tr><td><code>after N tries:</code></td><td>Stop guard</td></tr><tr><td><code>also:</code></td><td>Finishing passes after success</td></tr><tr><td><code>remember in</code></td><td>Cross-run memory</td></tr><tr><td><code>git:</code></td><td>Branch, commit, push, PR policy</td></tr></table>
+  <table><tr><th>Line</th><th>Meaning</th></tr><tr><td><code>goal:</code></td><td>What success means</td></tr><tr><td><code>done when</code></td><td>The check</td></tr><tr><td><code>look at:</code></td><td>Files and context</td></tr><tr><td><code>allow...</code></td><td>Permission policy</td></tr><tr><td><code>skills:</code></td><td>Skill policy: auto, ask, fixed, or none</td></tr><tr><td><code>each cycle:</code></td><td>Steps to repeat</td></tr><tr><td><code>when it fails:</code></td><td>Back-edge</td></tr><tr><td><code>after N tries:</code></td><td>Stop guard</td></tr><tr><td><code>also:</code></td><td>Finishing passes after success</td></tr><tr><td><code>remember in</code></td><td>Cross-run memory</td></tr><tr><td><code>git:</code></td><td>Branch, commit, push, PR policy</td></tr></table>
 </div></details></section>
 
 <section id="templates"><details><summary><h2>Starter templates</h2><span class="chev">+</span></summary><div class="content">
@@ -233,6 +234,16 @@ loop-run ls               # list loops</code></pre>
   <pre><code class="loop">done when "pnpm test" passes
 done when the skill "api-review" scores 8 or more on the output
   the bar: simple API, no secrets, clear errors</code></pre>
+</div></details></section>
+
+<section id="skills"><details open><summary><h2>Skills</h2><span class="chev">+</span></summary><div class="content">
+  <p><code class="inl">skills:</code> controls how the loop uses reusable capabilities while it plans and acts.</p>
+  <pre><code class="loop">skills: auto                         # discover/add useful skills with minimum friction
+skills: ask                          # recommend additions, ask before adding
+skills: fixed, seo-audit             # use only these explicit baseline skills
+skills: none                         # use no skills
+skills: auto, seo-audit              # start with seo-audit, auto-add more if useful</code></pre>
+  <p><code class="inl">auto</code> runs an early capability check and may add safe, useful skills. <code class="inl">ask</code> does the same analysis but asks first. <code class="inl">fixed</code> never adds skills beyond the listed baseline. Legacy <code class="inl">use skills:</code> loops still work, but <code class="inl">skills:</code> is the preferred form.</p>
 </div></details></section>
 
 <section id="config"><details><summary><h2>Project defaults</h2><span class="chev">+</span></summary><div class="content">
