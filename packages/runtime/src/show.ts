@@ -33,6 +33,13 @@ function guard(t?: Transition[]): { n?: number; warn?: string } | null {
 const asksWhenBlocked = (t?: Transition[]) =>
   (t ?? []).some((x) => x.on === "blocked" && (x.do ?? []).some((d) => d.action === "ask-human"));
 
+function skillPolicyStr(loop: Loop): string | null {
+  const policy = loop.skillPolicy;
+  if (!policy) return loop.skills?.length ? `fixed + ${loop.skills.join(", ")}` : null;
+  const use = policy.use?.length ? ` + ${policy.use.join(", ")}` : "";
+  return `${policy.mode}${use}`;
+}
+
 export function renderLoop(loop: Loop): string {
   const L: string[] = [`loop ${loop.name ? `"${loop.name}"` : "(unnamed)"}`];
   const cyc = (loop.cycle?.length ? loop.cycle : ["plan", "act", "observe"]).join(" → ");
@@ -50,6 +57,8 @@ export function renderLoop(loop: Loop): string {
     const what = h.predicate.type === "command" ? `"${h.predicate.command}" ${h.predicate.expect === "empty" ? "finds nothing" : "passes"}` : h.predicate.type === "test" ? `test "${h.predicate.target}"` : "";
     L.push(`   ⊘  hook ${h.at.replace(/-/g, " ")}: ${what}`);
   }
+  const sp = skillPolicyStr(loop);
+  if (sp) L.push(`   🧰 skills: ${sp}`);
   if (loop.context?.knowledge?.length) L.push(`   📖 knowledge: ${loop.context.knowledge.join(", ")}`);
   if (loop.context?.examples?.length) L.push(`   ✎  examples: ${loop.context.examples.join(", ")}`);
   if (loop.tools?.length) L.push(`   🔌 tools from: ${loop.tools.join(", ")}`);
@@ -159,6 +168,20 @@ export function explainLoop(loop: Loop): string {
   const preds = loop.doneWhen ?? [];
   if (preds.length) L.push(`It's done when ${joinList(preds.map(predicateProse), "and")}.`);
   else L.push(`It has no automatic check, so it relies on a human to decide when to stop.`);
+  if (loop.skillPolicy) {
+    const names = loop.skillPolicy.use ?? [];
+    if (loop.skillPolicy.mode === "auto") {
+      L.push(names.length ? `It starts with ${names.join(", ")} and may add more skills automatically.` : `It may add useful skills automatically before it starts implementation.`);
+    } else if (loop.skillPolicy.mode === "ask") {
+      L.push(names.length ? `It starts with ${names.join(", ")} and asks before adding more skills.` : `It asks before adding useful skills.`);
+    } else if (loop.skillPolicy.mode === "fixed") {
+      L.push(names.length ? `It uses only these skills: ${names.join(", ")}.` : `It does not dynamically add skills.`);
+    } else if (loop.skillPolicy.mode === "none") {
+      L.push(`It does not use skills.`);
+    }
+  } else if (loop.skills?.length) {
+    L.push(`It uses these skills: ${loop.skills.join(", ")}.`);
+  }
   if (failsToReflect(loop.transitions)) L.push(`If a check fails, it reflects on why and tries again.`);
   if (loop.humanPlan) L.push(`It pauses for you to approve the plan before changing anything.`);
   if (loop.humanReviewBeforeStop) L.push(`It pauses for you to review the result before finishing.`);
