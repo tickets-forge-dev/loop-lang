@@ -8,6 +8,7 @@ coverage/
 .playwright-mcp/
 .claude/worktrees/
 .worktrees/
+.agnets/
 docs/superpowers/
 packages/cli/assets/
 packages/cli/AGENTS.md
