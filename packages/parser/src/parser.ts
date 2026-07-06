@@ -20,6 +20,7 @@ import {
   Policy,
   Predicate,
   Rigor,
+  SkillPolicy,
   Stage,
   Transition,
 } from "./types.js";
@@ -331,6 +332,23 @@ export function parseModelsLine(text: string, lineNo: number): ModelPolicy {
 
 // ---------- loop body ----------
 
+function parseSkillsLine(text: string, lineNo: number): SkillPolicy {
+  const parts = text
+    .split(/,|\band\b/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const rawMode = parts.shift()?.toLowerCase();
+  if (rawMode !== "auto" && rawMode !== "ask" && rawMode !== "fixed" && rawMode !== "none") {
+    throw new ParseError(`skills: expected mode auto, ask, fixed, or none`, lineNo);
+  }
+  if (rawMode === "none" && parts.length > 0) {
+    throw new ParseError(`skills: none cannot list explicit skills`, lineNo);
+  }
+  const policy: SkillPolicy = { mode: rawMode };
+  if (parts.length > 0) policy.use = parts;
+  return policy;
+}
+
 interface LoopBodyResult {
   loop: Loop;
   gate: { message: string } | null;
@@ -341,6 +359,8 @@ function interpretLoopBody(name: string | null, body: Line[], defaults?: ParseDe
   let gate: { message: string } | null = null;
   let sawGoal = false;
   let sawCycle = false;
+  let sawSkillsDirective = false;
+  let sawLegacyUseSkills = false;
 
   let i = 0;
   while (i < body.length) {
@@ -425,11 +445,24 @@ function interpretLoopBody(name: string | null, body: Line[], defaults?: ParseDe
         .filter((s) => s.length > 0);
       i++; continue;
     }
+    if ((m = t.match(/^skills:\s*(.+)$/i))) {
+      if (sawSkillsDirective) throw new ParseError(`only one skills directive is allowed`, ln.lineNo);
+      if (sawLegacyUseSkills) throw new ParseError(`cannot combine skills: with use skills:`, ln.lineNo);
+      const policy = parseSkillsLine(m[1], ln.lineNo);
+      loop.skillPolicy = policy;
+      loop.skills = policy.use ? [...policy.use] : [];
+      sawSkillsDirective = true;
+      i++; continue;
+    }
     if ((m = t.match(/^use skills?:\s*(.+)$/i))) {
-      loop.skills = m[1]
+      if (sawSkillsDirective) throw new ParseError(`cannot combine skills: with use skills:`, ln.lineNo);
+      const names = m[1]
         .split(/,|\band\b/)
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
+      loop.skills = names;
+      loop.skillPolicy = names.length ? { mode: "fixed", use: names } : { mode: "fixed" };
+      sawLegacyUseSkills = true;
       i++; continue;
     }
     // ctx skill discovery: ctx recommends + installs skills for the goal. loopflow bakes the

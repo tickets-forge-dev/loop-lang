@@ -89,7 +89,7 @@ loop "<name>":
 
 | Line | Zone |
 |---|---|
-| `use skills:` / `use skills recommended by ctx` / `remember in` / `knowledge:` / `examples:` | 2 · boundaries (capabilities & context) |
+| `skills:` / `use skills recommended by ctx` / `remember in` / `knowledge:` / `examples:` | 2 · boundaries (capabilities & context) |
 | `plan from "<file>"` | 2 · boundaries (the plan is an input) |
 | `also:` (finishing passes) | 3 · engine (extra movement after the goal) |
 | `hooks:` | 4 · safety net (deterministic checkpoints) |
@@ -397,7 +397,7 @@ BMAD flow (discover → design → for each story) as one example method.
 | `allow edits automatically, but ask me before <classes>` | Action policy. Auto classes run unattended; confirm classes pause for you. Classes: `edit`, `migrate`, `push`, `deploy`, `delete`. |
 | `each cycle: plan, then act, then observe` | The repeated steps — any subset of `plan` / `act` / `observe`, in order. |
 | `also: <pass>, <pass>` | Extra finishing passes run **after** the goal is met (skipped on failure). |
-| `use skills: <a>, <b>` | Named skills the loop may invoke during `plan`/`act` — coordinate proven skills instead of one mega-prompt. |
+| `skills: auto \| ask \| fixed, <a>, <b> \| none` | Unified skill policy. `auto` may add useful skills with minimum friction; `ask` recommends additions but asks before adding; `fixed` uses only listed baseline skills; `none` disables skills. Explicit names after `auto`/`ask`/`fixed` are baseline skills. |
 | `remember in "<file.md>"` | Cross-run memory: read the file's lessons into the first plan, append a dated outcome entry on stop. (`keep a memory in "<file>"` also works.) |
 | `when it passes and the goal is met: stop` | Success transition. |
 | `when it fails: reflect on <focus>, then plan again` | The feedback edge — reflect, then re-enter the cycle. |
@@ -592,12 +592,31 @@ These add agentic-engineering discipline to Loop. All are optional; a simple loo
 | `observe:` block | config tier | `trace every cycle` / `meter tokens and cost` / `stop and warn if cost exceeds "$N"`. The CLI prints a stop-time **OpEx report** (cycles, reflects, first-pass success). |
 | `sandbox:` block | config tier | Run isolation: `no network access` / `allow egress to "host" only` / `cap cpu at … memory at … time at …`. |
 | `runs as: <identity>` | config tier | An auditable principal for unattended runs. |
-| `examples:` / `knowledge:` | loop body | `examples:` = reference patterns to imitate; `knowledge:` = read-only reference the agent must not edit. With `look at:`/`remember in:`/`use skills:`/`allow…ask`, a loop can declare all six context-engineering parts. |
+| `examples:` / `knowledge:` | loop body | `examples:` = reference patterns to imitate; `knowledge:` = read-only reference the agent must not edit. With `look at:`/`remember in:`/`skills:`/`allow…ask`, a loop can declare all six context-engineering parts. |
 | `use tools from the "<server>" server` | loop body | Name MCP servers whose tools the loop may use. |
 | `stages in parallel:` | inside a pipeline | The indented stages run **concurrently** (barrier-join, fail-fast). File-safe parallel edits need a worktree per branch. |
 
 See [`examples/agentic/`](../examples/agentic/) for one file per feature; run `loop-run explain
 <file>` on any of them to read it back in plain English.
+
+### Skills policy
+
+Use `skills:` as the preferred single source of truth for skill behavior:
+
+```loop
+skills: auto
+skills: ask
+skills: fixed, check-weather, analyze-workout
+skills: none
+skills: auto, seo-audit
+```
+
+- `auto` runs an early capability check before implementation and may add useful skills automatically when safe.
+- `ask` runs the same analysis, but asks before adding skills.
+- `fixed` uses only the explicitly listed baseline skills and never adds more.
+- `none` disables skill use; it cannot list names.
+- Explicit names after `auto`, `ask`, or `fixed` are baseline skills. `skills: auto, seo-audit` means start with `seo-audit` and add more only if useful.
+- Legacy `use skills: a, b` remains compatible and means `skills: fixed, a, b`; do not mix `use skills:` and `skills:` in one loop.
 
 ### Skill source: ctx
 

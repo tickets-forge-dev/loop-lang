@@ -80,6 +80,15 @@ export interface SkillDiscovery {
   intent?: string;
 }
 
+export type SkillMode = "auto" | "ask" | "fixed" | "none";
+
+export interface SkillPolicy {
+  /** Dynamic skill policy: auto-add, ask-to-add, fixed explicit set, or none. */
+  mode: SkillMode;
+  /** Explicit baseline skills that are always available for this loop. */
+  use?: string[];
+}
+
 /**
  * A capability group a `.loop` can grant ctx (`grant ctx: skills, agents, mcps, harnesses`).
  * Fails closed: with no grant, ctx defaults to skills+agents. mcps/harnesses are recommend-only;
@@ -167,7 +176,9 @@ export interface Loop {
   cycle: CycleStep[];
   /** Extra finishing passes run after the goal is met (e.g. "polish", "run a security check"). */
   also?: string[];
-  /** Named execution skills the loop may invoke during plan/act (e.g. ["check-weather"]). */
+  /** Unified skill behavior for this loop. Preferred over legacy `use skills:` syntax. */
+  skillPolicy?: SkillPolicy;
+  /** Flattened baseline execution skills. Kept for compatibility with existing runtime callers. */
   skills?: string[];
   /**
    * ctx skill discovery (`use skills recommended by ctx [for "<intent>"]`). At author time

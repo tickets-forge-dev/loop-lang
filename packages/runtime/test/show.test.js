@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parse } from "@loop-lang/parser";
-import { renderFile, renderDef, oneLine } from "../dist/show.js";
+import { renderFile, renderDef, oneLine, explainDef } from "../dist/show.js";
 
 test("renderFile shows a loop's cycle, done-when, reflect and guard", () => {
   const f = parse(`loop "fix test":\n  goal: tax is right\n  done when the test "checkout.spec.ts::tax" passes\n  each cycle: plan, then act, then observe\n  when it fails: reflect, then plan again\n  after 6 tries: stop and warn "stuck"\n`);
@@ -40,6 +40,19 @@ test("renderDef renders a flow chain with a gate", () => {
 test("oneLine gives a terse shape per definition kind", () => {
   const loop = parse(`loop "y":\n  goal: g\n  done when "t" passes\n  each cycle: plan, then act, then observe\n  when it fails: reflect, then plan again\n`).definitions[0];
   assert.match(oneLine(loop), /loop "y" · plan→act→observe, reflect, done-when/);
+});
+
+test("show renders skill mode and baseline skills", () => {
+  const file = parse('loop "x":\n  goal: g\n  skills: auto, seo-audit\n  done when "true" passes');
+  const out = renderFile(file);
+  assert.match(out, /skills: auto \+ seo-audit/);
+});
+
+test("explain describes auto skill behavior", () => {
+  const loop = parse('loop "x":\n  goal: g\n  skills: auto, seo-audit\n  done when "true" passes').definitions[0];
+  const out = explainDef(loop);
+  assert.match(out, /starts with seo-audit/i);
+  assert.match(out, /may add more skills automatically/i);
 });
 
 test("explain: plain-English description of a loop", async () => {

@@ -213,6 +213,60 @@ test("use skills: also accepts 'and' as a separator", () => {
   assert.deepEqual(loop.skills, ["a", "b", "c"]);
 });
 
+test("skills: auto parses to skillPolicy with no baseline skills", () => {
+  const loop = parse('loop "x":\n  goal: g\n  skills: auto').definitions[0];
+  assert.deepEqual(loop.skillPolicy, { mode: "auto" });
+  assert.deepEqual(loop.skills, []);
+});
+
+test("skills: auto with explicit names treats names as baseline skills", () => {
+  const loop = parse('loop "x":\n  goal: g\n  skills: auto, seo-audit, code-review').definitions[0];
+  assert.deepEqual(loop.skillPolicy, { mode: "auto", use: ["seo-audit", "code-review"] });
+  assert.deepEqual(loop.skills, ["seo-audit", "code-review"]);
+});
+
+test("skills: ask and fixed parse with explicit baseline skills", () => {
+  const ask = parse('loop "x":\n  goal: g\n  skills: ask, payment-review').definitions[0];
+  assert.deepEqual(ask.skillPolicy, { mode: "ask", use: ["payment-review"] });
+  assert.deepEqual(ask.skills, ["payment-review"]);
+
+  const fixed = parse('loop "y":\n  goal: g\n  skills: fixed, seo-audit').definitions[0];
+  assert.deepEqual(fixed.skillPolicy, { mode: "fixed", use: ["seo-audit"] });
+  assert.deepEqual(fixed.skills, ["seo-audit"]);
+});
+
+test("skills: none disables skills and rejects explicit names", () => {
+  const loop = parse('loop "x":\n  goal: g\n  skills: none').definitions[0];
+  assert.deepEqual(loop.skillPolicy, { mode: "none" });
+  assert.deepEqual(loop.skills, []);
+
+  assert.throws(
+    () => parse('loop "bad":\n  goal: g\n  skills: none, seo-audit'),
+    /skills: none cannot list explicit skills/i
+  );
+});
+
+test("skills: rejects unknown modes and duplicate skill directives", () => {
+  assert.throws(
+    () => parse('loop "x":\n  goal: g\n  skills: maybe'),
+    /skills: expected mode/i
+  );
+  assert.throws(
+    () => parse('loop "x":\n  goal: g\n  skills: auto\n  skills: ask'),
+    /only one skills directive/i
+  );
+  assert.throws(
+    () => parse('loop "x":\n  goal: g\n  skills: auto\n  use skills: seo-audit'),
+    /cannot combine skills: with use skills:/i
+  );
+});
+
+test("legacy use skills maps to fixed skillPolicy", () => {
+  const loop = parse('loop "x":\n  goal: g\n  use skills: a and b, c').definitions[0];
+  assert.deepEqual(loop.skills, ["a", "b", "c"]);
+  assert.deepEqual(loop.skillPolicy, { mode: "fixed", use: ["a", "b", "c"] });
+});
+
 test("flake guard: `passes N times` carries a runs count on a command predicate", () => {
   const loop = parse('loop "x":\n  goal: g\n  done when "pnpm test" passes 3 times').definitions[0];
   assert.deepEqual(loop.doneWhen, [{ type: "command", command: "pnpm test", expect: "exit-zero", runs: 3 }]);

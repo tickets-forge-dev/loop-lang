@@ -740,6 +740,101 @@ test("parallel stages run concurrently and all must satisfy", async () => {
   assert.equal(outcome.satisfied, true);
 });
 
+// ---- unified skill policy ----
+
+test("skills fixed passes only baseline skills to plan and act", async () => {
+  const def = parse('loop "x":\n  goal: g\n  skills: fixed, seo-audit\n  done when "true" passes').definitions[0];
+  const runner = new MockRunner();
+  await runDefinition(def, {
+    runner,
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO(),
+    baseDir: "/p",
+  });
+  assert.deepEqual(runner.planCalls[0].skills, ["seo-audit"]);
+  assert.deepEqual(runner.actCalls[0].skills, ["seo-audit"]);
+});
+
+test("skills none passes no skills even when a provider is attached", async () => {
+  const def = parse('loop "x":\n  goal: g\n  skills: none\n  done when "true" passes').definitions[0];
+  const runner = new MockRunner();
+  let called = false;
+  await runDefinition(def, {
+    runner,
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO(),
+    baseDir: "/p",
+    skillProvider: { resolve: async () => { called = true; return { add: ["extra"] }; } },
+  });
+  assert.equal(called, false);
+  assert.deepEqual(runner.planCalls[0].skills, []);
+  assert.deepEqual(runner.actCalls[0].skills, []);
+});
+
+test("skills auto calls provider before first plan and merges safe additions", async () => {
+  const def = parse('loop "x":\n  goal: hard payment feature\n  skills: auto, seo-audit\n  done when "true" passes').definitions[0];
+  const runner = new MockRunner();
+  const { events, onEvent } = collect();
+  const calls = [];
+  await runDefinition(def, {
+    runner,
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO(),
+    baseDir: "/p",
+    onEvent,
+    skillProvider: {
+      resolve: async (input) => {
+        calls.push(input);
+        return { add: ["payment-idempotency"], detail: "trusted source" };
+      },
+    },
+  });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].mode, "auto");
+  assert.deepEqual(calls[0].baseline, ["seo-audit"]);
+  assert.deepEqual(runner.planCalls[0].skills, ["seo-audit", "payment-idempotency"]);
+  assert.deepEqual(runner.actCalls[0].skills, ["seo-audit", "payment-idempotency"]);
+  const skillEvent = events.find((e) => e.type === "skills" && e.action === "resolve");
+  assert.deepEqual(skillEvent.final, ["seo-audit", "payment-idempotency"]);
+  assert.equal(skillEvent.ok, true);
+});
+
+test("skills ask calls provider with ask mode and merges approved provider additions", async () => {
+  const def = parse('loop "x":\n  goal: hard payment feature\n  skills: ask\n  done when "true" passes').definitions[0];
+  const runner = new MockRunner();
+  await runDefinition(def, {
+    runner,
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO(),
+    baseDir: "/p",
+    skillProvider: {
+      resolve: async (input) => {
+        assert.equal(input.mode, "ask");
+        return { add: ["payment-review"] };
+      },
+    },
+  });
+  assert.deepEqual(runner.planCalls[0].skills, ["payment-review"]);
+});
+
+test("skills auto degrades to baseline when provider throws", async () => {
+  const def = parse('loop "x":\n  goal: g\n  skills: auto, seo-audit\n  done when "true" passes').definitions[0];
+  const runner = new MockRunner();
+  const { events, onEvent } = collect();
+  await runDefinition(def, {
+    runner,
+    verifier: new SeqVerifier([true]),
+    human: new ScriptedHumanIO(),
+    baseDir: "/p",
+    onEvent,
+    skillProvider: { resolve: async () => { throw new Error("registry down"); } },
+  });
+  assert.deepEqual(runner.planCalls[0].skills, ["seo-audit"]);
+  const skillEvent = events.find((e) => e.type === "skills" && e.action === "resolve");
+  assert.equal(skillEvent.ok, false);
+  assert.match(skillEvent.detail, /registry down/);
+});
+
 // ---- ctx skill provisioning ----
 
 /** Records provision/topup calls; returns scripted skill names + recommend-only capabilities. */

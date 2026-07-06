@@ -69,9 +69,12 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
   const autoClasses = loop.policy?.auto ?? [];
   const confirmClasses = loop.policy?.confirm ?? [];
 
-  // The loop's working skill set. Starts from the hand-named `use skills:` list; ctx discovery
-  // and run-time top-ups extend it in place, so plan/act always see the current set.
-  const skills: string[] = [...(loop.skills ?? [])];
+  // The loop's working skill set. Starts from the unified `skills:` baseline (or legacy
+  // `use skills:` list); dynamic resolution, ctx discovery, and run-time top-ups extend it
+  // in place, so plan/act always see the current set.
+  const explicitSkillPolicy = loop.skillPolicy;
+  const skillMode = explicitSkillPolicy?.mode ?? "fixed";
+  const skills: string[] = [...(explicitSkillPolicy?.use ?? loop.skills ?? [])];
   const mergeSkills = (names: string[] | undefined): string[] => {
     const added: string[] = [];
     for (const raw of names ?? []) {
@@ -80,6 +83,35 @@ async function executeLoop(loop: Loop, opts: RunOptions): Promise<LoopOutcome> {
     }
     return added;
   };
+
+  const resolveDynamicSkills = async (): Promise<void> => {
+    const baseline = [...skills];
+    const shouldEmit = explicitSkillPolicy != null || baseline.length > 0;
+    if (skillMode === "none" || skillMode === "fixed") {
+      if (shouldEmit) emit(opts, { type: "skills", action: "resolve", mode: skillMode, baseline, added: [], final: [...skills], ok: true });
+      return;
+    }
+    if (!opts.skillProvider) {
+      emit(opts, { type: "skills", action: "resolve", mode: skillMode, baseline, added: [], final: [...skills], ok: true, detail: "no skill provider attached" });
+      return;
+    }
+    try {
+      const res = await opts.skillProvider.resolve({
+        mode: skillMode,
+        goal: loop.goal,
+        baseline,
+        doneWhen: loop.doneWhen,
+        files,
+        baseDir: opts.baseDir,
+      });
+      const added = mergeSkills(res.add);
+      emit(opts, { type: "skills", action: "resolve", mode: skillMode, baseline, added, final: [...skills], ok: true, detail: res.detail });
+    } catch (err) {
+      emit(opts, { type: "skills", action: "resolve", mode: skillMode, baseline, added: [], final: [...skills], ok: false, detail: String((err as Error)?.message ?? err) });
+    }
+  };
+
+  await resolveDynamicSkills();
 
   let reflection: string | null = null;
   let lastPlan = "";
