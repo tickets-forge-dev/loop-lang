@@ -1,6 +1,6 @@
 {
   "name": "@loop-lang/stdlib",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Bundled LoopFlow presets (methods as .loop files) and a resolver for `use`.",
   "license": "Apache-2.0",
   "type": "module",
