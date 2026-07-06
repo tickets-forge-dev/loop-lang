@@ -4,6 +4,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { createRequire } from "node:module";
 import { contextAt, completionsFor, hoverFor, lint } from "./language.js";
+import { buildClaudeSessionCommand, buildPiSessionCommand } from "./sessionCommand.js";
 
 const HEADER = /^(loop|pipeline|flow)\b/;
 const LOOP_SELECTOR: vscode.DocumentSelector = { language: "loop" };
@@ -25,6 +26,11 @@ export function activate(context: vscode.ExtensionContext) {
       const target = uri ?? vscode.window.activeTextEditor?.document.uri;
       if (!target) return void vscode.window.showErrorMessage("Loop: no .loop file to run.");
       runInSession(target);
+    }),
+    vscode.commands.registerCommand("loop.runInPi", (uri?: vscode.Uri) => {
+      const target = uri ?? vscode.window.activeTextEditor?.document.uri;
+      if (!target) return void vscode.window.showErrorMessage("Loop: no .loop file to run.");
+      runInPi(target);
     }),
     vscode.commands.registerCommand("loop.newFromTemplate", (uri?: vscode.Uri) => newFromTemplate(context, uri))
   );
@@ -132,7 +138,8 @@ class RunCodeLensProvider implements vscode.CodeLensProvider {
         const range = new vscode.Range(i, 0, i, 0);
         lenses.push(
           new vscode.CodeLens(range, { title: "▶ Run", command: "loop.run", arguments: [document.uri] }),
-          new vscode.CodeLens(range, { title: "$(comment-discussion) Claude session", command: "loop.runInSession", arguments: [document.uri] })
+          new vscode.CodeLens(range, { title: "$(comment-discussion) Claude session", command: "loop.runInSession", arguments: [document.uri] }),
+          new vscode.CodeLens(range, { title: "$(terminal) pi session", command: "loop.runInPi", arguments: [document.uri] })
         );
       }
     }
@@ -297,6 +304,7 @@ async function runLoop(uri: vscode.Uri | undefined, output: vscode.OutputChannel
   if (mode === "ask") {
     const pick = await vscode.window.showQuickPick(
       [
+        { label: "$(terminal) pi session", description: "open an interactive pi session — watch every step, answer gates in chat", mode: "pi" },
         { label: "$(comment-discussion) Claude Code session", description: "open an interactive session — watch every step, answer gates in chat", mode: "session" },
         { label: "$(output) VS Code output panel", description: "run headless — stream the trace into the Output panel", mode: "output" },
       ],
@@ -307,6 +315,7 @@ async function runLoop(uri: vscode.Uri | undefined, output: vscode.OutputChannel
   }
 
   if (mode === "session") return runInSession(target);
+  if (mode === "pi") return runInPi(target);
   return runInOutput(target, output);
 }
 
@@ -315,8 +324,20 @@ function runInSession(target: vscode.Uri) {
   const cfg = vscode.workspace.getConfiguration("loop");
   const claude = cfg.get<string>("claudePath") || "claude";
   const model = cfg.get<string>("model");
-  const cmd = `${claude}${model ? ` --model ${shq(model)}` : ""} ${shq(`/loopflow run ${target.fsPath}`)}`;
+  const cmd = buildClaudeSessionCommand({ binary: claude, model, targetPath: target.fsPath });
   const name = "Loop ▶ Claude";
+  const term = vscode.window.terminals.find((t) => t.name === name) ?? vscode.window.createTerminal({ name, cwd: dirnameOf(target.fsPath) });
+  term.show(true);
+  term.sendText(cmd, true);
+}
+
+// Open (or reuse) an integrated terminal and start a real pi session that runs the loop.
+function runInPi(target: vscode.Uri) {
+  const cfg = vscode.workspace.getConfiguration("loop");
+  const pi = cfg.get<string>("piPath") || "pi";
+  const model = cfg.get<string>("model");
+  const cmd = buildPiSessionCommand({ binary: pi, model, targetPath: target.fsPath });
+  const name = "Loop ▶ pi";
   const term = vscode.window.terminals.find((t) => t.name === name) ?? vscode.window.createTerminal({ name, cwd: dirnameOf(target.fsPath) });
   term.show(true);
   term.sendText(cmd, true);
@@ -392,7 +413,3 @@ function baseName(p: string): string {
   return p.slice(Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\")) + 1);
 }
 
-// Quote an argument for a POSIX shell (the common integrated-terminal case): double-quote and escape.
-function shq(s: string): string {
-  return `"${s.replace(/(["\\$`])/g, "\\$1")}"`;
-}
