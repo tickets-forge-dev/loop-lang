@@ -1,4 +1,4 @@
-import type { Loop, Predicate } from "@loop-lang/parser";
+import type { Loop, Predicate, SkillMode } from "@loop-lang/parser";
 
 /** A single event in the live trace emitted as a loop runs. */
 export type LoopEvent =
@@ -33,6 +33,7 @@ export type LoopEvent =
   | { type: "foreach-item-end"; var: string; index: number; satisfied: boolean }
   | { type: "foreach-end"; var: string; satisfied: boolean }
   | { type: "git"; action: "branch"|"worktree"|"commit"|"push"|"pr"; detail: string }
+  | { type: "skills"; action: "resolve"; mode: "auto" | "ask" | "fixed" | "none"; baseline: string[]; added: string[]; final: string[]; ok: boolean; detail?: string }
   | { type: "ctx"; action: "provision" | "topup"; skills: string[]; ok?: boolean; detail?: string;
       /** Recommend-only capabilities ctx surfaced (never auto-installed): MCP servers / harnesses. */
       mcps?: string[]; harnesses?: string[];
@@ -88,6 +89,27 @@ export interface SkillVerifyInput {
   /** Inline rubric (`the bar:`) naming the conditions the judge must score against. */
   bar?: string;
   baseDir: string;
+}
+
+export interface SkillDecisionInput {
+  mode: Exclude<SkillMode, "fixed" | "none">;
+  goal: string;
+  baseline: string[];
+  doneWhen?: Predicate[];
+  files: string[];
+  baseDir: string;
+}
+
+export interface SkillDecisionResult {
+  /** Skills to add to the loop's working set. Provider owns search/generation/approval policy. */
+  add?: string[];
+  /** Human-readable detail for logs/live UI. */
+  detail?: string;
+}
+
+export interface SkillProvider {
+  resolve(input: SkillDecisionInput): Promise<SkillDecisionResult>;
+  close?(): Promise<void>;
 }
 
 export interface ActResult {
@@ -213,6 +235,8 @@ export interface RunOptions {
   modelPolicy?: import("@loop-lang/parser").ModelPolicy;
   /** CLI/extension --model — kill switch that forces all phases to one model. */
   cliModel?: string;
+  /** Optional runtime skill resolver for `skills: auto` / `skills: ask`. */
+  skillProvider?: SkillProvider;
   /** External skill recommender (ctx). Present when the file opts in; absent = degrade to named skills. */
   ctx?: CtxAdapter;
   /** Capability groups the file grants ctx (`grant ctx: …`), threaded to provision/topup as permissions. */
