@@ -46,10 +46,10 @@
     </section>
 
     <section id="try" class="step">
-      <h2>Use it in Claude Code</h2>
-      <div class="claude-panel"><div class="claude-head"><span class="dot"></span> Claude Code live loop</div><div class="claude-body">
+      <h2>Run a live loop</h2>
+      <div class="claude-panel"><div class="claude-head"><span class="dot"></span> LoopFlow live run</div><div class="claude-body">
         <div class="term-row"><span class="term-tag">you</span><span class="typed">/loopflow fix checkout tax bug</span></div>
-        <div class="term-row term-step s1"><span class="term-tag loop">loopflow</span><span>Writing <strong>fix-checkout.loop</strong> from the failing test.</span></div>
+        <div class="term-row term-step s1"><span class="term-tag loop">agent</span><span>Writing <strong>fix-checkout.loop</strong> from the failing test.</span></div>
         <div class="term-box term-step s2"><pre><code class="loop">loop "fix checkout tax bug":
   goal: checkout shows the right tax total
   done when "pnpm test checkout" passes 3 times
@@ -57,9 +57,9 @@
   each cycle: plan, then act, then observe
   when it fails: reflect on the mismatch, then plan again
   after 6 tries: stop and warn "stuck"</code></pre></div>
-        <div class="term-row term-step s3"><span class="term-tag loop">loopflow</span><span>Running cycle 1: plan → act → observe <span class="term-bad">✗ tax total still off by $0.01</span></span></div>
-        <div class="term-row term-step s4"><span class="term-tag loop">loopflow</span><span>Reflecting on rounding failure, then planning a smaller patch.</span></div>
-        <div class="term-row term-step s5"><span class="term-tag loop">loopflow</span><span>Running cycle 2: plan → act → observe <span class="term-ok">✓ tests passed 3 times</span></span></div>
+        <div class="term-row term-step s3"><span class="term-tag loop">loopflow</span><span>Cycle 1: plan → act → observe <span class="term-bad">✗ tax total still off by $0.01</span></span></div>
+        <div class="term-row term-step s4"><span class="term-tag loop">agent</span><span>Reflecting on rounding failure, then planning a smaller patch.</span></div>
+        <div class="term-row term-step s5"><span class="term-tag loop">loopflow</span><span>Cycle 2: plan → act → observe <span class="term-ok">✓ tests passed 3 times</span></span></div>
         <div class="term-box code-diff term-step s6"><pre><code><span class="file">diff --git a/src/checkout/tax.ts b/src/checkout/tax.ts</span>
  export function totalWithTax(cart, region) {
 -  return cart.subtotal + cart.subtotal * taxRate(region)
