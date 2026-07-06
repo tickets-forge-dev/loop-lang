@@ -37,7 +37,7 @@
             <svg class="hero-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="#f8fafc" stroke-width="3.4" stroke-linecap="round" stroke-dasharray="42.2 11.2"/></svg>
       <h1 class="kicker">Your agent needs a loop,<br/>not another <em>prompt</em></h1>
       <p class="lede">LoopFlow is a control structure for AI coding agents.</p>
-      <p class="sub">Turn PR review, tests, API checks, curl validation, and human gates into one runnable file.</p>
+      <p class="sub">Turn PR review, tests, API checks, curl validation, and human gates into one reusable workflow file. Prompts disappear. Loop files compound.</p>
       <div class="actions"><a class="cta primary" href="#install">Try it</a><a class="cta" href="docs.html">Read the docs</a></div>
       <div id="install" class="install">
         <div class="tabs"><div class="tab active">Global install</div></div>
@@ -105,7 +105,7 @@
 
     <section id="example-loop">
       <h2>A loop is just a file.</h2>
-      <p>Claude, Codex, Cursor, Copilot — they all get the same artifact: a plain <code class="inl">.loop</code> file you can review, commit, and run when ready.</p>
+      <p>Claude, Codex, Cursor, Copilot — they all get the same artifact: a plain <code class="inl">.loop</code> file you can review, commit, copy to the next repo, and run when ready.</p><p>Because the workflow lives in a file, it becomes versioned, shareable, and repeatable — not trapped in one chat session.</p>
       <pre class="code"><code class="loop">loop "fix checkout tax":
   goal: checkout shows the right tax
   done when "pnpm test checkout" passes
