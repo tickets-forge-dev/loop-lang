@@ -61,9 +61,9 @@ footer{border-top:1px solid var(--line);padding-top:20px;margin-top:34px;color:v
   <a class="github" href="https://github.com/tickets-forge-dev/loop-lang">View on GitHub →</a>
   <ol id="tocList">
     <li class="grp">Start</li>
-    <li><a href="#what">What LoopFlow is</a></li>
+    <li><a href="#what">What is a loop?</a></li>
     <li><a href="#anatomy">The loop shape</a></li>
-    <li><a href="#start">Install + first loop</a></li>
+    <li><a href="#start">Quick start</a></li>
     <li class="grp">Language</li>
     <li><a href="#donewhen">Verify with done when</a></li>
     <li><a href="#material">Context</a></li>
@@ -106,13 +106,14 @@ footer{border-top:1px solid var(--line);padding-top:20px;margin-top:34px;color:v
   <p class="caption">That is a full loop: goal → check → context → permissions → cycle → guard.</p>
 </header>
 
-<section id="what"><details open><summary><h2>What LoopFlow is</h2><span class="chev">+</span></summary><div class="content">
-  <p>A <code class="inl">.loop</code> file is a runbook for an AI agent.</p>
+<section id="what"><details open><summary><h2>What is a loop?</h2><span class="chev">+</span></summary><div class="content">
+  <p>A loop is the work you already do around an AI agent: ask it to change something, check the result, give it the failure, and repeat until the work is actually done.</p>
   <div class="grid">
-    <div class="card"><h3>Instead of a one-shot prompt</h3><p>“Fix it” runs once and may stop early.</p></div>
-    <div class="card"><h3>You write a loop</h3><p>“Fix it until this real check passes, and ask before risky steps.”</p></div>
+    <div class="card"><h3>PR review</h3><p>The agent opens a PR, but review finds missing tests, a style issue, or a broken API contract. A loop sends the feedback back to the agent, reruns the checks, and stops only when the review bar is met.</p></div>
+    <div class="card"><h3>Feature implementation</h3><p>You ask for a feature, then keep saying “run the test,” “check the API,” “try a curl request,” and “fix what failed.” A loop writes those checks down once so the agent repeats them without babysitting.</p></div>
+    <div class="card"><h3>Bug fix</h3><p>A failing test proves the bug. The agent edits, observes the test result, reflects on the failure, and tries again until the test is green or the stop guard warns that it is stuck.</p></div>
   </div>
-  <p>The file is plain text. You can review it, commit it, share it, and run it again.</p>
+  <p>LoopFlow makes that cycle explicit: <strong>plan → act → observe → reflect</strong>, with a real <code class="inl">done when</code> check, human gates for risky steps, and a retry limit.</p>
 </div></details></section>
 
 <section id="anatomy"><details open><summary><h2>The loop shape</h2><span class="chev">+</span></summary><div class="content">
@@ -132,20 +133,23 @@ when it passes and the goal is met: stop</code></pre>
   <p>Built-in agent commands help in one session. LoopFlow gives you a portable file: runnable by people, agents, CI, and future you.</p>
 </div></details></section>
 
-<section id="start"><details open><summary><h2>Install + first loop</h2><span class="chev">+</span></summary><div class="content">
-  <pre><code class="sh">npm i -g @loop-lang/loop @loop-lang/runtime
-loop init
-loop-run show fix.loop
-loop-run run fix.loop</code></pre>
-  <p>Or use it in Claude Code with the <code class="inl">/loopflow</code> skill.</p>
-  <h3>Minimum useful loop</h3>
-  <pre><code class="loop">loop "make tests green":
-  goal: the test suite passes
-  done when "pnpm test" passes
-  look at: src/, tests/, and the last failure
+<section id="start"><details open><summary><h2>Quick start</h2><span class="chev">+</span></summary><div class="content">
+  <p>In Claude Code, ask LoopFlow for an example:</p>
+  <pre><code class="sh">/loopflow example</code></pre>
+  <p>It gives you a runnable <code class="inl">.loop</code> file like this:</p>
+  <pre><code class="loop">loop "fix checkout tax":
+  goal: checkout shows the right tax
+  done when "pnpm test checkout" passes
+
+  look at: src/checkout/, tests/checkout/, and the last failure
+  allow edits automatically, but ask me before migrations
+
   each cycle: plan, then act, then observe
   when it fails: reflect, then plan again
   after 6 tries: stop and warn "stuck"</code></pre>
+  <p>Save it as <code class="inl">fix-checkout.loop</code>, then run:</p>
+  <pre><code class="sh">/loopflow run fix-checkout.loop</code></pre>
+  <p class="note">Prefer the terminal? Install once with <code class="inl">npm i -g @loop-lang/loop @loop-lang/runtime</code>, then use <code class="inl">loop init</code>, <code class="inl">loop-run show file.loop</code>, and <code class="inl">loop-run run file.loop</code>.</p>
 </div></details></section>
 
 <section id="donewhen"><details open><summary><h2>Verify with done when</h2><span class="chev">+</span></summary><div class="content">
