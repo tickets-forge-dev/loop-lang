@@ -165,8 +165,8 @@ class LoopFormatter implements vscode.DocumentFormattingEditProvider {
 class LoopCompletion implements vscode.CompletionItemProvider {
   provideCompletionItems(document: vscode.TextDocument, position: vscode.Position): vscode.CompletionItem[] {
     const lines = document.getText().split(/\r?\n/);
-    const ctx = contextAt(lines, position.line);
-    return completionsFor(ctx).map((s, i) => {
+    const context = contextAt(lines, position.line);
+    return completionsFor(context).map((s, i) => {
       const isTemplate = s.kind === "template";
       const it = new vscode.CompletionItem(
         s.label,

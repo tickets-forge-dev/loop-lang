@@ -32,7 +32,7 @@ test("http event sink posts each event with a monotonic seq + token to the run e
     meta: { loop_path: "x.loop", principal: "ci" },
   });
   sink.post({ type: "loop-start", name: "n" });
-  sink.post({ type: "ctx", action: "provision", skills: ["a"] });
+  sink.post({ type: "git", action: "branch", detail: "loop/x" });
   sink.post({ type: "loop-end", satisfied: true });
   await sink.flush();
   srv.close();
@@ -47,7 +47,7 @@ test("http event sink posts each event with a monotonic seq + token to the run e
   const bySeq = new Map(received.map((r) => [r.body.events[0].seq, r.body.events[0].event]));
   assert.deepEqual([...bySeq.keys()].sort((a, b) => a - b), [0, 1, 2]);
   assert.equal(bySeq.get(0).type, "loop-start");
-  assert.equal(bySeq.get(1).type, "ctx");
+  assert.equal(bySeq.get(1).type, "git");
 });
 
 test("sink degrades silently when the collector is unreachable (never throws)", async () => {

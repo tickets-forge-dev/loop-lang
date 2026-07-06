@@ -1,6 +1,5 @@
 import {
   Action,
-  CapabilityGroup,
   Config,
   CycleStep,
   Definition,
@@ -25,14 +24,6 @@ import {
 } from "./types.js";
 
 const RIGOR_LEVELS: Rigor[] = ["vibe coding", "structured ai-assisted", "agentic engineering"];
-
-// Capability-group names a `grant ctx:` line may list (singular/plural + entity-type spellings).
-const CTX_CAPABILITY_GROUPS: Record<string, CapabilityGroup> = {
-  skills: "skills", skill: "skills",
-  agents: "agents", agent: "agents",
-  mcps: "mcps", mcp: "mcps", "mcp-server": "mcps", "mcp-servers": "mcps",
-  harnesses: "harnesses", harness: "harnesses",
-};
 
 const HOOK_POINTS: Record<string, HookPoint> = {
   "before each cycle": "before-cycle",
@@ -432,18 +423,6 @@ function interpretLoopBody(name: string | null, body: Line[], defaults?: ParseDe
         .filter((s) => s.length > 0);
       i++; continue;
     }
-    // ctx skill discovery: ctx recommends + installs skills for the goal. loopflow bakes the
-    // resolved names into a `use skills:` line at author time; this directive persists so a
-    // headless run re-resolves the bundle from ctx. Optional `for "<intent>"` overrides the goal.
-    if ((m = t.match(/^use skills recommended by ctx(?:\s+for\s+"([^"]+)")?$/i))) {
-      loop.skillDiscovery = m[1] ? { provider: "ctx", intent: m[1].trim() } : { provider: "ctx" };
-      i++; continue;
-    }
-    // ctx run-time top-up: when a step needs more, pull additional skills from ctx mid-loop.
-    if (/^top up skills from ctx(?:\s+when a step needs more)?$/i.test(t)) {
-      loop.skillTopUp = true;
-      i++; continue;
-    }
     // MCP: name servers whose tools the loop may use (`use tools from the "github" server`).
     if ((m = t.match(/^use tools from (?:the\s+)?"([^"]+)"(?:\s+server)?$/i))) {
       (loop.tools ??= []).push(m[1].trim());
@@ -520,19 +499,19 @@ function splitItems(s: string): string[] {
 }
 
 function parseContext(s: string): LoopContext {
-  const ctx: LoopContext = {};
+  const context: LoopContext = {};
   const items = s.split(",").map((p) => p.trim()).filter(Boolean);
   const files: string[] = [];
   for (let item of items) {
     item = item.replace(/^and\s+/i, "").trim();
     if (/^the last failure$/i.test(item)) {
-      ctx.includeLastFailure = true;
+      context.includeLastFailure = true;
     } else if (item.length > 0) {
       files.push(item);
     }
   }
-  if (files.length) ctx.files = files;
-  return ctx;
+  if (files.length) context.files = files;
+  return context;
 }
 
 function mergePolicy(loop: Loop, line: string) {
@@ -681,6 +660,10 @@ function parseFlow(lines: Line[], start: number): { flow: Flow; next: number } {
 function parseConfigLine(config: Config, ln: Line): boolean {
   const t = ln.text;
   let m: RegExpMatchArray | null;
+  if ((m = t.match(/^live\s*=\s*(true|false)$/i))) {
+    config.live = m[1].toLowerCase() === "true";
+    return true;
+  }
   if ((m = t.match(/^use\s+(?:the\s+)?(.+?)(?:\s+method)?$/i))) {
     config.use = m[1].trim();
     return true;
@@ -715,31 +698,6 @@ function parseConfigLine(config: Config, ln: Line): boolean {
   }
   if ((m = t.match(/^runs as:\s*(.+)$/i))) {
     config.runsAs = m[1].trim();
-    return true;
-  }
-  // Config tier: declare ctx as this file's skill recommender/installer.
-  if (/^recommend skills with ctx$/i.test(t)) {
-    config.skillSource = { provider: "ctx" };
-    return true;
-  }
-  // Config tier: capability groups the file grants ctx (`grant ctx: skills, agents, mcps, harnesses`).
-  // Fails closed — only listed groups are granted; default (no line) is skills+agents in the adapter.
-  if ((m = t.match(/^grant ctx:\s*(.+)$/i))) {
-    const groups: CapabilityGroup[] = [];
-    for (const raw of m[1].split(/,|\band\b/).map((s) => s.trim().toLowerCase()).filter(Boolean)) {
-      const g = CTX_CAPABILITY_GROUPS[raw];
-      if (!g) {
-        throw new ParseError(`unknown ctx capability group "${raw}" (expected: skills, agents, mcps, harnesses)`, ln.lineNo);
-      }
-      if (!groups.includes(g)) groups.push(g);
-    }
-    config.ctxGrants = groups;
-    return true;
-  }
-  // Config tier: declare a user-owned/local/API model so ctx may recommend harnesses (gated, dry-run).
-  if ((m = t.match(/^ctx may use my own model\s+"([^"]+)"$/i))) {
-    const spec = m[1].trim();
-    config.ownModel = { provider: spec.split("/")[0].trim(), model: spec };
     return true;
   }
   return false;

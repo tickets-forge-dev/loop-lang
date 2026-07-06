@@ -93,7 +93,7 @@ Taught with a worked example in the [tutorial](https://loopflow.live/#evals); fu
 
 ## Skills and memory
 
-A loop can coordinate proven skills (`use skills: check-weather, analyze-workout`), let a review skill be the verdict (`done when the skill "workout-review" approves`), and keep cross-run memory in a markdown file (`remember in "morning-run.memory.md"`). With [ctx](https://github.com/stevesolun/ctx) attached as the skill source, `use skills recommended by ctx` provisions the right bundle before the first plan — opt-in, fail-closed, inert without ctx. Details: [manual](docs/MANUAL.md#skill-source-ctx), [integration guide](docs/ctx-integration-guide.md), [`examples/skills_memory.loop`](examples/skills_memory.loop), [`examples/ctx_capabilities.loop`](examples/ctx_capabilities.loop).
+A loop can coordinate proven skills (`use skills: check-weather, analyze-workout`), let a review skill be the verdict (`done when the skill "workout-review" approves`), and keep cross-run memory in a markdown file (`remember in "morning-run.memory.md"`). Details: [manual](docs/MANUAL.md), [`examples/skills_memory.loop`](examples/skills_memory.loop).
 
 ## The vocabulary — learn it once
 

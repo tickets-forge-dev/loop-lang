@@ -89,7 +89,7 @@ loop "<name>":
 
 | Line | Zone |
 |---|---|
-| `use skills:` / `use skills recommended by ctx` / `remember in` / `knowledge:` / `examples:` | 2 · boundaries (capabilities & context) |
+| `use skills:` / `remember in` / `knowledge:` / `examples:` | 2 · boundaries (capabilities & context) |
 | `plan from "<file>"` | 2 · boundaries (the plan is an input) |
 | `also:` (finishing passes) | 3 · engine (extra movement after the goal) |
 | `hooks:` | 4 · safety net (deterministic checkpoints) |
@@ -220,7 +220,7 @@ self-contained (no external assets) and binds to `127.0.0.1` only.
 
 Every meaningful thing a run does is a **structured event** — `loop-start`, each
 `node-enter` / `node-exit` (with the attempt number), `observe` (pass/fail + output),
-`transition`, `reflect`, `loop-back`, human gates, `ctx` provision/top-up, `git` actions,
+`transition`, `reflect`, `loop-back`, human gates, `git` actions,
 `hook` results, the `model` tier per phase, `stop` (with the reason), `loop-end`, and the
 pipeline / flow / for-each envelopes. The live dashboard renders this stream; you can also
 **persist it** — to a local file and/or a remote collector — for auditing, debugging a
@@ -598,30 +598,6 @@ These add agentic-engineering discipline to Loop. All are optional; a simple loo
 
 See [`examples/agentic/`](../examples/agentic/) for one file per feature; run `loop-run explain
 <file>` on any of them to read it back in plain English.
-
-### Skill source: ctx
-
-[ctx](https://github.com/stevesolun/ctx) can act as a file's **skill source** —
-recommending and installing capabilities per loop goal. All lines are opt-in and **inert
-without the ctx MCP server** (the loop runs exactly as it would without them).
-
-| Line | Tier | What it does |
-|---|---|---|
-| `recommend skills with ctx` | config | ctx is this file's skill source. |
-| `use skills recommended by ctx` (optional `for "<intent>"`) | loop body | Resolve + install the skill bundle for the goal before the first plan; `for "…"` overrides the query. |
-| `top up skills from ctx` (optional `when a step needs more`) | loop body | Pull more skills after a failed cycle reflects. |
-| `grant ctx: skills, agents, mcps, harnesses` | config | Capability groups ctx may recommend — **fail-closed** (default `skills, agents`; only listed groups are returned). |
-| `ctx may use my own model "<provider>/<model>"` | config | Declares a user-owned/local/API model — unlocks harness recommendations. |
-
-Semantics of the groups: **skills / agents** install into `~/.claude/skills` and merge into
-the cycle's skill set. **mcps** are recommend-only — surfaced on a `ctx` event with a
-suggested install command, never auto-registered. **harnesses** recommend only when an
-own-model is declared, and ship as an explicit `--dry-run` install command — never an
-automatic install.
-
-Setup and the full capability walkthrough: [ctx-integration-guide](ctx-integration-guide.md).
-Examples: [`examples/ctx_skills.loop`](../examples/ctx_skills.loop),
-[`examples/ctx_capabilities.loop`](../examples/ctx_capabilities.loop).
 
 ### Git strategy
 

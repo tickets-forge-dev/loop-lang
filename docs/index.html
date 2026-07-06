@@ -36,6 +36,10 @@
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);line-height:1.5;-webkit-font-smoothing:antialiased}
+*{scrollbar-width:thin;scrollbar-color:rgba(110,110,115,.28) transparent}
+*::-webkit-scrollbar{width:6px;height:6px}
+*::-webkit-scrollbar-thumb{background:rgba(110,110,115,.28);border-radius:999px;border:1.5px solid transparent;background-clip:padding-box}
+*::-webkit-scrollbar-track{background:transparent}
 a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
 .shell{max-width:1180px;margin:0 auto;display:flex;align-items:flex-start}
 nav.toc{position:sticky;top:0;width:260px;flex:0 0 260px;height:100vh;padding:28px 22px;border-right:1px solid var(--line);overflow:auto;background:rgba(251,251,253,.82);backdrop-filter:blur(18px)}
@@ -47,6 +51,7 @@ h1{font-size:64px;line-height:1.02;letter-spacing:-.055em;margin:26px 0 14px}.le
 section{border-top:1px solid var(--line);margin-top:10px}details{padding:0}summary{list-style:none;cursor:pointer;padding:24px 0 18px;display:flex;align-items:center;justify-content:space-between;gap:16px}summary::-webkit-details-marker{display:none}summary h2{margin:0;font-size:30px;line-height:1.15;letter-spacing:-.035em}.chev{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);background:var(--panel);color:var(--muted);transition:.18s}details[open] .chev{transform:rotate(45deg);color:var(--ink)}.content{padding:0 0 28px}.content>*:first-child{margin-top:0}
 h3{font-size:19px;letter-spacing:-.02em;margin:26px 0 6px}p{color:#3a3a3c;margin:10px 0}ul,ol{color:#3a3a3c;padding-left:22px}li{margin:6px 0}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0}.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px}.card h3{margin-top:0}.card p{margin-bottom:0}.mini{font-size:13px;color:var(--muted)}
 code.inl,td code{font-family:var(--mono);font-size:.9em;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:1px 6px;color:var(--ink)}pre{background:#f5f5f7;border:1px solid var(--line);border-radius:18px;padding:18px;overflow:auto;font-size:13px;line-height:1.6}pre code{font-family:var(--mono);white-space:pre;color:var(--ink)}pre.hero-code{background:#111827;color:white;border-color:#111827;box-shadow:0 18px 50px rgba(0,0,0,.12)}pre.hero-code code{color:white}.caption{font-size:13px;color:var(--muted);margin-top:-6px}
+.claude-run{margin:22px 0 6px;border:1px solid var(--line);background:var(--panel);border-radius:18px;padding:15px 18px}.claude-badge{display:inline-block;background:var(--ink);color:#fff;font-size:11px;font-weight:700;letter-spacing:.02em;border-radius:999px;padding:3px 10px;margin-bottom:9px}.claude-run p{margin:6px 0}pre.cmd{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin:9px 0;font-size:13px;color:var(--ink);overflow:auto}pre.cmd code{font-family:var(--mono);color:var(--ink)}pre.cmd .p{color:var(--soft)}
 table{width:100%;border-collapse:separate;border-spacing:0;margin:14px 0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--panel)}th,td{padding:11px 13px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}tr:last-child td{border-bottom:0}th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:var(--panel2)}td{color:#3a3a3c}.note{border-left:3px solid var(--blue);background:#eef6ff;border-radius:14px;padding:13px 16px;color:#21364f}.flowline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:15px 0}.node{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-weight:700}.arrow{color:var(--muted)}
 footer{border-top:1px solid var(--line);padding-top:20px;margin-top:34px;color:var(--muted);font-size:13px}.tok-kw{color:#0057b8;font-weight:600}.tok-human{color:#9b2d8f;font-weight:600}.tok-str{color:#276b36}.tok-com{color:#8a8a8e;font-style:italic}.tok-num{color:#a35200}
 @media(max-width:900px){.shell{display:block}nav.toc{position:relative;width:auto;height:auto;border-right:0;border-bottom:1px solid var(--line)}nav.toc ol{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 8px}.grp{grid-column:1/-1}main{padding:28px 20px 70px}h1{font-size:46px}.lede{font-size:20px}.grid{grid-template-columns:1fr}summary h2{font-size:25px}}
@@ -92,6 +97,12 @@ footer{border-top:1px solid var(--line);padding-top:20px;margin-top:34px;color:v
   <p class="lede">Write the loop once. The agent plans, edits, checks, reflects, and stops only when the work is verified.</p>
   <p class="sub">LoopFlow is a small plain-English language for AI coding workflows. It keeps the important parts visible: goal, files, permissions, checks, humans, and stopping rules.</p>
   <div class="cta"><a class="btn primary" href="#start">Start in 2 minutes</a><a class="btn" href="playground.html">Try the playground</a></div>
+  <div class="claude-run">
+    <span class="claude-badge">Claude Code · easiest start</span>
+    <p><strong>Already in Claude Code? Just type <code class="inl">/loopflow</code> and say what you want.</strong> Nothing to install, no syntax to memorize.</p>
+    <pre class="cmd"><code><span class="p">&gt; </span>/loopflow fix the checkout tax bug until pnpm test passes</code></pre>
+    <p class="mini">The skill interviews you for the goal and the check, writes the loop below <em>with</em> you, shows its shape, then runs it right in the chat — pausing at every human gate.</p>
+  </div>
   <pre class="hero-code"><code class="loop">loop "fix checkout tax":
   goal: checkout shows the right tax
   done when "pnpm test checkout" passes
@@ -109,7 +120,7 @@ footer{border-top:1px solid var(--line);padding-top:20px;margin-top:34px;color:v
   <p>A <code class="inl">.loop</code> file is a runbook for an AI agent.</p>
   <div class="grid">
     <div class="card"><h3>Instead of a one-shot prompt</h3><p>“Fix it” runs once and may stop early.</p></div>
-    <div class="card"><h3>You write a loop</h3><p>“Fix it until this real check passes, and ask before risky steps.”</p></div>
+    <div class="card"><h3>You write a loop</h3><p><code class="inl">/loopflow fix it until this real check passes, and ask before risky steps</code></p></div>
   </div>
   <p>The file is plain text. You can review it, commit it, share it, and run it again.</p>
 </div></details></section>
@@ -127,8 +138,13 @@ when it passes and the goal is met: stop</code></pre>
   <table><tr><th>Prompt</th><th>LoopFlow</th></tr><tr><td>Hidden assumptions</td><td>Explicit goal, files, checks, gates</td></tr><tr><td>Stops after one attempt</td><td>Retries after real failures</td></tr><tr><td>“Looks done”</td><td><code class="inl">done when</code> proves it</td></tr></table>
 </div></details></section>
 
-<section id="vsbuiltins"><details><summary><h2>vs /loop and /goal</h2><span class="chev">+</span></summary><div class="content">
-  <p>Built-in agent commands help in one session. LoopFlow gives you a portable file: runnable by people, agents, CI, and future you.</p>
+<section id="vsbuiltins"><details open><summary><h2>Isn’t this just /goal — or a Ralph loop?</h2><span class="chev">+</span></summary><div class="content">
+  <p>In plain terms: LoopFlow keeps the good part of both — <strong>persistence toward a goal</strong> — and adds the parts that make it safe to trust and re-run.</p>
+  <div class="grid">
+    <div class="card"><h3>vs a one-shot <code class="inl">/goal</code></h3><p>A goal command runs once in a session and decides it’s “done” by feel; when the chat ends, nothing is left behind. A <code class="inl">.loop</code> is a portable file with a real <code class="inl">done when</code> check, human gates, and a stop guard — reviewable, committable, and re-runnable by people, agents, CI, and future you.</p></div>
+    <div class="card"><h3>vs a Ralph loop</h3><p>“Ralph” is <code class="inl">while true: run the same prompt</code> — brute-force repetition with no built-in verification or stopping rule, so you babysit it and kill it by hand. LoopFlow keeps the relentlessness but adds a check it must pass, a thrash guard (<code class="inl">after N tries: stop</code>), reflection that feeds each failure back, and gates on risky steps.</p></div>
+  </div>
+  <p class="mini">Same idea as both — loop the agent until the goal is met — with verification, stopping conditions, and human checkpoints written down in plain text.</p>
 </div></details></section>
 
 <section id="start"><details open><summary><h2>Install + first loop</h2><span class="chev">+</span></summary><div class="content">
@@ -236,13 +252,28 @@ done when the skill "api-review" scores 8 or more on the output
 </div></details></section>
 
 <section id="config"><details><summary><h2>Project defaults</h2><span class="chev">+</span></summary><div class="content">
-  <p>Put shared settings in <code class="inl">loop.config</code> so every loop inherits them.</p>
-  <pre><code class="loop">each cycle: plan, then act, then observe
+  <p>Create a <code class="inl">loop.config</code> file at your repo root to set defaults for every <code class="inl">.loop</code> file in the project. Users can edit it any time; a loop file can override these settings at the top of the file, and an individual loop can override the pieces it owns.</p>
+  <pre><code class="loop"># loop.config
+live=false
+
+each cycle: plan, then act, then observe
 models: fast haiku, strong opus
+rigor: structured ai-assisted
+mode: conductor
+runs as: developer
+
 git:
   work on a branch
   commit when the goal is met
-  do not push</code></pre>
+  do not push
+
+observe:
+  meter tokens and cost
+  stop and warn if cost exceeds "$5"
+
+sandbox:
+  no network access</code></pre>
+  <table><tr><th>Setting</th><th>Values you can use</th></tr><tr><td><code class="inl">live</code></td><td><code class="inl">true</code> to show the in-session dashboard, <code class="inl">false</code> to run normally.</td></tr><tr><td><code class="inl">each cycle:</code></td><td><code class="inl">plan</code>, <code class="inl">act</code>, <code class="inl">observe</code> in the order you want, usually <code class="inl">plan, then act, then observe</code> or <code class="inl">act, then observe</code>.</td></tr><tr><td><code class="inl">models:</code></td><td><code class="inl">fast &lt;model&gt;</code>, <code class="inl">strong &lt;model&gt;</code>, plus phase overrides like <code class="inl">act strong</code> or <code class="inl">all fast</code>.</td></tr><tr><td><code class="inl">rigor:</code></td><td><code class="inl">vibe coding</code>, <code class="inl">structured ai-assisted</code>, or <code class="inl">agentic engineering</code>.</td></tr><tr><td><code class="inl">mode:</code></td><td><code class="inl">conductor</code> for in-session supervision, or <code class="inl">orchestrator</code> for async/PR-style runs.</td></tr><tr><td><code class="inl">git:</code></td><td><code class="inl">work in place</code>, <code class="inl">work on a branch</code>, <code class="inl">work in a worktree</code>; commit options include <code class="inl">commit when the goal is met</code>, <code class="inl">commit each cycle</code>, <code class="inl">commit each story</code>, or <code class="inl">commit never</code>; push options are <code class="inl">do not push</code> or <code class="inl">push when done</code>.</td></tr><tr><td><code class="inl">observe:</code></td><td><code class="inl">trace every cycle</code>, <code class="inl">meter tokens and cost</code>, and <code class="inl">stop and warn if cost exceeds "$N"</code>.</td></tr><tr><td><code class="inl">sandbox:</code></td><td><code class="inl">no network access</code>, <code class="inl">allow egress to "host" only</code>, or resource caps such as <code class="inl">cap cpu at … memory at … time at …</code>.</td></tr><tr><td><code class="inl">schedule:</code>, <code class="inl">target:</code>, <code class="inl">notify:</code>, <code class="inl">runner:</code></td><td>Operational defaults: when to run, which directory to target, where to report, and which runner/agent to use.</td></tr></table>
 </div></details></section>
 
 <section id="rigor"><details><summary><h2>Rigor, mode, hooks, sandbox</h2><span class="chev">+</span></summary><div class="content">
@@ -282,6 +313,9 @@ when it breaks: reflect, then plan again</code></pre></div></details></section>
   <h3>What is an AI coding loop?</h3><p>A workflow where an agent plans, edits, checks, and retries until a real check passes.</p>
   <h3>How do I make an agent self-correct?</h3><p>Give it a goal, a real <code class="inl">done when</code> check, a reflect step, and a try limit.</p>
   <h3>How is this different from prompting?</h3><p>A prompt asks once. A loop keeps going until verified, with human gates for risk.</p>
+  <h3>Is this just /goal or a one-shot agent command?</h3><p>Those run once in a session and judge “done” by feel. LoopFlow is a portable file with a real <code class="inl">done when</code> check, a reflect step, human gates, and a stop guard — you can review it, commit it, and run it again.</p>
+  <h3>Is it just another Ralph loop?</h3><p>A Ralph loop repeats one prompt forever with no built-in check or stopping rule, so you watch it and kill it by hand. LoopFlow keeps the persistence but adds verification, a thrash guard, reflection, and human gates — so it stops when the work is actually proven.</p>
+  <h3>How easy is the Claude Code skill?</h3><p>Type <code class="inl">/loopflow</code> and describe what you want. It writes the loop with you, shows its shape, and runs it in the chat — no install.</p>
   <h3>What tools does it work with?</h3><p>Claude Code via <code class="inl">/loopflow</code>, headless via <code class="inl">loop-run</code>, and plain text anywhere.</p>
 </div></details></section>
 
@@ -290,6 +324,9 @@ when it breaks: reflect, then plan again</code></pre></div></details></section>
 {"@type":"Question","name":"What is an AI coding loop?","acceptedAnswer":{"@type":"Answer","text":"An AI coding loop is a workflow where an agent plans, edits, checks, and retries until a real check passes."}},
 {"@type":"Question","name":"How do I make an agent self-correct?","acceptedAnswer":{"@type":"Answer","text":"Give it a goal, a real done when check, a reflect step, and a try limit."}},
 {"@type":"Question","name":"How is LoopFlow different from prompting?","acceptedAnswer":{"@type":"Answer","text":"A prompt asks once. A loop keeps going until verified, with human gates for risk."}},
+{"@type":"Question","name":"Is LoopFlow just /goal or a one-shot agent command?","acceptedAnswer":{"@type":"Answer","text":"A one-shot goal command runs once in a session and judges done by feel. LoopFlow is a portable file with a real done when check, a reflect step, human gates, and a stop guard, so you can review it, commit it, and run it again."}},
+{"@type":"Question","name":"Is LoopFlow just another Ralph loop?","acceptedAnswer":{"@type":"Answer","text":"A Ralph loop repeats one prompt forever with no built-in check or stopping rule. LoopFlow keeps the persistence but adds verification, a thrash guard, reflection, and human gates, so it stops when the work is actually proven."}},
+{"@type":"Question","name":"How easy is the LoopFlow Claude Code skill?","acceptedAnswer":{"@type":"Answer","text":"Type /loopflow in Claude Code and describe what you want. The skill writes the loop with you, shows its shape, and runs it in the chat, with no install."}},
 {"@type":"Question","name":"What tools does LoopFlow work with?","acceptedAnswer":{"@type":"Answer","text":"Claude Code via /loopflow, headless via loop-run, and plain text anywhere."}}
 ]}
 </script>

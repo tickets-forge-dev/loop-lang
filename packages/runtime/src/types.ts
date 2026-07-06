@@ -33,13 +33,6 @@ export type LoopEvent =
   | { type: "foreach-item-end"; var: string; index: number; satisfied: boolean }
   | { type: "foreach-end"; var: string; satisfied: boolean }
   | { type: "git"; action: "branch"|"worktree"|"commit"|"push"|"pr"; detail: string }
-  | { type: "ctx"; action: "provision" | "topup"; skills: string[]; ok?: boolean; detail?: string;
-      /** Recommend-only capabilities ctx surfaced (never auto-installed): MCP servers / harnesses. */
-      mcps?: string[]; harnesses?: string[];
-      /** Dry-run command to install the top recommended harness — an explicit user action. */
-      harnessInstall?: string;
-      /** Non-fatal notes from ctx (e.g. harnesses granted without an own model). */
-      warnings?: string[] }
   | { type: "model"; node: "plan" | "act" | "reflect" | "also"; tier: "fast" | "strong"; model?: string };
 
 export type CycleNode = "plan" | "act" | "observe";
@@ -141,48 +134,6 @@ export interface HumanIO {
   ask(prompt: string): Promise<void>;
 }
 
-/** What a ctx skill-provision call returns. `useSkills` are names to merge into the loop's skills. */
-export interface CtxProvisionResult {
-  /** Skill names ctx recommended + installed; the engine adds them to the loop's skill set. */
-  useSkills: string[];
-  /** Slugs ctx installed this call (informational). */
-  installed?: string[];
-  /** Slugs ctx skipped because already present (informational). */
-  skipped?: string[];
-  /**
-   * Recommend-only capability names by group (the ctx.loop_adapter.v1 contract). `mcps` and
-   * `harnesses` are NEVER merged into the loop's skill set — they are surfaced for the host/user
-   * to act on. Present only for groups the loop granted.
-   */
-  capabilities?: { skills?: string[]; agents?: string[]; mcps?: string[]; harnesses?: string[] };
-  /** Dry-run command to install the top recommended harness — an explicit, human-gated action. */
-  harnessInstall?: string | null;
-  /** Non-fatal notes (e.g. harnesses granted without a declared own model). */
-  warnings?: string[];
-}
-
-/**
- * Bridge to an external skill recommender (ctx). The engine calls `provision` once before the
- * first plan of a loop that opted in (`use skills recommended by ctx`), and `topup` when a
- * `top up skills from ctx` loop reflects on a failure. A null/throwing adapter degrades to the
- * loop's hand-named skills — ctx is always optional.
- */
-export interface CtxAdapter {
-  provision(input: {
-    goal: string; intent?: string; baseDir: string;
-    /** Capability groups granted (`grant ctx: …`); omitted = ctx's default (skills+agents). */
-    permissions?: string[];
-    /** A user-owned model (`ctx may use my own model …`) — unlocks harness recommendations. */
-    ownModel?: { provider: string; model: string };
-  }): Promise<CtxProvisionResult>;
-  topup(input: {
-    goal: string; reflection: string; loaded: string[]; baseDir: string;
-    permissions?: string[];
-    ownModel?: { provider: string; model: string };
-  }): Promise<CtxProvisionResult>;
-  close?(): Promise<void>;
-}
-
 export interface RunOptions {
   runner: Runner;
   verifier: Verifier;
@@ -213,12 +164,6 @@ export interface RunOptions {
   modelPolicy?: import("@loop-lang/parser").ModelPolicy;
   /** CLI/extension --model — kill switch that forces all phases to one model. */
   cliModel?: string;
-  /** External skill recommender (ctx). Present when the file opts in; absent = degrade to named skills. */
-  ctx?: CtxAdapter;
-  /** Capability groups the file grants ctx (`grant ctx: …`), threaded to provision/topup as permissions. */
-  ctxGrants?: string[];
-  /** A user-owned model (`ctx may use my own model …`) that unlocks ctx harness recommendations. */
-  ownModel?: { provider: string; model: string };
   /**
    * Crash/interrupt recovery (`--resume <log>`): the plan built from a prior run's event log.
    * Only the top-level `run()` consults it (to skip whole completed definitions); per-definition

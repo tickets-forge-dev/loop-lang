@@ -18,7 +18,7 @@ loop "fix billing apostrophe bug":
 ## What you get
 
 - **Syntax highlighting** for the whole grammar — loops, pipelines, flows, `for each`,
-  evals (`by N judges`), flake guards (`passes N times`), git policy, ctx skill lines.
+  evals (`by N judges`), flake guards (`passes N times`), git policy, skill lines.
 - **Live error squiggles** — the real parser runs as you type; soft lint nudges when a
   loop is missing something load-bearing (a `done when`, a thrash guard).
 - **Context-aware completion** (Ctrl+Space) — offers only what's valid where the cursor
