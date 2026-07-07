@@ -252,7 +252,56 @@ a human approves before deploy</code></pre>
 </div></details></section>
 
 <section id="beyond"><details><summary><h2>The syntax map</h2><span class="chev">+</span></summary><div class="content">
-  <table><tr><th>Line</th><th>Meaning</th></tr><tr><td><code>goal:</code></td><td>What success means</td></tr><tr><td><code>done when</code></td><td>The check</td></tr><tr><td><code>look at:</code></td><td>Files and context</td></tr><tr><td><code>allow...</code></td><td>Permission policy</td></tr><tr><td><code>skills:</code></td><td>Skill policy: auto, ask, fixed, or none</td></tr><tr><td><code>each cycle:</code></td><td>Steps to repeat</td></tr><tr><td><code>when it fails:</code></td><td>Back-edge</td></tr><tr><td><code>after N tries:</code></td><td>Stop guard</td></tr><tr><td><code>also:</code></td><td>Finishing passes after success</td></tr><tr><td><code>remember in</code></td><td>Cross-run memory</td></tr><tr><td><code>git:</code></td><td>Branch, commit, push, PR policy</td></tr></table>
+  <p>LoopFlow keywords fall into a few jobs. Learn the groups first; use the <a href="keywords/index.html">keyword reference</a> when you need exact syntax.</p>
+
+  <h3>Shape</h3>
+  <table><tr><th>Keyword</th><th>Meaning</th></tr>
+    <tr><td><a href="keywords/loop.html"><code>loop</code></a></td><td>One self-correcting unit of work.</td></tr>
+    <tr><td><a href="keywords/pipeline.html"><code>pipeline</code></a></td><td>Ordered stages; fail-fast.</td></tr>
+    <tr><td><a href="keywords/stage.html"><code>stage</code></a></td><td>One checked step inside a pipeline.</td></tr>
+    <tr><td><a href="keywords/flow.html"><code>flow</code></a></td><td>Chain whole <code>.loop</code> files.</td></tr>
+    <tr><td><a href="keywords/run.html"><code>run</code> / <code>then run</code></a></td><td>Execute a file inside a flow.</td></tr>
+    <tr><td><a href="keywords/for-each.html"><code>for each … in …</code></a></td><td>Run one template per item from a plan file.</td></tr>
+  </table>
+
+  <h3>Contract</h3>
+  <table><tr><th>Keyword</th><th>Meaning</th></tr>
+    <tr><td><a href="keywords/goal.html"><code>goal:</code></a></td><td>What success means in plain language.</td></tr>
+    <tr><td><a href="keywords/done-when.html"><code>done when</code></a></td><td>The verification check; all checks must pass.</td></tr>
+  </table>
+
+  <h3>Context</h3>
+  <table><tr><th>Keyword</th><th>Meaning</th></tr>
+    <tr><td><a href="keywords/look-at.html"><code>look at:</code></a></td><td>Files, docs, examples, and the last failure to read before acting.</td></tr>
+    <tr><td><code>knowledge:</code></td><td>Read-only reference files the agent must not edit.</td></tr>
+    <tr><td><code>examples:</code></td><td>Patterns the agent should imitate.</td></tr>
+    <tr><td><a href="keywords/remember-in.html"><code>remember in</code></a></td><td>Cross-run memory in markdown.</td></tr>
+  </table>
+
+  <h3>Control</h3>
+  <table><tr><th>Keyword</th><th>Meaning</th></tr>
+    <tr><td><a href="keywords/each-cycle.html"><code>each cycle:</code></a></td><td>The repeated steps: plan, act, observe.</td></tr>
+    <tr><td><a href="keywords/when.html"><code>when …</code></a></td><td>Transitions after observe: pass, fail, blocked.</td></tr>
+    <tr><td><a href="keywords/reflect.html"><code>reflect</code></a></td><td>Turn a failure into the next plan.</td></tr>
+    <tr><td><a href="keywords/after-n-tries.html"><code>after N tries</code></a></td><td>Thrash guard.</td></tr>
+    <tr><td><a href="keywords/when.html"><code>stop</code></a></td><td>End the loop when the goal is met or the guard fires.</td></tr>
+    <tr><td><a href="keywords/also.html"><code>also:</code></a></td><td>Finishing passes after success.</td></tr>
+  </table>
+
+  <h3>Safety</h3>
+  <table><tr><th>Keyword</th><th>Meaning</th></tr>
+    <tr><td><a href="keywords/allow.html"><code>allow</code> / <code>ask me before</code></a></td><td>Action policy for automatic work vs confirmation.</td></tr>
+    <tr><td><a href="keywords/human-gates.html"><code>a human …</code></a></td><td>Plan approvals, result reviews, and risky-action gates.</td></tr>
+    <tr><td><a href="keywords/git.html"><code>git:</code></a></td><td>Branch, worktree, commit, push, and PR policy.</td></tr>
+  </table>
+
+  <h3>Capabilities</h3>
+  <table><tr><th>Keyword</th><th>Meaning</th></tr>
+    <tr><td><a href="keywords/use-skills.html"><code>skills:</code> / <code>use skills</code></a></td><td>Skill policy or explicit skill list.</td></tr>
+    <tr><td><a href="keywords/use-method.html"><code>use the &lt;X&gt; method</code></a></td><td>Import a reusable method preset.</td></tr>
+    <tr><td><a href="keywords/schedule.html"><code>schedule:</code></a></td><td>When an unattended loop should run.</td></tr>
+    <tr><td><a href="keywords/models.html"><code>models:</code></a></td><td>Route phases to fast or strong model tiers.</td></tr>
+  </table>
 </div></details></section>
 
 <section id="templates"><details><summary><h2>Starter templates</h2><span class="chev">+</span></summary><div class="content">
