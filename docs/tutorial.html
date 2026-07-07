@@ -252,6 +252,33 @@ a human approves before deploy</code></pre>
     <li>Repeated lessons go into <code class="inl">remember in</code>.</li>
   </ul>
   <p class="note">BMAD decides the plan. LoopFlow runs the plan until verified.</p>
+
+  <h3>Ask Claude or Pi to write the loop</h3>
+  <p>You do not have to hand-write the <code class="inl">.loop</code> first. After BMAD gives you a story, paste it into your agent and ask LoopFlow to turn it into a verifiable process.</p>
+  <pre><code class="sh"># Claude Code
+/loopflow Create a LoopFlow file for this BMAD story.
+
+Story:
+&lt;paste story&gt;
+
+Use the architecture notes as context.
+Done when the story acceptance tests pass.
+Ask me before migrations, dependencies, or pushes.</code></pre>
+  <pre><code class="sh"># Pi
+/skill:loopflow Create a LoopFlow file for this BMAD story.
+
+Story:
+&lt;paste story&gt;
+
+Use the architecture notes as context.
+Done when the story acceptance tests pass.
+Ask me before migrations, dependencies, or pushes.</code></pre>
+  <p>Then run the file:</p>
+  <pre><code class="sh"># Claude Code
+/loopflow run story-login.loop
+
+# Pi
+/skill:loopflow run story-login.loop</code></pre>
   <pre><code class="loop">flow "bmad sprint":
   for each story in "sprint.yaml":
     run "bmad-story-template.loop"</code></pre>
