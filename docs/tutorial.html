@@ -281,7 +281,8 @@ Ask me before migrations, dependencies, or pushes.</code></pre>
 /skill:loopflow run story-login.loop</code></pre>
   <pre><code class="loop">flow "bmad sprint":
   for each story in "sprint.yaml":
-    run "bmad-story-template.loop"</code></pre>
+    run "story-template.loop"</code></pre>
+  <p><code class="inl">story-template.loop</code> contains the pipeline each story runs:</p>
   <pre><code class="loop">pipeline "bmad story":
   stage "implement":
     goal: implement the BMAD story from the provided context
