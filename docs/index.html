@@ -29,16 +29,16 @@
 <div class="wrap">
   <header class="top">
     <a class="brand" href="/"><svg class="mark" viewBox="0 0 24 24" fill="none" aria-label="LoopFlow"><circle cx="12" cy="12" r="8.5" stroke="#65b7ff" stroke-width="3.4" stroke-linecap="round" stroke-dasharray="42.2 11.2"/></svg><span>LoopFlow</span></a>
-    <nav class="nav" aria-label="Main"><a href="/">Home</a><a href="docs.html">Docs</a><a href="market/">Market</a><a href="playground.html">Playground</a><a href="https://github.com/tickets-forge-dev/loop-lang" aria-label="GitHub"><svg class="gh-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.86c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>GitHub</a></nav>
+    <nav class="nav" aria-label="Main"><a href="/">Home</a><a href="tutorial.html">Tutorial</a><a href="market/">Market</a><a href="playground.html">Playground</a><a href="https://github.com/tickets-forge-dev/loop-lang" aria-label="GitHub"><svg class="gh-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.86c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>GitHub</a></nav>
   </header>
 
   <main>
     <section class="hero" style="border-top:0">
             <svg class="hero-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="#f8fafc" stroke-width="3.4" stroke-linecap="round" stroke-dasharray="42.2 11.2"/></svg>
-      <h1 class="kicker">Your agent needs a loop,<br/>not another <em>prompt</em></h1>
-      <p class="lede">LoopFlow is a control structure for AI coding agents.</p>
-      <p class="sub">Turn PR review, tests, API checks, curl validation, and human gates into one reusable workflow file. Prompts disappear. Loop files compound.</p>
-      <div class="actions"><a class="cta primary" href="#install">Try it</a><a class="cta" href="docs.html">Read the docs</a></div>
+      <h1 class="kicker">Your agent needs a process,<br/>not another <em>prompt</em></h1>
+      <p class="lede">LoopFlow is structured pseudocode for AI coding agents.</p>
+      <p class="sub">Write goals, context, checks, memory, human gates, and retry rules in one readable workflow file. Prompts disappear. Process files compound.</p>
+      <div class="actions"><a class="cta primary" href="#install">Try it</a><a class="cta" href="tutorial.html">Read the tutorial</a></div>
       <div id="install" class="install">
         <div class="tabs"><div class="tab active">Global install</div></div>
         <div class="snippet"><button class="copy" type="button" data-copy="npm i -g @loop-lang/loop @loop-lang/runtime">[ Copy ]</button><pre><code>npm i -g @loop-lang/loop @loop-lang/runtime</code></pre></div>
@@ -83,6 +83,22 @@
       <h2>Why LoopFlow?</h2>
       <p>The first prompt is not the problem. The problem is everything after it: checking, reviewing, copying failures back into chat, asking for one more fix, and hoping the agent actually ran the command.</p>
       <p>A <code class="inl">.loop</code> file says what the agent may edit, what it must check, when it should reflect, and when it must stop.</p>
+    </section>
+
+    <section id="features">
+      <h2>The process has structure.</h2>
+      <p>LoopFlow reads like pseudocode, but every line has a job the runner can honor.</p>
+      <div class="examples">
+        <div><h3>Goals</h3><p>Say what success means in plain English.</p><pre class="mini-code"><code class="loop">goal: checkout shows the right tax</code></pre></div>
+        <div><h3>Verification</h3><p>Done is proven by tests, scanners, evals, or humans.</p><pre class="mini-code"><code class="loop">done when "pnpm test checkout" passes</code></pre></div>
+        <div><h3>Context</h3><p>Keep the agent focused on the right files.</p><pre class="mini-code"><code class="loop">look at: src/checkout/, tests/checkout/</code></pre></div>
+        <div><h3>Memory</h3><p>Failures feed the next plan; lessons can survive future runs.</p><pre class="mini-code"><code class="loop">look at: src/, and the last failure
+remember in "checkout.memory.md"</code></pre></div>
+        <div><h3>Human gates</h3><p>Let the agent work, but pause before risk.</p><pre class="mini-code"><code class="loop">ask me before migrations or pushes</code></pre></div>
+        <div><h3>Composition</h3><p>Turn stories and epics into repeatable process files.</p><pre class="mini-code"><code class="loop">flow "bmad sprint":
+  for each story in "sprint.yaml":
+    run "story.loop"</code></pre></div>
+      </div>
     </section>
 
     <section id="examples">
@@ -146,7 +162,7 @@ models: fast haiku, strong opus</code></pre></div>
       <h2>Documentation that leads somewhere.</h2>
       <p>This page is the landing page. The full docs have the language, syntax, examples, and runner details.</p>
       <div class="docs">
-        <a class="doc" href="docs.html"><b>Full docs</b><span>The original tutorial and language walkthrough.</span></a>
+        <a class="doc" href="tutorial.html"><b>Tutorial</b><span>The language walkthrough, from first loop to advanced patterns.</span></a>
         <a class="doc" href="keywords/index.html"><b>Keyword reference</b><span>Every keyword with syntax and examples.</span></a>
         <a class="doc" href="playground.html"><b>Playground</b><span>Try LoopFlow syntax in the browser.</span></a>
         <a class="doc" href="market/"><b>Loop market</b><span>Reusable verified workflows.</span></a>
@@ -154,7 +170,7 @@ models: fast haiku, strong opus</code></pre></div>
     </section>
   </main>
 
-  <footer>LoopFlow · Apache-2.0 · <a href="https://github.com/tickets-forge-dev/loop-lang">GitHub</a> · <a href="docs.html">Docs</a></footer>
+  <footer>LoopFlow · Apache-2.0 · <a href="https://github.com/tickets-forge-dev/loop-lang">GitHub</a> · <a href="tutorial.html">Tutorial</a></footer>
 </div>
 <script>
 (function(){
@@ -164,7 +180,7 @@ models: fast haiku, strong opus</code></pre></div>
   function parallax(){var y=window.scrollY||0;document.body.style.backgroundPosition='0 '+(-y*.32)+'px, '+(-y*.16)+'px 0';if(mark)mark.style.transform='translateY('+(y*.065)+'px) rotate('+(y*.025)+'deg)';panels.forEach(function(el,i){el.style.transform='translateY('+(-y*(i?0.035:0.025))+'px)';});ticking=false;}
   window.addEventListener('scroll',function(){if(!ticking){requestAnimationFrame(parallax);ticking=true;}},{passive:true});
   parallax();
-  var KW=["then plan again","the last failure","each cycle","done when","look at","skills","passes","allow","after","tries","warn","when","goal","loop","plan","act","observe","reflect"];
+  var KW=["then plan again","the last failure","each cycle","done when","look at","remember in","for each","skills","passes","allow","after","tries","warn","when","goal","flow","loop","run","plan","act","observe","reflect"];
   function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}function span(c,t){return '<span class="'+c+'">'+t+'</span>';}function isW(ch){return /[A-Za-z0-9_-]/.test(ch||'');}
   function hlLine(line){var out='',i=0,n=line.length;while(i<n){var c=line.charAt(i);if(c==='#'){out+=span('tok-com',esc(line.slice(i)));break;}if(c==='"'){var e=line.indexOf('"',i+1),end=e<0?n:e+1;out+=span('tok-str',esc(line.slice(i,end)));i=end;continue;}var prev=i>0?line.charAt(i-1):' ',m=null;if(!isW(prev)){var low=line.toLowerCase();for(var k=0;k<KW.length;k++){var w=KW[k];if(low.substr(i,w.length)===w&&!isW(line.charAt(i+w.length))){m=line.substr(i,w.length);break;}}}if(m){out+=span('tok-kw',esc(m));i+=m.length;continue;}if(!isW(prev)&&c>='0'&&c<='9'){var nm=/^[0-9]+/.exec(line.slice(i))[0];out+=span('tok-num',nm);i+=nm.length;continue;}out+=esc(c);i++;}return out;}
   document.querySelectorAll('pre code.loop').forEach(function(el){el.innerHTML=el.textContent.split('\n').map(hlLine).join('\n');});

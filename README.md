@@ -4,9 +4,9 @@
 
 <h1 align="center">LoopFlow</h1>
 
-<p align="center"><b>An open, natural-language DSL for self-correcting AI coding loops.</b><br/>Describe what an AI coding agent should build and how to verify it in plain English, press ▶, and it loops until the check passes — a self-correcting alternative to one-shot prompts, on Claude Code, Cursor, or Copilot.</p>
+<p align="center"><b>Structured pseudocode for AI coding agents.</b></p>
 
-<p align="center"><i>Stop babysitting the agent. Write the goal once — the loop plans, acts, reflects on red,<br/>and stops only when the check is green, at the gates you set.</i></p>
+<p align="center">LoopFlow turns implicit agent processes into reviewable, runnable <code>.loop</code> files:<br/>goals, context, verification, memory, human gates, composition, and stop rules.</p>
 
 <p align="center"><img src="docs/assets/loop-demo.svg" alt="A Loop turning a failing test green: plan → act → observe (FAIL) → reflect → plan → act → observe (PASS) → done" width="760"></p>
 
@@ -17,50 +17,64 @@
   <img alt="Node 18+" src="https://img.shields.io/badge/node-%3E%3D18-5fd99a.svg">
 </p>
 
----
-
 <p align="center">
-  <a href="https://loopflow.live"><b>📖 Read the tutorial → loopflow.live</b></a>
-</p>
-
-<p align="center">
-  <a href="https://loopflow.live">Tutorial</a> ·
-  <a href="https://loopflow.live/playground.html">⚡ Playground</a> ·
-  <a href="https://loopflow.live/workshop.html">🛠️ Workshop</a> ·
-  <a href="https://loopflow.live/game.html">🎮 Lab</a> ·
-  <a href="https://github.com/tickets-forge-dev/loop-lang/blob/master/docs/MANUAL.md">Manual</a> ·
+  <a href="https://loopflow.live/tutorial.html"><b>Tutorial</b></a> ·
+  <a href="https://loopflow.live/playground.html">Playground</a> ·
   <a href="https://loopflow.live/keywords/index.html">Keywords</a> ·
+  <a href="docs/MANUAL.md">Manual</a> ·
+  <a href="https://loopflow.live/market/">Market</a> ·
   <a href="docs/FAQ.md">FAQ</a>
 </p>
 
+---
+
 ## Quickstart
 
-Requires Node 18+ and the [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) — full install options in the [manual](docs/MANUAL.md#2-install).
+Install the authoring package into a repo:
 
 ```bash
-npx @loop-lang/loop init      # /loopflow skill + AGENTS.md + the loop-first default (add --cursor / --copilot for other agents)
+npx @loop-lang/loop init
 ```
 
-That last piece means **you usually don't type `/loopflow` at all**: `init` drops a gated
-default into CLAUDE.md, so when you ask for something *repeatable and verifiable* ("fix this
-flaky test until it's reliably green"), Claude reaches for a `.loop` on its own — while
-one-off questions and trivial edits are done directly, no loop ceremony. The gate is
-AGENTS.md's four-condition test; `/loopflow` stays the explicit override in both directions:
+That writes:
 
+- `AGENTS.md` — the full LoopFlow grammar and authoring guide.
+- `loop.config` — project defaults, including `live=false`.
+- `.claude/skills/loopflow/` — the in-session `/loopflow` skill for Claude Code.
+- `examples/fix_test.loop` — a starter loop.
+- `templates/` — best-practice starter loops.
+
+Then run a loop in-session:
+
+```text
+/loopflow run examples/fix_test.loop
 ```
-/loopflow fix the failing test — done when the suite passes
-/loopflow run examples/fix_test.loop   # name a .loop file and it runs natively in the session
+
+Or run headless:
+
+```bash
+npm i -g @loop-lang/runtime
+loop-run show examples/fix_test.loop
+loop-run run examples/fix_test.loop
 ```
 
-Copy `.claude/skills/loopflow/` to `~/.claude/skills/` to use the skill in any repo. Don't write your first loop from scratch — [start from a template](https://loopflow.live/#templates) and edit the goal + `done when`. Full walkthrough at **[loopflow.live](https://loopflow.live)**.
+## The idea
 
-## Why
+A prompt is usually an implicit process:
 
-AI writes the code now. But you're still the conductor — kicking off manual pass after manual pass: *"fix the security issues", "now refactor", "now fix the UI."* Even strong methods leave you iterating by hand, in layers, forever.
+```text
+look at these files → make a change → run the test → if it fails, diagnose → try again → stop when safe
+```
 
-LoopFlow lets you describe that **movement once**. You don't type the app — you type the *loop*: the five decisions (objective, context, actions, verification, stopping) that today are buried in a prompt. LoopFlow makes them first-class, editable, and shareable; at run time they drive five phases — plan → act → observe → reflect → stop. The [tutorial](https://loopflow.live/#what) teaches the framing.
+LoopFlow writes that process down in a small structured language. A loop is the smallest useful process; pipelines and flows compose loops into larger work.
 
-## A taste
+```text
+goal → context → policy → plan → act → observe → reflect → memory → stop
+```
+
+The model does the work. The `.loop` file defines what it is allowed to read/edit, how reality is checked, when it may retry, where a human gates risk, and when it must stop.
+
+## A loop file
 
 ```loop
 loop "fix billing apostrophe bug":
@@ -69,113 +83,245 @@ loop "fix billing apostrophe bug":
 
   look at: billing/form.tsx, api/settings.ts, schema/settings.ts, and the last failure
   allow edits automatically, but ask me before migrations or pushes
+  remember in "billing.memory.md"
 
   each cycle: plan, then act, then observe
-  when it passes and the goal is met:  stop
-  when it fails:                        reflect on which layer broke, then plan again
-  when blocked:                         ask a human
-  after 6 tries:                        stop and warn "thrashing"
+  when it fails: reflect on which layer broke, then plan again
+  when blocked: ask a human
+  after 6 tries: stop and warn "thrashing"
 ```
 
-## Compose loops
+## Core primitives
 
-Compose loops into **pipelines** (stages in order, fail-fast), chain whole files with **`flow`**, and fan out over a plan with **`for each`** — humans wired in where judgment lives. Full grammar with worked examples: the [tutorial](https://loopflow.live) and the [manual](docs/MANUAL.md).
+| Primitive | Purpose |
+|---|---|
+| `goal:` | Plain-English success condition. |
+| `done when` | Machine or human check: tests, shell commands, scans, skill evals, review gates. |
+| `look at:` | Context boundary: files, docs, examples, and `the last failure`. |
+| `allow…ask me before…` | Action policy: automatic edits, gated migrations/pushes/deploys. |
+| `each cycle:` | Execution cycle: `plan`, `act`, `observe`. |
+| `when it fails:` | Feedback edge: reflect on the failure and re-plan. |
+| `after N tries:` | Thrash guard. No unbounded agent loops. |
+| `remember in` | Cross-run memory in markdown. |
+| `a human…` | Human approvals and review gates. |
+| `pipeline`, `flow`, `for each` | Composition: stages, chained files, and backlog fanout. |
+| `git:` | Branch/worktree, commit, push, PR policy. |
+| `models:` | Route phases to fast/strong model tiers. |
 
-## Verify like you mean it
+Full grammar: [`AGENTS.md`](AGENTS.md). Keyword reference: <https://loopflow.live/keywords/>.
 
-`done when` is the loop's definition of reality. List several checks (**all must pass**), mix deterministic tests with LM-judged evals, and harden both against false greens:
+## Verification is the source of truth
 
-- `done when "pnpm test checkout" passes 3 times` — **flake guard**: one lucky green isn't "done".
-- `done when the skill "code-review" approves by 3 judges` — **judge panel**: majority of 3 independent verdicts; one wobbly LM judgment isn't "done" either.
-- `done when the skill "path-review" approves on the trajectory` — **trajectory eval**: catches what a green test can't — an agent that gamed the check.
-
-Taught with a worked example in the [tutorial](https://loopflow.live/#evals); full mechanics (working dir, shell env, exit codes) in [How verification works](docs/MANUAL.md#how-verification-works--what-done-actually-depends-on).
-
-## Skills and memory
-
-A loop can use skills through one `skills:` keyword:
+`done when` is how a loop knows reality. Multiple `done when` lines are conjunctive: all must pass.
 
 ```loop
-skills: auto                         # discover/add useful skills with minimum friction
-skills: ask                          # recommend additions, ask before adding
-skills: fixed, seo-audit             # use only these explicit skills
-skills: none                         # use no skills
-skills: auto, seo-audit              # start with seo-audit, auto-add more if useful
+done when "pnpm test checkout" passes 3 times
+
+done when "semgrep --severity=high" finds nothing
+
+done when the skill "code-review" approves on the trajectory
+  the bar: did not weaken tests or write outside src/
 ```
 
-`auto` runs an early capability check before implementation. It may use installed skills, trusted installable skills, or temporary generated skills, and it logs what it added. It only interrupts for risky actions such as untrusted sources, broad capabilities, or permanent generated skills. Existing `use skills:` loops still work, but `skills:` is preferred. A review skill can still be the verdict (`done when the skill "workout-review" approves`), and cross-run memory still lives in markdown (`remember in "morning-run.memory.md"`). Details: [manual](docs/MANUAL.md#inside-a-loop--stage-body), [`examples/skills_memory.loop`](examples/skills_memory.loop).
+Supported verification patterns:
 
-## The vocabulary — learn it once
+- shell command exits zero: `"pnpm test" passes`
+- shell command emits nothing: `"semgrep …" finds nothing`
+- flake guard: `passes 3 times`
+- human confirmation: `a human confirms "looks right"`
+- review skill: `the skill "api-review" scores 8 or more`
+- trajectory eval: judge how the agent got there, not just the output
+- judge panel: `by 3 judges`
 
-`pipeline` · `stage` · `loop` · `flow` · `for each … in …` · `run … then …` · `each cycle` · `goal` · `done when` · `look at` · `allow…/ask me before…` · `also` · `skills` · `remember in` · `when…` · `reflect` · `a human…` · `stop` · `use` · `schedule` · `git`
+Details: [How verification works](docs/MANUAL.md#how-verification-works--what-done-actually-depends-on).
 
-Power comes from **composition**, not keyword count. Each word is documented at [loopflow.live/keywords](https://loopflow.live/keywords/index.html); the authoritative grammar is [AGENTS.md](AGENTS.md).
+## Memory model
 
-## Git strategy (safe by default)
+LoopFlow has two memory layers.
 
-Without a `git:` block, LoopFlow works on a branch and commits when the goal is met — it **never pushes to `main` or `master`** (unconditional, not configurable). A `git:` block opts into push and a pull request: all line forms and cascade rules in the [manual](docs/MANUAL.md#git-strategy), working file at [`examples/git_policy.loop`](examples/git_policy.loop).
+### Short-term memory: the current run
 
-## Authoring: by hand or by agent
+A failed check becomes the next plan’s input:
 
-By hand: the [**LoopFlow VS Code extension**](https://marketplace.visualstudio.com/items?itemName=Loop-Lang.loopflow) (`ext install Loop-Lang.loopflow`) gives highlighting, completions, hover docs, and squiggles. By agent: drop [AGENTS.md](AGENTS.md) in your repo and any assistant authors `.loop` from a plain-English request — feature details in the [manual](docs/MANUAL.md#7-vscode-extension).
-
-## Run it headless
-
-The `loop-run` CLI ships with `npm i -g @loop-lang/runtime`:
-
-```
-loop-run run file.loop --live          # real-time browser dashboard of the run
-loop-run run file.loop --log run.log   # NDJSON event log (secrets scrubbed)
-loop-run run file.loop --resume run.log  # skip what the log proves done; pick up where it died
-loop-run show file.loop                # sanity-check the shape as ASCII before spending tokens (explain = plain English)
+```loop
+look at: src/checkout/, tests/checkout/, and the last failure
+when it fails: reflect on what the test proved, then plan again
 ```
 
-In-session, the dashboard is opt-in: set `live=true` in `loop.config` (`loop init` writes it with `live=false`). Log format, redaction, resume semantics, and the `LOOP_EVENTS_URL` remote collector: [Event log & telemetry](docs/MANUAL.md#event-log--telemetry).
+`reflect` summarizes the failure; `and the last failure` feeds it into the next cycle.
 
-## Project layout
+### Long-term memory: future runs
+
+```loop
+remember in "checkout.memory.md"
+```
+
+The loop reads that markdown file before planning and appends a dated outcome when it stops. Use it when a loop repeats, thrashes, or carries project-specific lessons.
+
+## Compose processes
+
+### Pipeline: ordered stages
+
+```loop
+pipeline "checkout v2":
+  stage "cart totals":
+    goal: totals include tax
+    done when "pnpm test cart" passes
+
+  stage "submit order":
+    goal: orders submit safely
+    done when "pnpm test checkout" passes
+    a human approves before charging a card
+```
+
+### Flow: chain loop files
+
+```loop
+flow "ship":
+  run "build.loop"
+  then run "test.loop"
+  then run "deploy.loop":
+    a human approves first
+```
+
+### For each: run a template over a backlog
+
+```loop
+flow "bmad sprint":
+  for each story in "sprint.yaml":
+    run "story-template.loop"
+```
+
+The source can be YAML or Markdown. Each item becomes context for the template.
+
+## BMAD + LoopFlow
+
+BMAD is a method: discovery, PRD/tech-spec, architecture, epics, stories, sprint status.
+
+LoopFlow is execution control: take the repeatable story checklist and run it until real checks pass.
+
+Recommended split:
+
+```text
+BMAD decides what to build and in what order.
+LoopFlow executes each repeatable story checklist until verified.
+```
+
+Do not port all of BMAD into LoopFlow. Use BMAD for methodology and LoopFlow for verifiable execution loops.
+
+See [`examples/bmad/`](examples/bmad/) and [`examples/bmad-auth.loop`](examples/bmad-auth.loop).
+
+## Runtime architecture
+
+```text
+.loop text
+  ↓ @loop-lang/parser
+loop-spec JSON IR
+  ↓ @loop-lang/runtime
+runner cycle: plan → act → observe → reflect
+  ↓ verifier / human / skill / git / events
+trace, live dashboard, logs, resume, commit
+```
+
+Runtime properties:
+
+- deterministic parser with a JSON IR (`loop-spec`)
+- shell-backed verification for commands/tests
+- skill-backed eval predicates
+- human gates
+- event stream for live dashboards and logs
+- resume from event logs
+- git branch/worktree policy
+- model tier routing
+- optional live browser visualization
+
+## Packages
 
 | Package | Purpose |
 |---|---|
-| `@loop-lang/parser` | `.loop` text → `loop-spec` JSON (the open IR) |
-| `@loop-lang/runtime` | walks a spec, drives Claude Code, emits a live trace |
-| [`loopflow` (VS Code)](https://marketplace.visualstudio.com/items?itemName=Loop-Lang.loopflow) | highlight, diagnostics, completion, templates, ▶ Run CodeLens |
-| `@loop-lang/stdlib` | `BMAD.loop` + starter presets |
-| `@loop-lang/viz` | `loop-run viz file.loop` → self-contained HTML schematic; also the live dashboard (`--live`) |
-| `spec/loop-spec.schema.json` | the open IR contract |
+| `@loop-lang/loop` | repo initializer: installs grammar, templates, examples, and agent skill |
+| `@loop-lang/parser` | `.loop` text → `loop-spec` JSON |
+| `@loop-lang/runtime` | executes loop specs and emits events |
+| `@loop-lang/viz` | static diagrams and live dashboard |
+| `@loop-lang/stdlib` | method presets, including `BMAD.loop` |
+| `loopflow` VS Code extension | syntax, diagnostics, completions, templates, run CodeLens |
 
-## Is this just another &lt;X&gt;?
+## Run headless
 
-"Is this another LangChain?", "why not YAML?", "won't better models make this pointless?",
-"doesn't it lock me into Claude Code?" — answered straight in the [**FAQ**](docs/FAQ.md).
+```bash
+loop-run show file.loop                  # parse + ASCII preview
+loop-run run file.loop                   # execute
+loop-run run file.loop --live            # live browser dashboard
+loop-run run file.loop --log run.log     # NDJSON event log
+loop-run run file.loop --resume run.log  # skip what the log proves done
+loop-run ls                              # list loops in repo
+```
 
-## Status
+In-session dashboard is opt-in: set `live=true` in `loop.config`.
 
-Active — see the [roadmap](#roadmap) and [open issues](../../issues).
+## Authoring workflow
+
+Use a template first:
+
+- [`templates/bugfix.loop`](templates/bugfix.loop)
+- [`templates/feature.loop`](templates/feature.loop)
+- [`templates/load-spec.loop`](templates/load-spec.loop)
+- [`templates/security.loop`](templates/security.loop)
+- [`templates/review-diff.loop`](templates/review-diff.loop)
+
+Every `.loop` should answer:
+
+1. What is the goal?
+2. What proves done?
+3. What context should the agent read?
+4. What actions are automatic vs gated?
+5. When does it reflect, ask, or stop?
+
+Then run:
+
+```bash
+loop-run show file.loop
+```
+
+`show` is both the preview and the parse check.
+
+## VS Code
+
+Install the [LoopFlow VS Code extension](https://marketplace.visualstudio.com/items?itemName=Loop-Lang.loopflow):
+
+```text
+ext install Loop-Lang.loopflow
+```
+
+It provides highlighting, diagnostics, completions, templates, hover docs, and Run CodeLens.
 
 ## Roadmap
 
-- **Next** — runner abstraction (run loops on your own local/API model), a GitHub Action
-  (loops as CI quality gates), a community template registry (`use someone/their-method`).
-- **Later** — visual graph editor (the `loop-spec` IR is built for it), async human nodes,
-  reactive stages, scheduling.
+- runner abstraction for non-Claude/local/API models
+- platform-specific skill installation flags (`--pi`, `--claude`, etc.)
+- GitHub Action for loops as CI quality gates
+- community method/template registry
+- richer visual editor over the `loop-spec` IR
 
-## Built with LoopFlow
+## FAQ
 
-LoopFlow ships real software. **Forge** — a ticket-driven implementation platform (hand it a ticket, agents implement it) — is built with LoopFlow, including its **sandbox runner**: isolated, network-less execution of agent-written code. The pipeline that built it is [`examples/forge-sandbox.loop`](examples/forge-sandbox.loop); the walkthrough is the [case study in the tutorial](https://loopflow.live/#workflows).
+Straight answers to “why not YAML?”, “is this LangChain?”, “does this replace BMAD?”, “won’t better models make this pointless?”, and “does it lock me into Claude?” live in [`docs/FAQ.md`](docs/FAQ.md).
 
 ## Contributing
 
-This is a **community project** and an **open standard**. Good first issues: new presets, grammar edge cases, formatter rules. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
+This is a community project and an open standard. Good first issues: templates, grammar edge cases, parser tests, runner integrations, docs, and examples.
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
 
 ## License
 
-[Apache-2.0](LICENSE). The language and the `loop-spec` IR are an open standard — implement against them freely.
+[Apache-2.0](LICENSE). The language and `loop-spec` IR are open; implement against them freely.
 
 ## Maintainer
 
 <a href="https://www.linkedin.com/in/idan-ayalon/"><img src="docs/idan.jpg" alt="Idan Ayalon" width="104" align="left" hspace="18" vspace="4" /></a>
 
-**Idan Ayalon** — creator &amp; maintainer of LoopFlow. Built **Forge** with it.
+**Idan Ayalon** — creator and maintainer of LoopFlow. Built **Forge** with it.
 
 📧 [bar.idan@gmail.com](mailto:bar.idan@gmail.com)  
 💼 [linkedin.com/in/idan-ayalon](https://www.linkedin.com/in/idan-ayalon/)
