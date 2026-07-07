@@ -231,14 +231,27 @@ a human approves before deploy</code></pre>
 
 <section id="bmad"><details open><summary><h2>Use LoopFlow with BMAD</h2><span class="chev">+</span></summary><div class="content">
   <p>Use LoopFlow alone for small, checkable work. For real product work, we recommend pairing LoopFlow with a method like <strong>BMAD</strong>: BMAD gives you discovery, PRD or tech-spec, architecture, epics, and story slicing; LoopFlow turns each story into a verifiable agent process.</p>
-  <p>Recommended process:</p>
+  <h3>Tiny BMAD crash course</h3>
   <ol>
-    <li>Use BMAD for discovery: problem, users, constraints.</li>
-    <li>Use BMAD for PRD / tech spec: acceptance criteria and architecture notes.</li>
-    <li>Use BMAD to split the work into epics and stories.</li>
-    <li>Use LoopFlow for execution: one story = one <code class="inl">stage</code>, one epic = one <code class="inl">pipeline</code>, one sprint/backlog = one <code class="inl">flow</code> with <code class="inl">for each</code>.</li>
-    <li>Use LoopFlow verification to decide done: <code class="inl">done when</code>, reflection, gates, and <code class="inl">after N tries</code>.</li>
+    <li><strong>Brief</strong> — define the problem, user, constraints, and success.</li>
+    <li><strong>PRD</strong> — turn the brief into product requirements and acceptance criteria.</li>
+    <li><strong>Architecture</strong> — decide the technical shape, boundaries, risks, and dependencies.</li>
+    <li><strong>Epics</strong> — break the PRD into large deliverable chunks.</li>
+    <li><strong>Stories</strong> — break each epic into small, testable units of work.</li>
   </ol>
+
+  <h3>The handoff to LoopFlow</h3>
+  <ul>
+    <li>One story → one <code class="inl">stage</code>.</li>
+    <li>One epic → one <code class="inl">pipeline</code>.</li>
+    <li>One sprint/backlog → one <code class="inl">flow</code> with <code class="inl">for each</code>.</li>
+    <li>Story acceptance criteria become <code class="inl">done when</code>.</li>
+    <li>Architecture notes go into <code class="inl">look at:</code> or <code class="inl">knowledge:</code>.</li>
+    <li>Risky steps become human gates.</li>
+    <li>Failed checks feed <code class="inl">reflect</code>.</li>
+    <li>Repeated lessons go into <code class="inl">remember in</code>.</li>
+  </ul>
+  <p class="note">BMAD decides the plan. LoopFlow runs the plan until verified.</p>
   <pre><code class="loop">flow "bmad sprint":
   for each story in "sprint.yaml":
     run "bmad-story-template.loop"</code></pre>
