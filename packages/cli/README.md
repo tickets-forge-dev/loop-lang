@@ -1,12 +1,8 @@
 # @loop-lang/loop
 
-**Loop** is a small natural-language DSL for *loop engineering* — a `.loop` file describes a
-self-correcting, human-gated coding workflow: its goal, what it may read, how it verifies
-itself, when it stops, and where a human steps in. Your agent then **runs that loop**,
-cycling plan → act → observe and reflecting on failures until the goal is met.
+**LoopFlow is structured pseudocode for AI coding agents.** A `.loop` file turns an implicit agent process into a reviewable, runnable spec: goal, context, verification, memory, human gates, composition, and stop rules.
 
-This package drops Loop into any repo so **Claude Code — or any agent** — can author and run
-`.loop` files.
+This package installs LoopFlow into any repo so **Claude Code — or any agent** can author and run `.loop` files.
 
 ```sh
 npx @loop-lang/loop init
@@ -85,7 +81,8 @@ place, never duplicated.
 
 ## Learn more
 
-The [loop-lang repo](https://github.com/tickets-forge-dev/loop-lang) — tutorial, full keyword
-reference, and the playable Loop Lab.
+- [Tutorial](https://loopflow.live/tutorial.html)
+- [Keyword reference](https://loopflow.live/keywords/)
+- [GitHub repo](https://github.com/tickets-forge-dev/loop-lang)
 
 Apache-2.0.
