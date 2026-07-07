@@ -230,7 +230,15 @@ a human approves before deploy</code></pre>
 </div></details></section>
 
 <section id="bmad"><details open><summary><h2>Use LoopFlow with BMAD</h2><span class="chev">+</span></summary><div class="content">
-  <p>BMAD is the method: discovery, PRD or tech-spec, architecture, epics, stories, and sprint status. LoopFlow is the execution control: run the repeatable story checklist until real checks pass, with reflection, gates, and a try limit.</p>
+  <p>Use LoopFlow alone for small, checkable work. For real product work, we recommend pairing LoopFlow with a method like <strong>BMAD</strong>: BMAD gives you discovery, PRD or tech-spec, architecture, epics, and story slicing; LoopFlow turns each story into a verifiable agent process.</p>
+  <p>Recommended process:</p>
+  <ol>
+    <li>Use BMAD for discovery: problem, users, constraints.</li>
+    <li>Use BMAD for PRD / tech spec: acceptance criteria and architecture notes.</li>
+    <li>Use BMAD to split the work into epics and stories.</li>
+    <li>Use LoopFlow for execution: one story = one <code class="inl">stage</code>, one epic = one <code class="inl">pipeline</code>, one sprint/backlog = one <code class="inl">flow</code> with <code class="inl">for each</code>.</li>
+    <li>Use LoopFlow verification to decide done: <code class="inl">done when</code>, reflection, gates, and <code class="inl">after N tries</code>.</li>
+  </ol>
   <pre><code class="loop">flow "bmad sprint":
   for each story in "sprint.yaml":
     run "bmad-story-template.loop"</code></pre>

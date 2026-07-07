@@ -196,18 +196,18 @@ The source can be YAML or Markdown. Each item becomes context for the template.
 
 ## BMAD + LoopFlow
 
-BMAD is a method: discovery, PRD/tech-spec, architecture, epics, stories, sprint status.
+Use LoopFlow alone for small, checkable work. For real product work, we recommend pairing LoopFlow with a method like BMAD.
 
-LoopFlow is execution control: take the repeatable story checklist and run it until real checks pass.
+BMAD gives you discovery, PRD/tech-spec, architecture, epics, stories, and sprint status. LoopFlow turns each repeatable story into a verifiable agent process.
 
 Recommended split:
 
 ```text
 BMAD decides what to build and in what order.
-LoopFlow executes each repeatable story checklist until verified.
+LoopFlow executes each story until verified.
 ```
 
-Do not port all of BMAD into LoopFlow. Use BMAD for methodology and LoopFlow for verifiable execution loops.
+Do not port all of BMAD into LoopFlow. Use BMAD for methodology and LoopFlow for execution control: `done when`, reflection, gates, memory, and try limits.
 
 See [`examples/bmad/`](examples/bmad/) and [`examples/bmad-auth.loop`](examples/bmad-auth.loop).
 
